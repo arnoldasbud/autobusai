@@ -10,7 +10,7 @@
 <style>
 body.paused .st,body.paused .st *{animation-play-state:paused!important}.pm{display:flex;flex-direction:column;gap:8px}.pm2{display:flex;gap:8px}.pm2 button{flex:1}
 #station2{margin:0 10px;flex:none;position:relative;z-index:2}#bays2{display:grid;position:relative}#bays2 .bay{transform:rotate(180deg)}#bays2.shake{animation:shake .3s}#platform2{height:50px;position:relative;border-top:5px solid #f2c94c}#queue2{position:absolute;left:6px;top:9px;right:56px;height:34px}#sign2{position:absolute;right:6px;top:7px;width:44px;height:38px;border-radius:6px;background:#c2410c;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:800;line-height:1.1}#sign2 b{font-size:13px}.cols{display:flex;gap:8px;justify-content:center}.cols i{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 3px rgba(255,255,255,.25)}
-#opp{display:none;align-items:center;gap:8px;padding:5px 10px;background:#2a1d10;color:#fed7aa;font:700 12px system-ui;border-bottom:1px solid #7c2d12;position:relative;z-index:5}#opp.on{display:flex}#opp .obar{flex:1;height:8px;background:rgba(255,255,255,.15);border-radius:5px;overflow:hidden}#opp .obar i{display:block;height:100%;background:#fb923c;transition:width .4s}#card .wst{font-size:14px;color:#fde68a}#card button.wait{background:#713f12;color:#fde68a}#opp .ost{font-size:11px;border-radius:6px;padding:1px 5px}#opp .ost.bad{background:#7f1d1d;color:#fecaca}#opp .ost.warn{background:#713f12;color:#fde68a}#opp .osc{background:#7c2d12;border-radius:6px;padding:1px 6px}
+#opp{display:none;align-items:center;gap:8px;padding:5px 10px;background:#2a1d10;color:#fed7aa;font:700 12px system-ui;border-bottom:1px solid #7c2d12;position:relative;z-index:5}#opp.on{display:flex}#opp .obar{flex:1;height:8px;background:rgba(255,255,255,.15);border-radius:5px;overflow:hidden}#opp .obar i{display:block;height:100%;background:#fb923c;transition:width .4s}#card .coin{color:#fde68a;font-weight:800}#card .wst{font-size:14px;color:#fde68a}#card button.wait{background:#713f12;color:#fde68a}#opp .ost{font-size:11px;border-radius:6px;padding:1px 5px}#opp .ost.bad{background:#7f1d1d;color:#fecaca}#opp .ost.warn{background:#713f12;color:#fde68a}#opp .osc{background:#7c2d12;border-radius:6px;padding:1px 6px}
 #pause{position:relative;font-size:22px;width:46px;height:42px;padding:0}#zoomCtl #hint.new::after{right:-2px;top:-2px}#mpdot{display:none;position:absolute;right:4px;top:4px;width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px #0e131a}
 .card.wide{width:min(380px,94vw);max-height:92vh;overflow:auto}.mpc{display:flex;flex-direction:column;gap:10px}.qrb{display:flex;justify-content:center;background:#fff;border-radius:12px;padding:6px}
 .mpx{text-align:left;color:#a9b6c3;font-size:13px}.mpx textarea{width:100%;margin:6px 0;border-radius:8px;border:0;padding:8px;font:12px monospace}.mpx button{width:100%}
@@ -254,7 +254,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.4.0';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.4.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -966,13 +966,18 @@ function craneLift(b,res,el){const rr=el.getBoundingClientRect(),cx=rr.left+rr.w
   const f=makeFly(b,base),w=base,h=base*b.len,s1=U/base;f.style.zIndex=9;
   f.animate([{transform:`translate(${cx-w/2}px,${cy-h/2}px) rotate(${a0}deg) scale(1)`},{transform:`translate(${cx-w/2}px,${cy-h/2-20}px) rotate(${a0}deg) scale(1.25)`,offset:.25},{transform:`translate(${bc.x-w/2}px,${bc.y-h/2-30}px) rotate(0deg) scale(${s1*1.2})`,offset:.8},{transform:`translate(${bc.x-w/2}px,${bc.y-h/2}px) rotate(0deg) scale(${s1})`}],{duration:1300,easing:'ease-in-out',fill:'forwards'}).onfinish=()=>{f.remove();game.markReady(res.slot,b.id,performance.now());renderSlots();sfx('arrive')}}
 /* --- pagalbos už žvaigždutes --- */
-const BOOST=[{id:'crane',ic:'🏗️',name:'Kranas',cost:6,txt:'Pakelia bet kurį autobusą – net užstotą ar užrakintą – tiesiai į stotelę.'},
-  {id:'slot',ic:'➕',name:'Papildoma vieta',cost:5,txt:'Šiam lygiui stotelėje atsiranda 6-a vieta.'},
-  {id:'clear',ic:'🧹',name:'Nuvalyti kliūtį',cost:4,txt:'Iš karto pašalina vieną kliūtį ant kelio.'}];
-function starBank(){let e=0;for(const k in best)e+=best[k]||0;return e-store.get('busjam.spent',0)}
-function showBoost(){const bank=starBank();showCard(`<h2>🧰 Pagalbos</h2><p>Turi ★ ${bank}${testMode?' · testo režime nemokamai':''}</p><div class="hl">${BOOST.map(b=>`<div><b>${b.ic}</b><p><strong>${b.name} – ${b.cost}★</strong>${b.txt}</p><button class="bb" data-b="${b.id}" ${(!testMode&&bank<b.cost)||game.status!=='play'||(b.id==='clear'&&!game.robs.some(o=>o.on))||(b.id==='slot'&&game.nSlots>5)?'disabled':''}>Naudoti</button></div>`).join('')}</div><button id="bx">Uždaryti</button>`);
+/* --- monetos 🪙: gaunamos už kiekvieną įveiktą lygį (pirmą kartą – daugiau, kartojant – mažiau), leidžiamos pagalboms --- */
+var COINS=store.get('busjam.coins',null);if(COINS==null){COINS=40+Math.max(0,store.get('busjam.unlocked',1)-1)*8;store.set('busjam.coins',COINS)}
+function addCoins(n){COINS=Math.max(0,COINS+n);store.set('busjam.coins',COINS);return n}
+// pirmas įveikimas: 10 + 3 už ★ (+ bosų priedai); kartojant: 2 + ★, o už naujai pagerintas ★ – po 5
+function levelReward(L,st,prev){const l=lLoc(L),bon=l===100?40:l%25===0?25:l%5===0?10:0;return prev>0?2+st+Math.max(0,st-prev)*5:10+st*3+bon}
+const BOOST=[{id:'crane',ic:'🏗️',name:'Kranas',cost:35,txt:'Pakelia bet kurį autobusą – net užstotą ar užrakintą – tiesiai į stotelę.'},
+  {id:'slot',ic:'➕',name:'Papildoma vieta',cost:30,txt:'Šiam lygiui stotelėje atsiranda 6-a vieta.'},
+  {id:'clear',ic:'🧹',name:'Nuvalyti kliūtį',cost:20,txt:'Iš karto pašalina vieną kliūtį ant kelio.'}];
+function starBank(){return COINS}
+function showBoost(){const bank=starBank();showCard(`<h2>🧰 Pagalbos</h2><p>Turi 🪙 ${bank}${testMode?' · testo režime nemokamai':''}</p><p style="font-size:13px">Monetas gauni už kiekvieną įveiktą lygį – ir kartodamas.</p><div class="hl">${BOOST.map(b=>`<div><b>${b.ic}</b><p><strong>${b.name} – ${b.cost} 🪙</strong>${b.txt}</p><button class="bb" data-b="${b.id}" ${(!testMode&&bank<b.cost)||game.status!=='play'||(b.id==='clear'&&!game.robs.some(o=>o.on))||(b.id==='slot'&&game.nSlots>5)?'disabled':''}>Naudoti</button></div>`).join('')}</div><button id="bx">Uždaryti</button>`);
   $('bx').onclick=()=>$('overlay').classList.remove('show');
-  document.querySelectorAll('.bb').forEach(bt=>bt.onclick=()=>{const B=BOOST.find(x=>x.id===bt.dataset.b);if(!testMode)store.set('busjam.spent',store.get('busjam.spent',0)+B.cost);$('overlay').classList.remove('show');sfx('unlock');
+  document.querySelectorAll('.bb').forEach(bt=>bt.onclick=()=>{const B=BOOST.find(x=>x.id===bt.dataset.b);if(!testMode)addCoins(-B.cost);$('overlay').classList.remove('show');sfx('unlock');
     if(B.id==='crane'){game.crane=true;toast('🏗️ Paspausk autobusą','Kranas jį pakels į stotelę')}
     else if(B.id==='slot'){game.addSlot();buildBays();renderSlots();toast('➕ Atsirado 6-a vieta','')}
     else{const o=game.robs.find(o=>o.on);if(o){o.on=false;updObs([0])}}})}
@@ -1272,8 +1277,8 @@ setInterval(()=>{
     if(ev.win&&VS.playing){if(VS.surv)whenQuiet(g,survNext);else vsEnd(true);return}
     if(ev.win){
       unlocked=Math.max(unlocked,level+1);store.set('busjam.unlocked',unlocked);
-      const el=endT-startT,st=game.stars(el),cOk=game.chalOk(el);best[level]=Math.max(best[level]||0,st);store.set('busjam.stars',best);
-      whenQuiet(g,()=>{sfx('win');for(let i=0;i<st;i++)setTimeout(()=>sfx('star',i),450+i*220);showCard(`<h2>Lygis įveiktas!</h2><div class="stars">${'★'.repeat(st)}<span>${'★'.repeat(4-st)}</span></div><div class="sbrk"><span class="on">★ Lygis įveiktas</span><span class="${el<=game.parTime*1000?'on':''}">★ Laikas ${fmt(el)} (≤ ${fmt(game.parTime*1000)})</span><span class="${game.moves<=game.parMoves?'on':''}">★ Ėjimai ${game.moves} (≤ ${game.parMoves})${game.bumps?' · atsitrenkimai '+game.bumps:''}</span><span class="${cOk?'on':''}">★ ${game.chal?chalText(game.chal):'Užduotis (šiame lygyje nėra)'}</span></div>${lLoc(level)===100?'<p>🎉 Atrakintas naujas pasaulis!</p>':''}<button class="primary" id="nx">${playable(level+1)?'Kitas lygis':'Į meniu'}</button><button id="rp">↻ Žaisti šį lygį iš naujo</button><button id="mn">Lygių meniu</button>`);$('nx').onclick=()=>playable(level+1)?newGame(level+1):openMenu();$('rp').onclick=()=>newGame(level);$('mn').onclick=()=>openMenu()});
+      const el=endT-startT,st=game.stars(el),cOk=game.chalOk(el),prevSt=best[level]||0,coin=addCoins(levelReward(level,st,prevSt));best[level]=Math.max(prevSt,st);store.set('busjam.stars',best);
+      whenQuiet(g,()=>{sfx('win');for(let i=0;i<st;i++)setTimeout(()=>sfx('star',i),450+i*220);showCard(`<h2>Lygis įveiktas!</h2><div class="stars">${'★'.repeat(st)}<span>${'★'.repeat(4-st)}</span></div><div class="sbrk"><span class="on">★ Lygis įveiktas</span><span class="${el<=game.parTime*1000?'on':''}">★ Laikas ${fmt(el)} (≤ ${fmt(game.parTime*1000)})</span><span class="${game.moves<=game.parMoves?'on':''}">★ Ėjimai ${game.moves} (≤ ${game.parMoves})${game.bumps?' · atsitrenkimai '+game.bumps:''}</span><span class="${cOk?'on':''}">★ ${game.chal?chalText(game.chal):'Užduotis (šiame lygyje nėra)'}</span></div>${lLoc(level)===100?'<p>🎉 Atrakintas naujas pasaulis!</p>':''}<p class="coin">🪙 +${coin}${prevSt?' (kartojant)':''} · iš viso ${COINS}</p><button class="primary" id="nx">${playable(level+1)?'Kitas lygis':'Į meniu'}</button><button id="rp">↻ Žaisti šį lygį iš naujo</button><button id="mn">Lygių meniu</button>`);$('nx').onclick=()=>playable(level+1)?newGame(level+1):openMenu();$('rp').onclick=()=>newGame(level);$('mn').onclick=()=>openMenu()});
     }else loseCard(g);
   }
 },170);
@@ -1288,7 +1293,7 @@ function resumeGame(){if(!PZ.on)return;PZ.on=false;document.body.classList.remov
   if(startT&&!endT)startT+=dt;if(VIP.paxT)VIP.paxT+=dt;if(VIP.busDl)VIP.busDl+=dt;if(plowT)plowT+=dt;
   game.robs.forEach(o=>{if(o.dl)o.dl+=dt});Object.keys(game.readyAt).forEach(k=>{if(game.readyAt[k]!=null)game.readyAt[k]+=dt});game.buses.forEach(b=>{if(b.touch)b.touch+=dt});renderStats()}
 function openPause(){pauseGame();$('menu').classList.remove('show');const vs=VS.playing,on=MP.open;
-  showCard(`<h2>${vs?'☰ Meniu':'⏸ Pauzė'}</h2>${vs?'<p>Varžybose laikas neustoja</p>':`<p>Lygis ${lLoc(level)} · ${fmt(startT?PZ.t0-startT:0)} · ${game.moves} ėj.</p>`}<div class="pm">
+  showCard(`<h2>${vs?'☰ Meniu':'⏸ Pauzė'}</h2>${vs?'<p>Varžybose laikas neustoja</p>':`<p>Lygis ${lLoc(level)} · ${fmt(startT?PZ.t0-startT:0)} · ${game.moves} ėj. · 🪙 ${COINS}</p>`}<div class="pm">
     <button class="primary" id="pr">▶ Tęsti</button>
     <button id="pa">${vs?'🏳️ Pasiduoti':'↻ Pradėti iš naujo'}</button>
     ${vs?'':'<button id="pl">🗺️ Lygiai</button>'}
@@ -1313,7 +1318,7 @@ function openSettings(){showCard(`<h2>⚙️ Nustatymai</h2><div class="pm"><but
   $('rs').onclick=()=>{showCard(`<h2>🗑️ Anuliuoti progresą?</h2><p>Bus ištrinta viskas: atrakinti lygiai, visos žvaigždutės, išleistos pagalbos, matytos užuominos ir nustatymai. Šio veiksmo atšaukti negalima.</p><button class="primary danger" id="ry">Taip, ištrinti viską</button><button id="rn">Ne, palikti</button>`);
     $('rn').onclick=()=>$('overlay').classList.remove('show');
     $('ry').onclick=()=>{try{Object.keys(localStorage).filter(k=>k.startsWith('busjam.')).forEach(k=>localStorage.removeItem(k))}catch(e){}
-      unlocked=1;level=1;best={};testMode=0;AU.on.s=1;AU.on.m=1;auApply();curWorld=null;newGame(1,true);toast('🗑️ Progresas ištrintas','Pradedame nuo 1 lygio')}};
+      unlocked=1;level=1;best={};testMode=0;COINS=40;AU.on.s=1;AU.on.m=1;auApply();curWorld=null;newGame(1,true);toast('🗑️ Progresas ištrintas','Pradedame nuo 1 lygio')}};
   const setTest=v=>{testMode=v;store.set('busjam.test2',v);openSettings();const nx=$('next');if(nx)nx.disabled=!playable(level+1)};
   $('tt').onclick=()=>{if(testMode)return setTest(0);
     showCard(`<h2>🧪 Testo režimas</h2><p>Įvesk slaptažodį</p><input id="tpw" type="password" autocomplete="off" style="width:100%;padding:12px;border-radius:10px;border:0;font:600 16px system-ui;margin:8px 0 4px"><p id="tpe" style="color:#fca5a5;min-height:18px"></p><button class="primary" id="tok">Įjungti</button><button id="tno">Atšaukti</button>`);
@@ -1344,7 +1349,7 @@ function renderMenu(){
       cells+=`<button class="lv k-${kd}${pl?'':' lock'}${L===level?' cur':''}" data-l="${L}"><b>${l}</b><i>${sub}</i></button>`}
     tot+=cs;body+=`<div class="chap"><span>${ch+1} skyrius</span><span>★ ${cs}/100</span></div><div class="grid">${cells}</div>`}
   const w=WORLDS[menuW%WORLDS.length];
-  $('menu').innerHTML=`<div class="mtop"><b>${w.emoji} ${w.name}</b><span>★ ${tot}/400</span><button id="mx">✕</button></div><div class="mhead">${tabs}</div><div class="mbody">${body}</div>
+  $('menu').innerHTML=`<div class="mtop"><b>${w.emoji} ${w.name}</b><span>★ ${tot}/400 · 🪙 ${COINS}</span><button id="mx">✕</button></div><div class="mhead">${tabs}</div><div class="mbody">${body}</div>
    <div class="ver">Versija ${VERSION}</div>`;
   $('mx').onclick=()=>$('menu').classList.remove('show');
   $('menu').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{menuW=+b.dataset.w;renderMenu()});
@@ -1697,11 +1702,11 @@ function coopGo(L,local,m){VS.want={me:null,op:null};if(!VS.on)VS.prev=level;VS.
   let n=3;const tick=()=>{if(!VS.playing)return;if(n>0){showCard(`<div class="cd">${n}</div><p>🤝 Coop · ${lvName(L)}</p><p>Tavo stotelė – <b>${COOP.host?'viršuje 🔵':'apačioje 🟠'}</b>. Tavo keleiviai:</p><div class="cols">${mine.map(c=>`<i style="background:${COLORS[c]}"></i>`).join('')}</div>`);sfx('click');n--;setTimeout(tick,900)}
     else{$('overlay').classList.remove('show');VS.lock=false;startT=performance.now();sfx('depart')}};tick()}
 function coopEnd(win,st){if(COOP.ended)return;COOP.ended=true;VS.playing=false;const el=startT?endT-startT:0,stars=win?game.stars(el):0;sfx(win?'win':'lose');
-  const who=st==null?'':(st===(COOP.host?0:1)?'Tavo':'Draugo');VS.cres={win,el,stars,who};setTimeout(renderCoopEnd,900)}
+  const who=st==null?'':(st===(COOP.host?0:1)?'Tavo':'Draugo');VS.cres={win,el,stars,who,coin:addCoins(win?4+stars:1)};setTimeout(renderCoopEnd,900)}
 function renderCoopEnd(){const r=VS.cres;if(!r||VS.playing)return;const W=VS.want;
   const btn=(act,label,prim)=>{const mine=W.me&&W.me.act===act,his=W.op&&W.op.act===act;return `<button class="${prim||his?'primary':''}${mine?' wait':''}" data-a="${act}">${mine?'⏳ Laukiama draugo… (atšaukti)':label+(his?' · 🟠 draugas pasiruošęs':'')}</button>`};
   showCard(`<div class="mpc"><h2>${r.win?'🤝 Įveikėte kartu!':r.who==='Tavo'?'😬 Tavo stotelė užsikimšo':r.who?'😬 Draugo stotelė užsikimšo':'😬 Nepavyko'}</h2>
-    ${r.win?`<div class="stars">${'★'.repeat(r.stars)}<span>${'★'.repeat(4-r.stars)}</span></div>`:''}<p>${fmt(r.el)} · ${game.moves} ėj. · 🔵 ${game.qOf(0)}/${game.S[0].queue.length} · 🟠 ${game.qOf(1)}/${game.S[1].queue.length}</p>
+    ${r.win?`<div class="stars">${'★'.repeat(r.stars)}<span>${'★'.repeat(4-r.stars)}</span></div>`:''}<p class="coin">🪙 +${r.coin}</p><p>${fmt(r.el)} · ${game.moves} ėj. · 🔵 ${game.qOf(0)}/${game.S[0].queue.length} · 🟠 ${game.qOf(1)}/${game.S[1].queue.length}</p>
     <p class="wst">${W.me?'⏳ Pradėsim, kai draugas patvirtins':W.op?'🟠 Draugas pasiruošęs – patvirtink':'Pasirinkite, ką toliau – pradėsim, kai abu patvirtinsite'}</p>
     ${btn('rematch',r.win?'↻ Žaisti dar kartą':'↻ Bandyti dar kartą',!r.win)}${btn('next','Kitas lygis →',r.win)}<button id="lb">⚙️ Keisti nustatymus</button><button id="qt">Baigti</button></div>`);$('card').classList.add('wide');
   document.querySelectorAll('#card [data-a]').forEach(bt=>bt.onclick=()=>{const act=bt.dataset.a;vsWant(W.me&&W.me.act===act?null:act)});
@@ -1792,7 +1797,7 @@ function vsCheck(){if(!VS.me||!VS.opp||!VS.opp.end)return;const a=VS.me,b=VS.opp
   if(v==='surv'){r=a.q===b.q?0:a.q>b.q?1:-1;if(a.win&&!b.win)r=1;if(b.win&&!a.win)r=-1}
   else if(v==='stars'){r=Math.sign(a.st-b.st);if(!r&&a.win&&b.win)r=Math.sign(b.ms-a.ms)}
   else{if(a.win&&b.win)r=Math.sign(b.ms-a.ms);else r=a.win?1:b.win?-1:0}
-  VS.res=r;if(r>0)VS.score[0]++;else if(r<0)VS.score[1]++;sfx(r>0?'win':r<0?'lose':'click');renderResult()}
+  VS.res=r;if(r>0)VS.score[0]++;else if(r<0)VS.score[1]++;VS.coin=addCoins(r>0?6:2);sfx(r>0?'win':r<0?'lose':'click');renderResult()}
 function matchOver(){return !VS.cfg.bo3||VS.score[0]>=2||VS.score[1]>=2||VS.round>=3}
 // kitas raundas / revanšas prasideda tik tada, kai abu patvirtina tą patį pasirinkimą
 const ACTN={rematch:'↻ Revanšas',next:'Kitas lygis →',round:'▶ Kitas raundas'};
@@ -1808,7 +1813,7 @@ function renderResult(){if(VS.res==null||VS.playing)return;const a=VS.me,b=VS.op
     return `<button class="${prim||his?'primary':''}${mine?' wait':''}" data-a="${act}">${mine?'⏳ Laukiama draugo… (atšaukti)':label+(his?' · 🟠 draugas pasiruošęs':'')}</button>`};
   const status=W.me&&W.op&&W.me.act!==W.op.act?`<p class="wst">🟠 Draugas pasirinko: <b>${ACTN[W.op.act]}</b></p>`:W.me?'<p class="wst">⏳ Pradėsim, kai draugas patvirtins</p>':W.op?`<p class="wst">🟠 Draugas pasiruošęs: <b>${ACTN[W.op.act]}</b> – patvirtink</p>`:'<p class="wst">Pasirinkite, ką toliau – žaidimas prasidės, kai abu patvirtinsite</p>';
   showCard(`<div class="mpc"><h2>${big}</h2>${VS.cfg.bo3?`<div class="score">${VS.score[0]} : ${VS.score[1]}</div>`:''}
-    <table class="vst"><tr><th></th><th>${meName}</th><th>${opName}</th></tr>${row('Rezultatas',res(a),res(b))}${VS.surv?row('Keleivių',a.q,b.q):row('Laikas',fmt(a.ms),fmt(b.ms))+row('Ėjimai',a.m,b.m)+row('★',a.st,b.st)}</table>
+    <p class="coin">🪙 +${VS.coin||0}</p><table class="vst"><tr><th></th><th>${meName}</th><th>${opName}</th></tr>${row('Rezultatas',res(a),res(b))}${VS.surv?row('Keleivių',a.q,b.q):row('Laikas',fmt(a.ms),fmt(b.ms))+row('Ėjimai',a.m,b.m)+row('★',a.st,b.st)}</table>
     ${status}
     ${bo?(iPick?`<p>Tavo eilė rinktis ${VS.round+1} raundo lygį</p><div class="lvp"><button id="lm">−</button><div><b>${lvName(VS.cfg.L)}</b><small>Lygis ${VS.cfg.L}</small></div><button id="lp">+</button><button id="lr">🎲</button></div>`:`<p>${VS.round+1} raundo lygį renkasi draugas: <b>${lvName(VS.cfg.L)}</b></p>`)+btn('round',`✅ Pasiruošęs ${VS.round+1} raundui`,true)
     :btn('rematch','↻ Revanšas',true)+(VS.surv?'':btn('next','Kitas lygis →'))+'<button id="lb">⚙️ Keisti nustatymus</button>'}
