@@ -16,6 +16,7 @@ body.paused .st,body.paused .st *{animation-play-state:paused!important}.pm{disp
 .segs{display:flex;gap:6px;flex-wrap:wrap}.segs .seg{flex:1;min-width:30%;padding:9px 6px;font-size:13px;opacity:.75}.segs .seg.on{background:#2563eb;color:#fff;opacity:1}.seg:disabled{cursor:default}
 .mpd{font-size:13px}.lvp{display:flex;align-items:center;gap:6px}.lvp>div{flex:1;display:flex;flex-direction:column}.lvp small{opacity:.6}.lvp button{width:44px;padding:10px 0}
 .cd{font:900 84px system-ui;color:#fbbf24;line-height:1}.score{font:900 40px system-ui;color:#fbbf24}.vst{width:100%;border-collapse:collapse;font-size:14px}.vst td,.vst th{padding:5px;border-bottom:1px solid rgba(255,255,255,.08)}.vst td:first-child{text-align:left;color:#a9b6c3}
+.rcode{font:900 54px system-ui;letter-spacing:10px;color:#fbbf24}.rcin{font:900 40px system-ui;letter-spacing:12px;text-align:center;width:100%;border-radius:12px;border:0;padding:8px}
 .pbar{height:10px;background:rgba(255,255,255,.12);border-radius:6px;overflow:hidden}.pbar i{display:block;height:100%;width:0;background:#22c55e}button.alt{background:#0f766e}
 #upd{position:fixed;left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:60;display:none;align-items:center;gap:10px;background:#0f766e;color:#fff;border-radius:14px;padding:10px 12px;font:600 14px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.35)}#upd.show{display:flex}#upd b{flex:1}#upd button{border:0;border-radius:10px;padding:9px 12px;font:700 14px system-ui;background:#fff;color:#0f766e}#upd .x{background:transparent;color:#fff;padding:9px 6px}.ver{opacity:.6;font-size:12px;text-align:center;margin-top:10px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -248,7 +249,7 @@ function params(L){
     veh:ll>6?Math.min(.25,.06+D*.25):0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
   return {ll,W,H,rc,rb,n,colors,win,slots:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.2.4';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.3.0';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -1425,76 +1426,88 @@ const QR=(()=>{
     for(let y=0;y<N;y++)for(let i=0;i<N;i++)if(M[y][i])x.fillRect((i+q)*s,(y+q)*s,s,s);c.style.cssText='width:'+px+'px;height:'+px+'px;image-rendering:pixelated;border-radius:8px';return c}
   return {encode,canvas};
 })();
-/* ===================== DVIESE: RYŠYS (WebRTC + QR) =====================
-   Telefonai jungiasi tiesiogiai (tas pats WiFi / hotspot'as). Signalai keliauja per du QR kodus:
-   1) kūrėjas rodo „pasiūlymą“, 2) prisijungiantis nuskaito ir rodo „atsakymą“, 3) kūrėjas nuskaito.
-   Kad QR būtų mažas, SDP sutraukiamas iki: ufrag, pwd, fingerprint ir kandidatų adresų. */
-var MP={pc:null,dc:null,role:null,open:false,peerVer:null,up:null,cam:null};
-const PTAG='BJ1';
-function packSDP(d){const s=d.sdp,g=k=>((s.match(new RegExp('a='+k+':(.*)'))||[])[1]||'').trim();
-  const fp=g('fingerprint').split(' ')[1].split(':').map(h=>parseInt(h,16)),fpb=btoa(String.fromCharCode(...fp)).replace(/=+$/,'');
-  const cs=[];s.split(/\r?\n/).forEach(l=>{const m=l.match(/^a=candidate:\S+ 1 udp \d+ (\S+) (\d+) typ (host|srflx)/i);if(m){const c=(m[3]==='host'?'h':'s')+m[1]+'_'+m[2];if(!cs.includes(c))cs.push(c)}});
-  return [PTAG,d.type==='offer'?'O':'A',g('ice-ufrag'),g('ice-pwd'),fpb,...cs.slice(0,8)].join('~')}
-function unpackSDP(code){const p=code.trim().split('~');if(p[0]!==PTAG||p.length<5)throw new Error('bad');
-  const [,t,u,pw,fpb,...cs]=p,fp=[...atob(fpb)].map(c=>c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0')).join(':');
-  const cl=cs.map((c,i)=>{const typ=c[0]==='h'?'host':'srflx',k=c.lastIndexOf('_'),ip=c.slice(1,k),port=c.slice(k+1);return `a=candidate:${i+1} 1 udp ${2122260223-i*1000} ${ip} ${port} typ ${typ}${typ==='srflx'?' raddr 0.0.0.0 rport 0':''}`});
-  const sdp=['v=0','o=- 4611731400430051336 2 IN IP4 127.0.0.1','s=-','t=0 0','a=group:BUNDLE 0','a=msid-semantic: WMS','m=application 9 UDP/DTLS/SCTP webrtc-datachannel','c=IN IP4 0.0.0.0',...cl,'a=end-of-candidates',
-    `a=ice-ufrag:${u}`,`a=ice-pwd:${pw}`,`a=fingerprint:sha-256 ${fp}`,`a=setup:${t==='O'?'actpass':'active'}`,'a=mid:0','a=sctp-port:5000','a=max-message-size:262144',''].join('\r\n');
-  return {type:t==='O'?'offer':'answer',sdp}}
-async function camPerm(){try{const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});s.getTracks().forEach(t=>t.stop());return true}catch(e){return false}}
-function mpReset(){try{MP.dc&&MP.dc.close()}catch(e){}try{MP.pc&&MP.pc.close()}catch(e){}MP.pc=MP.dc=null;MP.open=false;MP.peerVer=null;MP.up=null;stopCam()}
-function mkPC(){mpReset();const pc=new RTCPeerConnection({iceServers:navigator.onLine?[{urls:'stun:stun.l.google.com:19302'}]:[]});
-  const dc=pc.createDataChannel('g',{negotiated:true,id:0,ordered:true});MP.pc=pc;MP.dc=dc;
-  dc.onopen=()=>{MP.open=true;stopCam();mpSend({t:'hi',ver:VERSION,role:MP.role});mpStatus()};
-  dc.onclose=()=>{const was=MP.open;MP.open=false;mpStatus();if(was){vsAbort('Ryšys su draugu nutrūko');toast('📴 Ryšys nutrūko','Prisijunkite iš naujo per 👥')}};
-  dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}mpOnMsg(m)};
-  pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'&&!MP.open)mpFail()};
-  return pc}
-function gather(pc){return new Promise(r=>{if(pc.iceGatheringState==='complete')return r();const t=setTimeout(r,navigator.onLine?3500:2000);pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete'){clearTimeout(t);r()}})})}
-function mpSend(o){if(MP.dc&&MP.dc.readyState==='open')MP.dc.send(JSON.stringify(o))}
+/* ===================== DVIESE: RYŠYS PER INTERNETĄ (kambario kodas) =====================
+   Žinutės keliauja per viešus MQTT serverius (per WebSocket). Jungiamės prie kelių iš karto –
+   jei vienas neveikia, veikia kitas; pasikartojančios žinutės atmetamos pagal id.
+   Kūrėjas gauna 4 skaitmenų kodą (ir QR su nuoroda), svečias jį įveda arba nuskaito. */
+var MP={role:null,open:false,peerVer:null,up:null,cam:null,room:null,id:Math.random().toString(36).slice(2,10),peer:null,seen:new Set(),seq:0,last:0,conns:[],timer:null,joinT:null};
+const BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081/mqtt'];
+const TOPIC=r=>'autobusai-spustis/v1/'+r;
+/* --- mažas MQTT 3.1.1 klientas (tik QoS 0) --- */
+function mqStr(s){const b=new TextEncoder().encode(s);return [b.length>>8,b.length&255,...b]}
+function mqPkt(h,body){const len=[];let n=body.length;do{let d=n%128;n=Math.floor(n/128);if(n>0)d|=128;len.push(d)}while(n>0);return new Uint8Array([h,...len,...body])}
+function mqConnect(url,onMsg,onUp){const c={url,ok:false,ws:null,subs:[],buf:new Uint8Array(0)};
+  try{c.ws=new WebSocket(url,['mqtt'])}catch(e){return c}c.ws.binaryType='arraybuffer';
+  c.ws.onopen=()=>c.ws.send(mqPkt(0x10,[...mqStr('MQTT'),4,2,0,30,...mqStr('ab'+MP.id+Math.random().toString(36).slice(2,6))]));
+  c.ws.onmessage=e=>{const a=new Uint8Array(e.data),nb=new Uint8Array(c.buf.length+a.length);nb.set(c.buf);nb.set(a,c.buf.length);c.buf=nb;
+    for(;;){const b=c.buf;if(b.length<2)break;let m=1,len=0,i=1,d;do{d=b[i++];len+=(d&127)*m;m*=128}while(d&128&&i<b.length);if(d&128||b.length<i+len)break;
+      const type=b[0]>>4,body=b.slice(i,i+len);c.buf=b.slice(i+len);
+      if(type===2){c.ok=body[1]===0;if(c.ok){c.subs.forEach(t=>mqSub(c,t));onUp&&onUp(c)}}
+      else if(type===3){const tl=body[0]<<8|body[1],topic=new TextDecoder().decode(body.slice(2,2+tl)),qos=(b[0]>>1)&3,off=2+tl+(qos?2:0);onMsg(topic,new TextDecoder().decode(body.slice(off)))}}};
+  c.ws.onclose=c.ws.onerror=()=>{c.ok=false};
+  c.ping=setInterval(()=>{if(c.ok&&c.ws.readyState===1)c.ws.send(new Uint8Array([0xC0,0]))},20000);return c}
+function mqSub(c,t){if(!c.subs.includes(t))c.subs.push(t);if(c.ok&&c.ws.readyState===1)c.ws.send(mqPkt(0x82,[0,1+c.subs.indexOf(t),...mqStr(t),0]))}
+function mqPub(c,t,s){if(c.ok&&c.ws.readyState===1)c.ws.send(mqPkt(0x30,[...mqStr(t),...new TextEncoder().encode(s)]))}
+/* --- kambarys --- */
+function netStart(onUp){netStop();MP.conns=BROKERS.map(u=>mqConnect(u,netIn,onUp));MP.seen=new Set()}
+function netStop(){MP.conns.forEach(c=>{clearInterval(c.ping);try{c.ws&&c.ws.close()}catch(e){}});MP.conns=[];clearInterval(MP.timer);clearInterval(MP.joinT);MP.timer=MP.joinT=null}
+function netSubscribe(t){MP.conns.forEach(c=>mqSub(c,t))}
+function netRaw(t,obj){const s=JSON.stringify({i:MP.id+'.'+(++MP.seq),f:MP.id,d:obj});MP.conns.forEach(c=>mqPub(c,t,s))}
+function mpSend(o){if(MP.room&&MP.peer)netRaw(TOPIC(MP.room)+(MP.role==='host'?'/g':'/h'),o)}
+function netIn(topic,s){let e;try{e=JSON.parse(s)}catch(x){return}if(!e||e.f===MP.id||MP.seen.has(e.i))return;MP.seen.add(e.i);if(MP.seen.size>3000)MP.seen=new Set([...MP.seen].slice(-1000));
+  const m=e.d;if(!m)return;
+  if(MP.role==='host'&&m.t==='join'){if(MP.peer&&MP.peer!==e.f){netRaw(TOPIC(MP.room)+'/g',{t:'busy',to:e.f});return}MP.peer=e.f;netRaw(TOPIC(MP.room)+'/g',{t:'welcome',to:e.f});if(!MP.open)mpOpen();return}
+  if(MP.role==='guest'&&m.t==='welcome'){if(m.to!==MP.id)return;MP.peer=e.f;clearInterval(MP.joinT);if(!MP.open)mpOpen();return}
+  if(MP.role==='guest'&&m.t==='busy'){if(m.to!==MP.id)return;clearInterval(MP.joinT);mpCard('<h2>🚫 Kambarys užimtas</h2><p>Prie šio kodo jau prisijungė kitas žaidėjas.</p><button id="mpx">Gerai</button>');$('mpx').onclick=()=>{mpReset();$('overlay').classList.remove('show')};return}
+  if(e.f!==MP.peer)return;MP.last=performance.now();
+  if(!MP.open){mpOpen(true);return}
+  if(m.t==='hb')return;mpOnMsg(m)}
+function mpOpen(again){MP.open=true;MP.last=performance.now();mpStatus();stopCam();
+  clearInterval(MP.timer);MP.timer=setInterval(()=>{mpSend(MP.peerVer?{t:'hb'}:{t:'hi',ver:VERSION,role:MP.role});if(MP.open&&performance.now()-MP.last>15000){MP.open=false;mpStatus();vsAbort('Ryšys su draugu nutrūko');toast('📴 Ryšys nutrūko','Bandau atkurti…')}},4000);
+  if(again){toast('🔗 Ryšys atkurtas','');return}mpSend({t:'hi',ver:VERSION,role:MP.role})}
+function mpReset(){if(MP.open)mpSend({t:'bye'});netStop();MP.open=false;MP.peer=null;MP.room=null;MP.peerVer=null;MP.up=null;stopCam();mpStatus()}
 function mpStatus(){const b=$('mpdot');if(b)b.style.display=MP.open?'inline-block':'none'}
+const netOk=()=>MP.conns.some(c=>c.ok);
 /* --- kamera ir QR skaitymas --- */
 function stopCam(){if(MP.cam){MP.cam.getTracks().forEach(t=>t.stop());MP.cam=null}MP.scanning=false}
+function codeFrom(s){const m=String(s).match(/(?:join=)?(\d{4})\b/);return m?m[1]:null}
 async function startScan(box,onCode){
-  const v=document.createElement('video');v.setAttribute('playsinline','');v.muted=true;v.style.cssText='width:100%;max-height:44vh;border-radius:12px;background:#000;object-fit:cover';box.appendChild(v);
-  if(!('BarcodeDetector' in window)){box.insertAdjacentHTML('beforeend','<p>Šis telefonas negali skaityti QR – įklijuok kodą žemiau.</p>');v.remove();return}
-  try{MP.cam=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});v.srcObject=MP.cam;await v.play()}catch(e){box.insertAdjacentHTML('beforeend','<p>Nepavyko įjungti kameros. Leisk kamerą arba įklijuok kodą.</p>');v.remove();return}
+  if(!('BarcodeDetector' in window)){box.innerHTML='<p>Šis telefonas negali skaityti QR – įvesk kodą.</p>';return}
+  const v=document.createElement('video');v.setAttribute('playsinline','');v.muted=true;v.style.cssText='width:100%;max-height:40vh;border-radius:12px;background:#000;object-fit:cover';box.appendChild(v);
+  try{MP.cam=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});v.srcObject=MP.cam;await v.play()}catch(e){box.innerHTML='<p>Nepavyko įjungti kameros – įvesk kodą.</p>';return}
   const bd=new BarcodeDetector({formats:['qr_code']});MP.scanning=true;
-  const loop=async()=>{if(!MP.scanning)return;try{const r=await bd.detect(v);const c=r.find(x=>x.rawValue&&x.rawValue.startsWith(PTAG));if(c){MP.scanning=false;stopCam();sfx('click');onCode(c.rawValue);return}}catch(e){}setTimeout(loop,180)};loop()}
-const mpCard=(h)=>{showCard(`<div class="mpc">${h}</div>`);$('card').classList.add('wide')};
-function pasteRow(id){return `<details class="mpx"><summary>Neveikia kamera?</summary><textarea id="${id}" rows="3" placeholder="Įklijuok draugo kodą"></textarea><button id="${id}b">Naudoti kodą</button></details>`}
-function codeRow(code){return `<details class="mpx"><summary>Nėra kuo nuskaityti?</summary><textarea readonly rows="3">${code}</textarea><button class="cpy">📋 Kopijuoti kodą</button></details>`}
-function wireCode(code){const b=document.querySelector('#card .cpy');if(b)b.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(code);toast('📋 Nukopijuota','Nusiųsk draugui')}}
-/* --- srautas: meniu → kurti / prisijungti --- */
-function openMP(){
-  if(MP.open)return openLobby();
-  const ok='RTCPeerConnection' in window&&/^https?:$/.test(location.protocol)&&!/claudeusercontent|claude\.ai/.test(location.hostname);
-  mpCard(`<h2>👥 Žaisti dviese</h2><p>Abu telefonai turi būti tame pačiame WiFi arba vienas prisijungęs prie kito hotspot'o. Internetas nebūtinas.</p>
-    ${ok?`<button class="primary" id="mph">📡 Kurti žaidimą</button><button class="primary alt" id="mpg">📷 Prisijungti prie draugo</button>`:`<p style="color:#fca5a5">Dviese žaisti galima tik įdiegtoje versijoje: arnoldasbud.github.io/autobusai</p>`}<button id="mpx">Atšaukti</button>`);
-  if(ok){$('mph').onclick=hostStart;$('mpg').onclick=guestStart}$('mpx').onclick=()=>{$('card').classList.remove('wide');$('overlay').classList.remove('show')}}
-async function hostStart(){MP.role='host';mpCard('<h2>📡 Kuriama…</h2><p>Ruošiamas ryšio kodas</p>');await camPerm();
-  const pc=mkPC();await pc.setLocalDescription(await pc.createOffer());await gather(pc);const code=packSDP(pc.localDescription);
-  mpCard(`<h2>1️⃣ Parodyk draugui</h2><p>Draugas spaudžia „Prisijungti“ ir nuskaito šį kodą.</p><div id="qrb" class="qrb"></div>${codeRow(code)}<button class="primary" id="mpn">Toliau: nuskaityk draugo kodą →</button><button id="mpx">Atšaukti</button>`);
-  $('qrb').appendChild(QR.canvas(code,Math.min(300,innerWidth-90)));wireCode(code);$('mpx').onclick=()=>{mpReset();$('overlay').classList.remove('show')};
-  $('mpn').onclick=()=>{mpCard(`<h2>2️⃣ Nuskaityk draugo kodą</h2><p>Nukreipk kamerą į draugo ekraną.</p><div id="scb"></div>${pasteRow('pa')}<button id="mpb">← Atgal į mano kodą</button>`);
-    const use=async c=>{try{await pc.setRemoteDescription(unpackSDP(c));mpCard('<h2>🔗 Jungiamasi…</h2><p>Dar akimirka</p>');setTimeout(()=>{if(!MP.open)mpFail()},12000)}catch(e){toast('⚠️ Netinkamas kodas','Nuskaityk draugo atsakymo kodą')}};
-    startScan($('scb'),use);$('pab').onclick=()=>use($('pa').value);
-    $('mpb').onclick=()=>{stopCam();mpCard(`<h2>1️⃣ Parodyk draugui</h2><div id="qrb" class="qrb"></div>${codeRow(code)}<button class="primary" id="mpn2">Toliau →</button>`);$('qrb').appendChild(QR.canvas(code,Math.min(300,innerWidth-90)));wireCode(code);$('mpn2').onclick=()=>$('mpn').onclick()}}}
-async function guestStart(){MP.role='guest';await camPerm();
-  mpCard(`<h2>1️⃣ Nuskaityk draugo kodą</h2><p>Draugas turi būti paspaudęs „Kurti žaidimą“.</p><div id="scb"></div>${pasteRow('pa')}<button id="mpx">Atšaukti</button>`);
+  const loop=async()=>{if(!MP.scanning)return;try{const r=await bd.detect(v);const c=r.map(x=>codeFrom(x.rawValue)).find(Boolean);if(c){MP.scanning=false;stopCam();sfx('click');onCode(c);return}}catch(e){}setTimeout(loop,180)};loop()}
+const mpCard=h=>{showCard(`<div class="mpc">${h}</div>`);$('card').classList.add('wide')};
+/* --- srautas --- */
+function openMP(){if(MP.open)return openLobby();
+  mpCard(`<h2>👥 Žaisti dviese</h2><p>Abiem telefonams reikia interneto (mobilaus ar WiFi).</p>
+    <button class="primary" id="mph">➕ Kurti žaidimą</button><button class="primary alt" id="mpg">🔢 Prisijungti prie draugo</button><button id="mpx">Atšaukti</button>`);
+  $('mph').onclick=hostStart;$('mpg').onclick=()=>guestStart();$('mpx').onclick=()=>{$('card').classList.remove('wide');$('overlay').classList.remove('show')}}
+function joinURL(code){return location.origin+location.pathname+'#join='+code}
+function hostStart(){if(!navigator.onLine)return toast('📴 Nėra interneto','');mpReset();MP.role='host';MP.room=String(1000+Math.floor(Math.random()*9000));
+  netStart();netSubscribe(TOPIC(MP.room)+'/h');
+  mpCard(`<h2>Kambario kodas</h2><div class="rcode">${MP.room}</div><p>Draugas įveda šį kodą arba nuskaito QR.</p><div id="qrb" class="qrb"></div><p id="mps">⏳ Jungiamasi prie serverio…</p><button id="mpx">Atšaukti</button>`);
+  $('qrb').appendChild(QR.canvas(joinURL(MP.room),Math.min(220,innerWidth-120)));$('mpx').onclick=()=>{mpReset();$('overlay').classList.remove('show')};
+  let n=0;const chk=setInterval(()=>{const el=$('mps');if(!el||MP.open||MP.role!=='host'){clearInterval(chk);return}n++;
+    if(netOk())el.textContent='⏳ Laukiama draugo…';else if(n>16)el.innerHTML='<span style="color:#fca5a5">⚠️ Nepavyksta pasiekti serverio. Patikrink internetą.</span>'},500)}
+function guestStart(code){if(!navigator.onLine)return toast('📴 Nėra interneto','');mpReset();MP.role='guest';
+  mpCard(`<h2>Prisijungti</h2><p>Įvesk draugo kambario kodą</p><input id="rc" class="rcin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="____" value="${code||''}"><button class="primary" id="rj">Prisijungti</button><p>arba nuskaityk draugo QR</p><div id="scb"></div><button id="mpx">Atšaukti</button>`);
   $('mpx').onclick=()=>{mpReset();$('overlay').classList.remove('show')};
-  const use=async c=>{let d;try{d=unpackSDP(c);if(d.type!=='offer')throw 0}catch(e){toast('⚠️ Netinkamas kodas','Nuskaityk draugo pirmą kodą');return}
-    stopCam();mpCard('<h2>🔗 Ruošiama…</h2>');const pc=mkPC();await pc.setRemoteDescription(d);await pc.setLocalDescription(await pc.createAnswer());await gather(pc);const code=packSDP(pc.localDescription);
-    mpCard(`<h2>2️⃣ Parodyk draugui</h2><p>Draugas nuskaito šį kodą – ir esate sujungti.</p><div id="qrb" class="qrb"></div>${codeRow(code)}<p id="mpw">⏳ Laukiama draugo…</p><button id="mpx">Atšaukti</button>`);
-    $('qrb').appendChild(QR.canvas(code,Math.min(300,innerWidth-90)));wireCode(code);$('mpx').onclick=()=>{mpReset();$('overlay').classList.remove('show')}};
-  startScan($('scb'),use);$('pab').onclick=()=>use($('pa').value)}
-function mpFail(){mpCard(`<h2>😕 Nepavyko susijungti</h2><p>Patikrink, ar abu telefonai tame pačiame WiFi ar hotspot'e, ir bandykite iš naujo.</p><button class="primary" id="mpr">Bandyti dar kartą</button><button id="mpx">Uždaryti</button>`);
-  $('mpr').onclick=()=>{mpReset();openMP()};$('mpx').onclick=()=>{mpReset();$('overlay').classList.remove('show')}}
+  const go=c=>{c=codeFrom(c);if(!c){toast('⚠️ Kodas – 4 skaitmenys','');return}stopCam();join(c)};
+  $('rj').onclick=()=>go($('rc').value);$('rc').oninput=()=>{if($('rc').value.length===4)go($('rc').value)};
+  if(code&&code.length===4)return join(code);startScan($('scb'),go)}
+function join(code){MP.room=code;netStart();netSubscribe(TOPIC(code)+'/g');
+  mpCard(`<h2>🔗 Jungiamasi…</h2><div class="rcode">${code}</div><p id="mps">Ieškoma draugo kambario</p><button id="mpx">Atšaukti</button>`);$('mpx').onclick=()=>{mpReset();$('overlay').classList.remove('show')};
+  let n=0;MP.joinT=setInterval(()=>{n++;netRaw(TOPIC(code)+'/h',{t:'join'});const el=$('mps');
+    if(el&&n===8&&!netOk())el.innerHTML='<span style="color:#fca5a5">⚠️ Nepavyksta pasiekti serverio. Patikrink internetą.</span>';
+    if(n===20){clearInterval(MP.joinT);mpCard(`<h2>😕 Kambarys nerastas</h2><p>Patikrink kodą ${code} ir ar draugas vis dar rodo jį ekrane.</p><button class="primary" id="mpr">Bandyti dar kartą</button><button id="mpx">Uždaryti</button>`);$('mpr').onclick=()=>guestStart(code);$('mpx').onclick=()=>{mpReset();$('overlay').classList.remove('show')}}},1500)}
+// QR, nuskaitytas telefono kamera, atidaro nuorodą su #join=KODAS
+setTimeout(()=>{const c=codeFrom(location.hash);if(/join=/.test(location.hash)&&c){history.replaceState(null,'',location.pathname);guestStart(c)}},1200);
 /* --- versijų suderinimas ir atnaujinimas per ryšį --- */
 async function ownHtml(){try{const r=await fetch('./index.html',{cache:'no-store'});if(r.ok)return await r.text()}catch(e){}try{const r=await caches.match('./index.html',{ignoreSearch:true})||await caches.match('./');if(r)return await r.text()}catch(e){}return null}
 async function sendUpdate(){mpCard(`<h2>📤 Siunčiamas atnaujinimas</h2><p>Draugo telefone senesnė versija (${MP.peerVer}). Siunčiu ${VERSION}…</p><div class="pbar"><i id="upb"></i></div>`);
   const h=await ownHtml();if(!h){mpCard('<h2>⚠️ Nepavyko</h2><p>Atnaujinkite abu telefonus per internetą.</p><button id="mpx">Gerai</button>');$('mpx').onclick=()=>$('overlay').classList.remove('show');return}
-  const CH=48000,n=Math.ceil(h.length/CH);for(let i=0;i<n;i++){while(MP.dc.bufferedAmount>1e6)await new Promise(r=>setTimeout(r,40));mpSend({t:'up',i,n,ver:VERSION,d:h.slice(i*CH,(i+1)*CH)});const b=$('upb');if(b)b.style.width=((i+1)/n*100)+'%'}
+  const CH=30000,n=Math.ceil(h.length/CH);for(let i=0;i<n;i++){await new Promise(r=>setTimeout(r,150));mpSend({t:'up',i,n,ver:VERSION,d:h.slice(i*CH,(i+1)*CH)});const b=$('upb');if(b)b.style.width=((i+1)/n*100)+'%'}
   mpCard(`<h2>✅ Išsiųsta</h2><p>Draugo žaidimas persikrauna į ${VERSION}. Tada prisijunkite iš naujo per 👥.</p><button id="mpx">Gerai</button>`);$('mpx').onclick=()=>$('overlay').classList.remove('show')}
 async function gotUpdate(m){if(!MP.up||MP.up.ver!==m.ver)MP.up={ver:m.ver,parts:[],got:0};const u=MP.up;if(u.parts[m.i]==null){u.parts[m.i]=m.d;u.got++}
   if(u.got===1)mpCard(`<h2>📥 Gaunamas atnaujinimas</h2><p>Versija ${m.ver} iš draugo telefono</p><div class="pbar"><i id="upb"></i></div>`);
@@ -1504,10 +1517,11 @@ async function gotUpdate(m){if(!MP.up||MP.up.ver!==m.ver)MP.up={ver:m.ver,parts:
       mpCard(`<h2>✅ Atnaujinta į ${m.ver}</h2><p>Žaidimas persikrauna…</p>`);setTimeout(()=>location.reload(),1200)}catch(e){mpCard('<h2>⚠️ Nepavyko įrašyti</h2><p>Atnaujink per internetą.</p>')}}}
 /* --- žinutės --- */
 function mpOnMsg(m){
-  if(m.t==='hi'){MP.peerVer=m.ver;const c=verCmp(VERSION,m.ver);
+  if(m.t==='bye'){MP.open=false;mpStatus();vsAbort('Draugas atsijungė');return}
+  if(m.t==='hi'){if(MP.peerVer)return;MP.peerVer=m.ver;const c=verCmp(VERSION,m.ver);
     if(c>0)return sendUpdate();
     if(c<0)return mpCard(`<h2>⏳ Laukiama atnaujinimo</h2><p>Tavo versija ${VERSION}, draugo ${m.ver}. Draugo telefonas tuoj atsiųs naujesnę.</p>`);
-    sfx('star',2);toast('🔗 Sujungta!',MP.role==='host'?'Tu kuri žaidimą':'Draugas kuria žaidimą');return openLobby()}
+    sfx('star',2);toast('🔗 Sujungta!',MP.role==='host'?'Tu renkiesi nustatymus':'Draugas renkasi nustatymus');return openLobby()}
   if(m.t==='up')return gotUpdate(m);
   vsMsg(m)}
 /* ===================== DVIESE: VERSUS ===================== */
