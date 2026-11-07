@@ -256,7 +256,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.5.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.5.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -691,7 +691,7 @@ function newGame(L,showWorld,vs){
   else if(kd!=='n'){toast({boss:'🔥 Bosas',big:'👑 Didysis bosas',mega:'💀 Bosų bosas'}[kd],{pax:'VIP keleiviai laukia neilgai',bus:'VIP autobusas laukia neilgai',esc:'VIP išvažiuos tik po palydos 🚓',all:'VIP: palyda, nekantrūs keleiviai ir autobusas'}[game.mech.vip]);setTimeout(()=>sfx('boss'),300)}
   else if(game.mech.first&&game.mech.on.length)toast(game.mech.on.map(m=>mechName(m,w.name)).join(' · '),MECHSUB[game.mech.on[game.mech.on.length-1]]);
   else if((WW*V.z>$('view').clientWidth+2||WH*V.z>$('view').clientHeight+2)&&!store.get('busjam.panHint',0)){store.set('busjam.panHint',1);toast('👆 Slink pirštu','Dviem pirštais – mastelis')}
-  VIP.paxT=0;VIP.busDl=0;VIP.last=-1;plowT=0;setTimeout(revealAll,50);
+  VIP.paxT=0;VIP.busDl=0;VIP.last=-1;VIP.mult=1;plowT=0;setTimeout(revealAll,50);
   const hi=hintItems(),seen=store.get('busjam.seenHints',{}),fresh=hi.filter(h=>h[0]!=='chal'&&!seen[h[0]]);
   $('hint').classList.toggle('new',hi.some(h=>h[0]!=='chal'&&h[0]!=='basic'));
   if(fresh.length&&!vs){const g0=gen;setTimeout(()=>{if(gen===g0&&game.moves===0&&!HOME.on)showHints()},900)}
@@ -976,12 +976,14 @@ function addCoins(n){COINS=Math.max(0,COINS+n);store.set('busjam.coins',COINS);r
 function levelReward(L,st,prev){const l=lLoc(L),bon=l===100?40:l%25===0?25:l%5===0?10:0;return prev>0?2+st+Math.max(0,st-prev)*5:10+st*3+bon}
 const BOOST=[{id:'crane',ic:'🏗️',name:'Kranas',cost:35,txt:'Pakelia bet kurį autobusą – net užstotą ar užrakintą – tiesiai į stotelę.'},
   {id:'slot',ic:'➕',name:'Papildoma vieta',cost:30,txt:'Šiam lygiui stotelėje atsiranda 6-a vieta.'},
+  {id:'vip',ic:'⏸',name:'VIP kantrybė',cost:15,txt:'Šiame lygyje VIP keleiviai ir VIP autobusai laukia dvigubai ilgiau.'},
   {id:'clear',ic:'🧹',name:'Nuvalyti kliūtį',cost:20,txt:'Iš karto pašalina vieną kliūtį ant kelio.'}];
 function starBank(){return COINS}
-function showBoost(){const bank=starBank();showCard(`<h2>🧰 Pagalbos</h2><p>Turi 🪙 ${bank}${testMode?' · testo režime nemokamai':''}</p><p style="font-size:13px">Monetas gauni už kiekvieną įveiktą lygį – ir kartodamas.</p><div class="hl">${BOOST.map(b=>`<div><b>${b.ic}</b><p><strong>${b.name} – ${b.cost} 🪙</strong>${b.txt}</p><button class="bb" data-b="${b.id}" ${(!testMode&&bank<b.cost)||game.status!=='play'||(b.id==='clear'&&!game.robs.some(o=>o.on))||(b.id==='slot'&&game.nSlots>5)?'disabled':''}>Naudoti</button></div>`).join('')}</div><button id="bx">Uždaryti</button>`);
+function showBoost(){const bank=starBank();showCard(`<h2>🧰 Pagalbos</h2><p>Turi 🪙 ${bank}${testMode?' · testo režime nemokamai':''}</p><p style="font-size:13px">Monetas gauni už kiekvieną įveiktą lygį – ir kartodamas.</p><div class="hl">${BOOST.map(b=>`<div><b>${b.ic}</b><p><strong>${b.name} – ${b.cost} 🪙</strong>${b.txt}</p><button class="bb" data-b="${b.id}" ${(!testMode&&bank<b.cost)||game.status!=='play'||(b.id==='clear'&&!game.robs.some(o=>o.on))||(b.id==='slot'&&game.nSlots>5)||(b.id==='vip'&&(game.vipId<0||VIP.mult>1))?'disabled':''}>Naudoti</button></div>`).join('')}</div><button id="bx">Uždaryti</button>`);
   $('bx').onclick=()=>$('overlay').classList.remove('show');
   document.querySelectorAll('.bb').forEach(bt=>bt.onclick=()=>{const B=BOOST.find(x=>x.id===bt.dataset.b);if(!testMode)addCoins(-B.cost);$('overlay').classList.remove('show');sfx('unlock');
     if(B.id==='crane'){game.crane=true;toast('🏗️ Paspausk autobusą','Kranas jį pakels į stotelę')}
+    else if(B.id==='vip'){VIP.mult=2;const n=performance.now();if(VIP.busDl)VIP.busDl+=Math.max(0,VIP.busDl-n);if(VIP.paxT)VIP.paxT-=Math.max(0,(VIP.easy?20000:15000)-(n-VIP.paxT));toast('⏸ VIP kantrybė','Laukia dvigubai ilgiau')}
     else if(B.id==='slot'){game.addSlot();buildBays();renderSlots();toast('➕ Atsirado 6-a vieta','')}
     else{const o=game.robs.find(o=>o.on);if(o){o.on=false;updObs([0])}}})}
 function makeFly(b,base){const f=document.createElement('div');f.className='fly';f.style.width=base+'px';f.style.height=base*b.len+'px';f.innerHTML=busSVG(b.color,b.len,false,b.kind);$('fx').appendChild(f);return f}
@@ -1101,7 +1103,7 @@ function vipTick(){
   const bd=$('vipb');if(!game||game.status!=='play'||game.vipId<0){bd.style.display='none';return}
   const now=performance.now(),mode=game.mech.vip,ll=lLoc(level),easyB=ll<=25;let show=null;
   // laukimo laikas: 1 skyriuje ilgesnis; VIP autobusas nesupyksta, kol eilė juda (kiekvienas įlipęs keleivis prailgina laiką)
-  const PAX=easyB?20000:15000,BUS=easyB?18000:14000;
+  const m2=VIP.mult||1,PAX=(easyB?20000:15000)*m2,BUS=(easyB?18000:14000)*m2;VIP.easy=easyB;
   if(mode==='pax'||mode==='all'||mode==='esc'){
     const vf=game.fronts().find(i=>game.queue[i]===VIPC),front=vf!=null,has=game.slots.some(s=>s&&s.ready&&s.color===VIPC&&s.filled<s.cap);
     if(front&&!has){if(!VIP.paxT)VIP.paxT=now;const rem=PAX-(now-VIP.paxT),el=qEls.get(vf);
