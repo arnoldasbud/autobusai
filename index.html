@@ -238,7 +238,7 @@ function params(L){
     veh:ll>6?Math.min(.25,.06+D*.25):0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
   return {ll,W,H,rc,rb,n,colors,win,slots:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.0.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.0.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -344,7 +344,7 @@ function generate(L){
     else chal={type:tp,s:20}}
   // modifikatoriai: dvi eilės, lėtas senjoras, draugų grupė
   let mod=M.mod,senior=-1,groups={};
-  if(mod==='senior'){for(let t=0;t<50;t++){const i=Math.floor(queue.length*(.15+.6*r()));if(queue[i]!==VIPC){senior=i;break}}if(senior<0)mod=null}
+  if(mod==='senior'){for(let t=0;t<50;t++){const i=Math.floor(queue.length*(.15+.6*r()));if(queue[i]!==VIPC&&queue[i]!==KIDC){senior=i;break}}if(senior<0)mod=null}
   if(mod==='friends'){let ok=false;
     // trejetas iš eilės tos pačios spalvos, kuris sprendime telpa į vieną autobusą
     const slotOf=[];const sl3=[];let qq=0;const dr=()=>{for(;qq<queue.length;){const w3=wt[qq]||1,s3=sl3.find(o=>o.c===queue[qq]&&o.cap-o.f>=w3);if(!s3)break;s3.f+=w3;slotOf[qq]=sl3.indexOf(s3);qq++}};
@@ -517,9 +517,9 @@ function carInner(ci,arrow,taxi=true){const c=COLORS[ci],body=taxi?'#f4f6f8':c,d
   <rect x="11" y="2" width="78" height="98" rx="22" fill="rgba(0,0,0,.28)"/>${WHEELS([13,68])}
   <ellipse cx="11" cy="34" rx="4" ry="3" fill="${dk}"/><ellipse cx="89" cy="34" rx="4" ry="3" fill="${dk}"/>
   <rect x="14" y="3" width="72" height="94" rx="20" fill="url(#${g})" stroke="${dk}" stroke-width="2.5"/>
-  ${taxi?`<rect x="15.5" y="18" width="7" height="66" rx="3" fill="${c}"/><rect x="77.5" y="18" width="7" height="66" rx="3" fill="${c}"/><path d="M15.5 30h7M15.5 42h7M15.5 54h7M15.5 66h7M77.5 30h7M77.5 42h7M77.5 54h7M77.5 66h7" stroke="#111" stroke-width="3" opacity=".55"/>`:`<path d="M32 7 Q50 4 68 7M34 9 V24M66 9 V24" stroke="${dk}" stroke-width="1.6" fill="none" opacity=".5"/>`}
+  ${taxi?`<rect x="15" y="16" width="8.5" height="70" rx="3" fill="${c}"/><rect x="76.5" y="16" width="8.5" height="70" rx="3" fill="${c}"/><path d="M15.5 30h7M15.5 42h7M15.5 54h7M15.5 66h7M77.5 30h7M77.5 42h7M77.5 54h7M77.5 66h7" stroke="#111" stroke-width="3" opacity=".55"/>`:`<path d="M32 7 Q50 4 68 7M34 9 V24M66 9 V24" stroke="${dk}" stroke-width="1.6" fill="none" opacity=".5"/>`}
   <path d="M22 30 Q50 22 78 30 L74 40 H26Z" fill="#203347"/><path d="M28 31 H42 L35 38 H27Z" fill="#fff" opacity=".2"/>
-  <rect x="26" y="40" width="48" height="33" rx="6" fill="${taxi?'#e9edf1':shade(c,-.12)}"/>
+  <rect x="24" y="39" width="52" height="35" rx="7" fill="${taxi?c:shade(c,-.12)}"${taxi?` stroke="${shade(c,-.4)}" stroke-width="2"`:''}/>
   <path d="M26 74 H74 L77 83 Q50 89 23 83Z" fill="#203347"/>
   ${taxi?`<rect x="31" y="58" width="38" height="13" rx="3" fill="#facc15" stroke="#111" stroke-width="1.5"/><text x="50" y="68.2" text-anchor="middle" font-size="10" font-weight="900" font-family="system-ui,sans-serif" fill="#111">TAXI</text>`:''}
   <rect x="18" y="4" width="12" height="5" rx="2" fill="#fff7cf"/><rect x="70" y="4" width="12" height="5" rx="2" fill="#fff7cf"/>
