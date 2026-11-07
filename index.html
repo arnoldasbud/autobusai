@@ -259,7 +259,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.6.3';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.6.4';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -640,8 +640,8 @@ function lotBusSVG(b){
   const tr=['',`translate(${L},0) rotate(90)`,`translate(100,${L}) rotate(180)`,`translate(0,100) rotate(-90)`][b.dir];
   // našumas: kiekvienas aikštelės autobusas – vienas <img> (SVG paveikslėlis talpinamas pagal spalvą/ilgį/kryptį),
   // o ne šimtai SVG elementų puslapyje – didelėse aikštelėse telefonas nebe„stringa“
-  const ci=b.hidden?HIDC:b.color,key=[ci,b.len,b.dir,b.kind,curWorld?curWorld.name:''].join('|');let u=BIMG.get(key);
-  if(!u){const vw=h?L:100,vh=h?100:L;u='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}"><g transform="${tr}">${busInner(ci,b.len,true,b.kind)}</g></svg>`);BIMG.set(key,u)}
+  const ci=b.hidden||b.leafy?HIDC:b.color,arw=!b.leafy,key=[ci,b.len,b.dir,b.kind,arw,curWorld?curWorld.name:''].join('|');let u=BIMG.get(key);
+  if(!u){const vw=h?L:100,vh=h?100:L;u='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}"><g transform="${tr}">${busInner(ci,b.len,arw,b.kind)}</g></svg>`);BIMG.set(key,u)}
   return `<img class="bimg" src="${u}" draggable="false" alt="">`;
 }
 const BIMG=new Map();
@@ -740,7 +740,7 @@ function hintItems(){const g=game,wn=curWorld.name,o=[],on=new Set(g.mech.on);
   if(g.mech.freeze)o.push(['freeze','🥶','Užšąla laukdami','Autobusas, kurio kelias laisvas, bet jo neliečiai ilgiau nei 40 s, užšąla – atšils išvažiavus 2 kitiems.']);
   if(g.animals.length)o.push(['animals','🦌','Gyvūnai ant kelio','Retkarčiais per kelią pereina elniai – tuo metu iš tos atkarpos autobusai neišvažiuoja (ženklas 🦌 rodo, kur).']);
   if(g.mud.length)o.push(['mud','🟫','Purvo balos','Autobusas, kurio kelyje ar po kuriuo yra bala, pirmą kartą užstringa – spausk antrą kartą.']);
-  if(g.buses.some(b=>b.leafy))o.push(['leaves','🍂','Lapų krūvos','Lapai uždengia autobuso galą – matai tik priekį ir kryptį, bet ne ilgį. Atsidengia, kai kelias laisvas.']);
+  if(g.buses.some(b=>b.leafy))o.push(['leaves','🍂','Lapų krūvos','Lapai visiškai uždengia autobusą – nematai nei spalvos, nei krypties. Lapai nupučiami, kai to autobuso kelias tampa laisvas']);
   if(g.boss&&lLoc(level)>=10)o.push(['bosshard','🔥','Bosas: galvok į priekį','Keleivių eilė sumaišyta labiau nei įprastai. Stenkis stotelėje palikti bent vieną laisvą vietą. Suklydus gali padėti 🧰 pagalbos už 🪙.']);
   if(g.robs.some(o=>o.kind==='truck'))o.push(['truck','🚚','Pristatymo sunkvežimis','Užstoja kvartalo išvažiavimą ir išvažiuos po nurodyto tavo ėjimų skaičiaus.']);
   if(g.storm)o.push(['storm','🌪️','Smėlio audra','Kas 30 s smėlio audra uždengia kairę aikštelės pusę – tada ten esančių autobusų paspausti negalima.']);
@@ -856,7 +856,7 @@ function obstSVG(wn,x,y,S,onRoad,vert){
   if(wn==='Žiema')return `<ellipse cx="${f(x+3)}" cy="${f(y+4)}" rx="${f(S*.44)}" ry="${f(S*.34)}" fill="rgba(80,110,140,.25)"/><circle cx="${f(x-S*.16)}" cy="${f(y+S*.05)}" r="${f(S*.28)}" fill="#f4f8fc"/><circle cx="${f(x+S*.15)}" cy="${f(y-S*.06)}" r="${f(S*.3)}" fill="#fbfdff"/><circle cx="${f(x+S*.05)}" cy="${f(y+S*.18)}" r="${f(S*.22)}" fill="#eef4fa"/>`;
   return `<circle cx="${f(x+3)}" cy="${f(y+3)}" r="${f(S*.32)}" fill="rgba(0,0,0,.25)"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.32)}" fill="#8a5a33"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.25)}" fill="#c89b62"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.15)}" fill="none" stroke="#a87c4a" stroke-width="1.5"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.06)}" fill="#a87c4a"/>`;
 }
-function leafHTML(b){if(!b.leafy)return '';const C=cell,st=['top','right','bottom','left'][b.dir];return `<div class="lv-ov" style="${st}:${C}px"></div>`}
+function leafHTML(b){if(!b.leafy)return '';return `<div class="lv-ov" style="inset:0"></div>`}
 const LOCKSKIN={'Žiema':['ice','❄'],'Miestas':['tow','🔧']};
 function lockHTML(b){if(b.heat>0)return `<div class="lk heat"><span>🔥 ${b.heat}</span></div>`;if(b.esc>0)return `<div class="lk chain"><span>🚓 ${b.esc}</span></div>`;if(!(b.lock>0))return '';const [cls,ic]=LOCKSKIN[curWorld.name]||['chain','🔒'];return `<div class="lk ${cls}"><span>${ic} ${b.lock}</span></div>`}
 /* --- slinkimas ir mastelis --- */
