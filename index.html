@@ -69,10 +69,10 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
 .seats i.on{background:#fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.3)}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 #view{flex:1;position:relative;overflow:hidden;touch-action:none;z-index:1;margin:0 10px}
-#world{position:absolute;left:0;top:0;transform-origin:0 0}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
 .ground{position:absolute;left:0;top:0;pointer-events:none}
 .bus{position:absolute;cursor:pointer;padding:2px}
-.bus svg{display:block;width:100%;height:100%;overflow:visible}
+.bus svg,.bus .bimg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none;-webkit-user-drag:none}
 #zoomCtl{position:absolute;right:8px;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:6px;z-index:6;transform:translateZ(0);will-change:transform}
 #zoomCtl button{width:40px;height:40px;padding:0;font-size:20px;font-weight:700;background:rgba(14,19,26,.72);border-color:rgba(255,255,255,.25)}
 #amb{position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden}
@@ -90,7 +90,7 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
 .obs .cnt{position:absolute;transform:translate(-50%,-50%);background:rgba(15,20,26,.88);color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:8px;white-space:nowrap}
 .obs.gone{animation:obgone .6s forwards}@keyframes obgone{30%{transform:scale(1.15)}to{transform:scale(.2);opacity:0}}
 .lv-ov{position:absolute;left:0;right:0;top:0;bottom:0;border-radius:12px;pointer-events:none;background:radial-gradient(ellipse 9px 6px at 20% 30%,#c2662d 90%,transparent),radial-gradient(ellipse 8px 5px at 60% 20%,#d9a032 90%,transparent),radial-gradient(ellipse 9px 6px at 80% 60%,#a8452a 90%,transparent),radial-gradient(ellipse 8px 6px at 35% 70%,#7aa23c 90%,transparent),radial-gradient(ellipse 9px 5px at 55% 85%,#d9a032 90%,transparent),radial-gradient(ellipse 7px 5px at 15% 85%,#c2662d 90%,transparent),#8a5a2b;background-size:44px 44px;box-shadow:0 3px 5px rgba(0,0,0,.35)}
-.mov{position:absolute;z-index:3;pointer-events:none;transition:left .1s linear,top .1s linear;display:flex;align-items:center;justify-content:center;font-size:24px}
+.mov{position:absolute;left:0;top:0;z-index:3;pointer-events:none;transition:transform .1s linear;will-change:transform;display:flex;align-items:center;justify-content:center;font-size:24px}
 .mov.tram i{display:block;width:78%;height:92%;border-radius:8px;background:linear-gradient(90deg,#b91c1c 0 18%,#fef2f2 18% 82%,#b91c1c 82%);box-shadow:0 3px 4px rgba(0,0,0,.4);border:2px solid #7f1d1d}
 .ow{position:absolute;pointer-events:none;z-index:1;display:flex;align-items:center;justify-content:center}.ow b{font-size:22px;color:#fff;text-shadow:0 0 3px #000;transition:transform .4s;background:#1d4ed8;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:2px solid #fff}.ow span{position:absolute;font-size:10px;color:#fff;transform:translateY(22px);background:rgba(0,0,0,.6);border-radius:6px;padding:0 4px}
 .ani{position:absolute;pointer-events:none;z-index:2;overflow:visible}.ani .sign{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;background:#facc15;border:2px solid #111;border-radius:4px;padding:0 2px;opacity:.85;transition:opacity .3s}
@@ -105,7 +105,7 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
 .lk.heat{background:radial-gradient(circle,rgba(249,115,22,.45),rgba(239,68,68,.25))}.lk.heat span{background:#7c2d12;color:#fff}
 .lk.chain{background:rgba(30,30,35,.35)}
 .lk.gone{animation:lkgone .5s forwards}@keyframes lkgone{to{opacity:0;transform:scale(1.2)}}
-.bus.reveal svg{animation:rv .45s}@keyframes rv{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+.bus.reveal svg,.bus.reveal .bimg{animation:rv .45s}@keyframes rv{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
 .bus.nope{animation:shake .3s}
 #vipb{position:fixed;z-index:6;pointer-events:none;background:#111827;color:#f2c94c;border:2px solid #f2c94c;border-radius:12px;padding:3px 8px;font-weight:800;font-size:13px;transform:translate(-50%,-100%);display:none;white-space:nowrap}
 #vipb.warn{background:#7f1d1d;color:#fff;border-color:#fca5a5;animation:pulse .5s infinite alternate}@keyframes pulse{to{transform:translate(-50%,-100%) scale(1.1)}}
@@ -259,7 +259,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.6.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.6.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -638,8 +638,13 @@ const busSVG=(ci,len,arrow,kind)=>`<svg viewBox="0 0 100 ${100*len}" width="100%
 function lotBusSVG(b){
   const L=100*b.len,h=b.dir%2===1;
   const tr=['',`translate(${L},0) rotate(90)`,`translate(100,${L}) rotate(180)`,`translate(0,100) rotate(-90)`][b.dir];
-  return `<svg viewBox="0 0 ${h?L:100} ${h?100:L}" overflow="visible"><g transform="${tr}">${busInner(b.hidden?HIDC:b.color,b.len,true,b.kind)}</g></svg>`;
+  // našumas: kiekvienas aikštelės autobusas – vienas <img> (SVG paveikslėlis talpinamas pagal spalvą/ilgį/kryptį),
+  // o ne šimtai SVG elementų puslapyje – didelėse aikštelėse telefonas nebe„stringa“
+  const ci=b.hidden?HIDC:b.color,key=[ci,b.len,b.dir,b.kind,curWorld?curWorld.name:''].join('|');let u=BIMG.get(key);
+  if(!u){const vw=h?L:100,vh=h?100:L;u='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}"><g transform="${tr}">${busInner(ci,b.len,true,b.kind)}</g></svg>`);BIMG.set(key,u)}
+  return `<img class="bimg" src="${u}" draggable="false" alt="">`;
 }
+const BIMG=new Map();
 const SK=['#f3d2b1','#e0b48c','#c68c5e','#8d5a3b'],PA=['#2d3748','#1e3a5f','#4a3b2a','#3f3f46','#52525b'],HA=['#2b1d14','#5a3a1e','#d9b26a','#1a1a1a','#8b3a1a'];
 function hr(n){n=Math.imul(n^0x9e3779b9,0x85ebca6b);n^=n>>>13;n=Math.imul(n,0xc2b2ae35);n^=n>>>16;return (n>>>0)/4294967296}
 function makeStick(ci,seed,old){
@@ -1063,12 +1068,14 @@ function stormCovers(id){if(!stormOn||!game.storm)return false;const b=game.buse
 setInterval(()=>{if(!game||!game.storm||game.status!=='play'){stormOn=false;const e=$('storm');if(e)e.classList.remove('on','warn');return}
   const t=(performance.now()%30000),e=$('storm');if(!e)return;const was=stormOn;stormOn=t>20000&&t<27000;
   e.classList.toggle('warn',t>17000&&t<=20000);e.classList.toggle('on',stormOn);if(stormOn&&!was)sfx('storm');if(t>17000&&t<17300&&!e._w){e._w=1;toast('🌪️ Artėja smėlio audra','Kairė aikštelės pusė bus uždengta')}if(t<17000)e._w=0},250);
-function updMovers(){if(!game||!game.movers)return;const now=performance.now(),C=cell;
-  $('world').querySelectorAll('.mov').forEach(e=>{const cs=game.moverAt(+e.dataset.m,now),c=cs[+e.dataset.k];if(!c){e.style.display='none';return}e.style.display='flex';e.style.left=(wx(c[0])-C*.45)+'px';e.style.top=(wy(c[1])-C*.45)+'px'});
-  $('world').querySelectorAll('.ow').forEach(e=>{const i=+e.dataset.w,w=game.oneway[i],d=game.owDir(i,now),ang=w.vert?(d>0?90:-90):(d>0?0:180);e.querySelector('b').style.transform=`rotate(${ang}deg)`;
-    const left=Math.ceil((w.period-((now+w.off)%w.period))/1000);e.querySelector('span').textContent='⇄ '+left})}
+// našumas: keičiam tik tai, kas pasikeitė, ir tik per transform (be layout perskaičiavimo)
+function updMovers(){if(!game||PZ.on||((!game.movers||!game.movers.length)&&(!game.oneway||!game.oneway.length)))return;const now=performance.now(),C=cell;
+  if(game.movers.length)$('world').querySelectorAll('.mov').forEach(e=>{const cs=game.moverAt(+e.dataset.m,now),c=cs[+e.dataset.k];const vis=!!c;if(e._v!==vis){e._v=vis;e.style.display=vis?'flex':'none'}if(!c)return;
+    const t=`translate3d(${Math.round(wx(c[0])-C*.45)}px,${Math.round(wy(c[1])-C*.45)}px,0)`;if(e._t!==t){e._t=t;e.style.transform=t}});
+  if(game.oneway.length)$('world').querySelectorAll('.ow').forEach(e=>{const i=+e.dataset.w,w=game.oneway[i],d=game.owDir(i,now),ang=w.vert?(d>0?90:-90):(d>0?0:180);if(e._a!==ang){e._a=ang;e.querySelector('b').style.transform=`rotate(${ang}deg)`}
+    const left='⇄ '+Math.ceil((w.period-((now+w.off)%w.period))/1000);if(e._l!==left){e._l=left;e.querySelector('span').textContent=left}})}
 setInterval(updMovers,100);
-function updLights(){if(!game)return;const now=performance.now();$('world').querySelectorAll('.ani').forEach(e=>{const r=game.red(+e.dataset.a,now,game.animals);if(r&&!e.classList.contains('on'))sfx('deer');e.classList.toggle('on',r)});if(!game.lights.length)return;$('world').querySelectorAll('.lgt').forEach(e=>{const r=game.red(+e.dataset.l,now);e.classList.toggle('red',r)})}
+function updLights(){if(!game||PZ.on||(!game.lights.length&&!game.animals.length))return;const now=performance.now();$('world').querySelectorAll('.ani').forEach(e=>{const r=game.red(+e.dataset.a,now,game.animals);if(r&&!e.classList.contains('on'))sfx('deer');e.classList.toggle('on',r)});if(!game.lights.length)return;$('world').querySelectorAll('.lgt').forEach(e=>{const r=game.red(+e.dataset.l,now);e.classList.toggle('red',r)})}
 setInterval(updLights,150);
 function updObs(cl){if(!game.robs.length)return;$('world').querySelectorAll('.obs').forEach(e=>{const o=game.robs[+e.dataset.o];
   if(!o.on){if(!e.classList.contains('gone')){e.classList.add('gone');setTimeout(()=>e.remove(),600);if(o.kind==='truck')sfx('horn')}}else e.querySelector('.cnt').textContent=obsLabel(o)});
