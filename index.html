@@ -9,7 +9,7 @@
 <link rel="icon" href="icon.svg">
 <style>
 body.paused .st,body.paused .st *{animation-play-state:paused!important}.pm{display:flex;flex-direction:column;gap:8px}.pm2{display:flex;gap:8px}.pm2 button{flex:1}
-#opp{display:none;align-items:center;gap:8px;padding:5px 10px;background:#2a1d10;color:#fed7aa;font:700 12px system-ui;border-bottom:1px solid #7c2d12;position:relative;z-index:5}#opp.on{display:flex}#opp .obar{flex:1;height:8px;background:rgba(255,255,255,.15);border-radius:5px;overflow:hidden}#opp .obar i{display:block;height:100%;background:#fb923c;transition:width .4s}#opp .osc{background:#7c2d12;border-radius:6px;padding:1px 6px}
+#opp{display:none;align-items:center;gap:8px;padding:5px 10px;background:#2a1d10;color:#fed7aa;font:700 12px system-ui;border-bottom:1px solid #7c2d12;position:relative;z-index:5}#opp.on{display:flex}#opp .obar{flex:1;height:8px;background:rgba(255,255,255,.15);border-radius:5px;overflow:hidden}#opp .obar i{display:block;height:100%;background:#fb923c;transition:width .4s}#opp .ost{font-size:11px;border-radius:6px;padding:1px 5px}#opp .ost.bad{background:#7f1d1d;color:#fecaca}#opp .ost.warn{background:#713f12;color:#fde68a}#opp .osc{background:#7c2d12;border-radius:6px;padding:1px 6px}
 #pause{position:relative;font-size:22px;width:46px;height:42px;padding:0}#zoomCtl #hint.new::after{right:-2px;top:-2px}#mpdot{display:none;position:absolute;right:4px;top:4px;width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px #0e131a}
 .card.wide{width:min(380px,94vw);max-height:92vh;overflow:auto}.mpc{display:flex;flex-direction:column;gap:10px}.qrb{display:flex;justify-content:center;background:#fff;border-radius:12px;padding:6px}
 .mpx{text-align:left;color:#a9b6c3;font-size:13px}.mpx textarea{width:100%;margin:6px 0;border-radius:8px;border:0;padding:8px;font:12px monospace}.mpx button{width:100%}
@@ -249,7 +249,7 @@ function params(L){
     veh:ll>6?Math.min(.25,.06+D*.25):0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
   return {ll,W,H,rc,rb,n,colors,win,slots:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.3.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.3.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -1430,7 +1430,7 @@ const QR=(()=>{
    Žinutės keliauja per viešus MQTT serverius (per WebSocket). Jungiamės prie kelių iš karto –
    jei vienas neveikia, veikia kitas; pasikartojančios žinutės atmetamos pagal id.
    Kūrėjas gauna 4 skaitmenų kodą (ir QR su nuoroda), svečias jį įveda arba nuskaito. */
-var MP={role:null,open:false,peerVer:null,up:null,cam:null,room:null,id:Math.random().toString(36).slice(2,10),peer:null,seen:new Set(),seq:0,last:0,conns:[],timer:null,joinT:null};
+var MP={sid:Math.random().toString(36).slice(2,9),role:null,open:false,peerVer:null,up:null,cam:null,room:null,id:(()=>{let i=store.get('busjam.devid',null);if(!i){i=Math.random().toString(36).slice(2,10);store.set('busjam.devid',i)}return i})(),peer:null,seen:new Set(),seq:0,last:0,conns:[],timer:null,joinT:null};
 const BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081/mqtt'];
 const TOPIC=r=>'autobusai-spustis/v1/'+r;
 /* --- mažas MQTT 3.1.1 klientas (tik QoS 0) --- */
@@ -1452,20 +1452,35 @@ function mqPub(c,t,s){if(c.ok&&c.ws.readyState===1)c.ws.send(mqPkt(0x30,[...mqSt
 function netStart(onUp){netStop();MP.conns=BROKERS.map(u=>mqConnect(u,netIn,onUp));MP.seen=new Set()}
 function netStop(){MP.conns.forEach(c=>{clearInterval(c.ping);try{c.ws&&c.ws.close()}catch(e){}});MP.conns=[];clearInterval(MP.timer);clearInterval(MP.joinT);MP.timer=MP.joinT=null}
 function netSubscribe(t){MP.conns.forEach(c=>mqSub(c,t))}
-function netRaw(t,obj){const s=JSON.stringify({i:MP.id+'.'+(++MP.seq),f:MP.id,d:obj});MP.conns.forEach(c=>mqPub(c,t,s))}
+function netRaw(t,obj){const s=JSON.stringify({i:MP.sid+'.'+(++MP.seq),f:MP.id,d:obj});MP.conns.forEach(c=>mqPub(c,t,s))}
 function mpSend(o){if(MP.lan){if(MP.dc&&MP.dc.readyState==='open')MP.dc.send(JSON.stringify(o));return}if(MP.room&&MP.peer)netRaw(TOPIC(MP.room)+(MP.role==='host'?'/g':'/h'),o)}
 function netIn(topic,s){let e;try{e=JSON.parse(s)}catch(x){return}if(!e||e.f===MP.id||MP.seen.has(e.i))return;MP.seen.add(e.i);if(MP.seen.size>3000)MP.seen=new Set([...MP.seen].slice(-1000));
   const m=e.d;if(!m)return;
-  if(MP.role==='host'&&m.t==='join'){if(MP.peer&&MP.peer!==e.f){netRaw(TOPIC(MP.room)+'/g',{t:'busy',to:e.f});return}MP.peer=e.f;netRaw(TOPIC(MP.room)+'/g',{t:'welcome',to:e.f});if(!MP.open)mpOpen();return}
-  if(MP.role==='guest'&&m.t==='welcome'){if(m.to!==MP.id)return;MP.peer=e.f;clearInterval(MP.joinT);if(!MP.open)mpOpen();return}
+  if(MP.role==='host'&&m.t==='join'){if(MP.peer&&MP.peer!==e.f&&MP.open&&performance.now()-MP.last<20000){netRaw(TOPIC(MP.room)+'/g',{t:'busy',to:e.f});return}if(MP.peer!==e.f)MP.peerVer=null;MP.peer=e.f;MP.last=performance.now();netRaw(TOPIC(MP.room)+'/g',{t:'welcome',to:e.f});if(!MP.open)mpOpen(MP.wasOpen);return}
+  if(MP.role==='guest'&&m.t==='welcome'){if(m.to!==MP.id)return;MP.peer=e.f;MP.last=performance.now();clearInterval(MP.joinT);if(!MP.open)mpOpen(MP.wasOpen);return}
   if(MP.role==='guest'&&m.t==='busy'){if(m.to!==MP.id)return;clearInterval(MP.joinT);mpCard('<h2>🚫 Kambarys užimtas</h2><p>Prie šio kodo jau prisijungė kitas žaidėjas.</p><button id="mpx">Gerai</button>');$('mpx').onclick=()=>{mpReset();$('overlay').classList.remove('show')};return}
   if(e.f!==MP.peer)return;MP.last=performance.now();
   if(!MP.open){mpOpen(true);return}
-  if(m.t==='hb')return;mpOnMsg(m)}
-function mpOpen(again){MP.open=true;MP.last=performance.now();mpStatus();stopCam();
-  clearInterval(MP.timer);MP.timer=setInterval(()=>{mpSend(MP.peerVer?{t:'hb'}:{t:'hi',ver:VERSION,role:MP.role});if(MP.open&&performance.now()-MP.last>15000){MP.open=false;mpStatus();vsAbort('Ryšys su draugu nutrūko');toast('📴 Ryšys nutrūko','Bandau atkurti…')}},4000);
-  if(again){toast('🔗 Ryšys atkurtas','');return}mpSend({t:'hi',ver:VERSION,role:MP.role})}
-function mpReset(){if(MP.open)mpSend({t:'bye'});netStop();lanClose();MP.lan=false;MP.open=false;MP.peer=null;MP.room=null;MP.peerVer=null;MP.up=null;stopCam();mpStatus()}
+  mpOnMsg(m)}
+// ryšio sargas: kas 2 s „širdies plakimas“ su varžybų būsena; 6 s tylos – „neatsiliepia“, 20 s – „atsijungė“
+function hiMsg(){return {t:'hi',ver:VERSION,role:MP.role,need:!MP.peerVer}}
+function mpOpen(again){MP.open=true;MP.wasOpen=true;MP.last=performance.now();mpStatus();stopCam();roomSave();
+  clearInterval(MP.timer);MP.timer=setInterval(mpWatch,2000);
+  if(again){toast('🔗 Draugas vėl prisijungęs','');mpSend(hiMsg());renderOpp();return}mpSend(hiMsg())}
+function mpWatch(){if(!MP.peer)return;mpSend(MP.peerVer?{t:'hb',g:VS.on?VS.gid:null,pl:VS.playing}:hiMsg());roomSave();
+  const q=performance.now()-MP.last;
+  if(MP.open&&q>20000){MP.open=false;mpStatus();toast('📴 Draugas atsijungė',MP.lan?'Prisijunkite iš naujo per 👥':'Laukiama, kol grįš');renderOpp();if(VS.on&&!VS.playing&&VS.me)renderWait()}
+  if(VS.on)renderOpp()}
+function roomSave(){if(MP.lan||!MP.room)return;store.set('busjam.room',{room:MP.room,role:MP.role,peer:MP.peer,t:Date.now()})}
+// po netyčinio perkrovimo – pasiūlyti grįžti į tą patį kambarį
+setTimeout(()=>{const r=store.get('busjam.room',null);if(!r||MP.open||Date.now()-r.t>10*60000||/join=/.test(location.hash))return;
+  showCard(`<h2>👥 Grįžti į kambarį?</h2><div class="rcode">${r.room}</div><p>Ką tik žaidei dviese. Prisijungti iš naujo prie to paties kambario?</p><button class="primary" id="rr">🔗 Grįžti</button><button id="rx">Ne, žaisti vienam</button>`);
+  $('rx').onclick=()=>{store.set('busjam.room',null);$('overlay').classList.remove('show')};
+  $('rr').onclick=()=>{if(r.role==='guest'){MP.role='guest';join(r.room)}else{mpReset();MP.role='host';MP.room=r.room;MP.peer=r.peer;MP.wasOpen=true;netStart();netSubscribe(TOPIC(r.room)+'/h');
+    mpCard(`<h2>Kambario kodas</h2><div class="rcode">${r.room}</div><p>Laukiama draugo… Jei jis irgi perkrovė žaidimą, tegul spaudžia „Grįžti“ arba įveda kodą.</p><div id="qrb" class="qrb"></div><button id="mpx">Atšaukti</button>`);
+    $('qrb').appendChild(QR.canvas(joinURL(r.room),Math.min(200,innerWidth-120)));$('mpx').onclick=()=>{mpReset();$('overlay').classList.remove('show')};
+    let n=0;const t=setInterval(()=>{if(MP.open||++n>40||MP.room!==r.room){clearInterval(t);return}netRaw(TOPIC(r.room)+'/g',{t:'welcome',to:r.peer})},1500)}}},1600);
+function mpReset(){if(MP.open)mpSend({t:'bye'});store.set('busjam.room',null);MP.wasOpen=false;netStop();lanClose();MP.lan=false;MP.open=false;MP.peer=null;MP.room=null;MP.peerVer=null;MP.up=null;stopCam();mpStatus()}
 function mpStatus(){const b=$('mpdot');if(b)b.style.display=MP.open?'inline-block':'none'}
 const netOk=()=>MP.conns.some(c=>c.ok);
 /* --- kamera ir QR skaitymas --- */
@@ -1526,7 +1541,7 @@ function mkPC(){mpReset();const pc=new RTCPeerConnection({iceServers:[]});
   const dc=pc.createDataChannel('g',{negotiated:true,id:0,ordered:true});MP.pc=pc;MP.dc=dc;MP.lan=true;
   dc.onopen=()=>{MP.peer='lan';mpOpen()};
   dc.onclose=()=>{if(MP.open&&MP.lan){MP.open=false;mpStatus();vsAbort('Ryšys su draugu nutrūko');toast('📴 Ryšys nutrūko','Prisijunkite iš naujo per 👥')}};
-  dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}MP.last=performance.now();if(m.t!=='hb')mpOnMsg(m)};
+  dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}MP.last=performance.now();mpOnMsg(m)};
   pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'&&!MP.open)lanFail()};
   return pc}
 function gather(pc){return new Promise(r=>{if(pc.iceGatheringState==='complete')return r();const t=setTimeout(r,2500);pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete'){clearTimeout(t);r()}})})}
@@ -1568,7 +1583,8 @@ async function gotUpdate(m){if(!MP.up||MP.up.ver!==m.ver)MP.up={ver:m.ver,parts:
 /* --- žinutės --- */
 function mpOnMsg(m){
   if(m.t==='bye'){MP.open=false;mpStatus();vsAbort('Draugas atsijungė');return}
-  if(m.t==='hi'){if(MP.peerVer)return;MP.peerVer=m.ver;const c=verCmp(VERSION,m.ver);
+  if(m.t==='hb'){if(VS.on&&MP.peerVer&&m.g!==VS.gid&&performance.now()-(VS.gt||0)>5000)vsAbort('Draugas nebežaidžia varžybų');return}
+  if(m.t==='hi'){if(m.need)mpSend({t:'hi',ver:VERSION,role:MP.role,need:false});if(MP.peerVer){if(VS.on)vsAbort('Draugas prisijungė iš naujo');return}MP.peerVer=m.ver;const c=verCmp(VERSION,m.ver);
     if(c>0)return sendUpdate();
     if(c<0)return mpCard(`<h2>⏳ Laukiama atnaujinimo</h2><p>Tavo versija ${VERSION}, draugo ${m.ver}. Draugo telefonas tuoj atsiųs naujesnę.</p>`);
     sfx('star',2);toast('🔗 Sujungta!',MP.role==='host'?'Tu renkiesi nustatymus':'Draugas renkasi nustatymus');return openLobby()}
@@ -1581,7 +1597,7 @@ function lvName(L){const w=worldOf(L);return `${w.emoji} ${w.name} · ${lLoc(L)}
 function openLobby(){$('card').classList.add('wide');const c=VS.cfg,host=MP.role==='host';
   const opt=(k,v,t)=>`<button class="seg${c[k]===v?' on':''}" data-k="${k}" data-v="${v}"${host?'':' disabled'}>${t}</button>`;
   const tog=(k,t)=>`<button class="seg${c[k]?' on':''}" data-k="${k}" data-t="1"${host?'':' disabled'}>${c[k]?'✅':'⬜'} ${t}</button>`;
-  showCard(`<div class="mpc"><h2>👥 Žaidžiam dviese</h2><p>${host?'Tu renkiesi nustatymus':'Nustatymus renkasi draugas'}</p>
+  showCard(`<div class="mpc"><h2>👥 Žaidžiam dviese</h2><p>${MP.open?'🟢 Draugas prisijungęs':'📴 Draugas atsijungęs'}${MP.room&&!MP.lan?' · kambarys '+MP.room:''}</p><p>${host?'Tu renkiesi nustatymus':'Nustatymus renkasi draugas'}</p>
     <div class="segs">${opt('mode','vs','⚔️ Versus')}${opt('mode','coop','🤝 Coop')}</div>
     ${c.mode==='vs'?`<div class="segs">${opt('v','race','🏁 Kas greičiau')}${opt('v','stars','⭐ Daugiau ★')}${opt('v','surv','🧱 Išgyvenimas')}</div>
     <div class="segs">${c.v==='surv'?'':tog('bo3','Partija iš 3')}${tog('atk','Atakos')}</div>
@@ -1595,10 +1611,10 @@ function openLobby(){$('card').classList.add('wide');const c=VS.cfg,host=MP.role
   if(host&&$('go'))$('go').onclick=()=>{VS.round=1;VS.score=[0,0];vsStart(c.mode==='coop'?'coop':'go',c.L)};
   $('lx').onclick=()=>{$('card').classList.remove('wide');$('overlay').classList.remove('show')};$('ld').onclick=()=>{mpReset();mpStatus();vsAbort();$('overlay').classList.remove('show');toast('👋 Atsijungta','')}}
 function vsCfg(){mpSend({t:'cfg',cfg:VS.cfg});openLobby()}
-function vsStart(kind,L){const m={t:kind,L,cfg:VS.cfg,round:VS.round,score:VS.score};mpSend(m);vsMsg(m,true)}
+function vsStart(kind,L){const m={t:kind,L,cfg:VS.cfg,round:VS.round,score:VS.score,gid:Math.random().toString(36).slice(2,8)};mpSend(m);vsMsg(m,true)}
 function vsMsg(m,local){
   if(m.t==='cfg'){VS.cfg=m.cfg;if($('overlay').classList.contains('show')&&document.querySelector('#card .lvp,#card .segs'))openLobby();return}
-  if(m.t==='go'){VS.cfg=m.cfg;VS.round=m.round;VS.score=local?m.score:[m.score[1],m.score[0]];return vsGo(m.L)}
+  if(m.t==='go'){VS.gid=m.gid;VS.gt=performance.now();VS.cfg=m.cfg;VS.round=m.round;VS.score=local?m.score:[m.score[1],m.score[0]];return vsGo(m.L)}
   if(m.t==='coop'){VS.cfg=m.cfg;return window.coopGo?coopGo(m.L,local):0}
   if(m.t==='p'){if(VS.opp&&!VS.opp.end)Object.assign(VS.opp,m);return renderOpp()}
   if(m.t==='end'){if(!VS.opp)return;VS.opp.end=m;renderOpp();
@@ -1622,8 +1638,11 @@ setInterval(()=>{if(VS.playing&&game&&startT)mpSend({t:'p',q:vsQ(),n:game.queue.
 function vsEnd(win,forced){if(!VS.playing)return;VS.playing=false;if(game.status==='play'){game.status=win?'win':'lose';if(!win)game.reason='vs'}if(!endT)endT=performance.now();renderStats();
   const el=vsElapsed();VS.me={win,ms:el,m:game.moves,st:win&&!VS.surv?game.stars(el):0,q:vsQ(),forced:!!forced};
   mpSend({t:'end',...VS.me});
-  if(!VS.opp.end)showCard(`<h2>${win?'✅ Įveikta!':(VS.surv?'🧱 Stotelė užsikimšo':'😬 Nepavyko')}</h2><p>${fmt(el)} · ${game.moves} ėj.${VS.surv?' · '+vsQ()+' keleivių':''}</p><p>⏳ Laukiama draugo…</p>`);
+  if(!VS.opp.end)renderWait();
   vsCheck()}
+function renderWait(){const a=VS.me;if(!a||VS.opp.end)return;const gone=!MP.open;
+  showCard(`<h2>${a.win?'✅ Įveikta!':(VS.surv?'🧱 Stotelė užsikimšo':'😬 Nepavyko')}</h2><p>${fmt(a.ms)} · ${a.m} ėj.${VS.surv?' · '+a.q+' keleivių':''}</p><p>${gone?'📴 Draugas atsijungęs – laukiama, kol grįš':'⏳ Draugas dar žaidžia…'}</p><button id="wq">Baigti varžybas</button>`);
+  $('wq').onclick=()=>{mpSend({t:'quit'});vsAbort()}}
 function vsCheck(){if(!VS.me||!VS.opp||!VS.opp.end)return;const a=VS.me,b=VS.opp.end,v=VS.cfg.v;let r=0;
   if(v==='surv'){r=a.q===b.q?0:a.q>b.q?1:-1;if(a.win&&!b.win)r=1;if(b.win&&!a.win)r=-1}
   else if(v==='stars'){r=Math.sign(a.st-b.st);if(!r&&a.win&&b.win)r=Math.sign(b.ms-a.ms)}
@@ -1649,7 +1668,8 @@ function renderResult(){if(VS.res==null||VS.playing)return;const a=VS.me,b=VS.op
 function vsAbort(msg){if(!VS.on)return;VS.on=false;VS.playing=false;VS.lock=false;VS.res=null;$('opp').classList.remove('on');$('boost').style.visibility='';$('card').classList.remove('wide');
   if(msg)toast('👥 '+msg,'');const p=VS.prev||level;newGame(p)}
 function renderOpp(){const o=VS.opp;if(!o)return;const pct=o.end?(o.end.win?100:Math.round((o.end.q||o.q)/Math.max(1,o.n)*100)):Math.round(o.q/Math.max(1,o.n)*100);
-  $('opp').innerHTML=`<span class="on">${opName}</span><div class="obar"><i style="width:${VS.surv?Math.min(100,o.q/3):pct}%"></i></div><span class="ot">${o.end?(o.end.win?'✅ '+fmt(o.end.ms):(VS.surv?'🧱 '+o.end.q:'❌')):(VS.surv?o.q+' 👥':pct+'%')+' · '+o.m+' ėj.'}</span>${VS.cfg.bo3?`<b class="osc">${VS.score[0]}:${VS.score[1]}</b>`:''}`}
+  const q=performance.now()-MP.last,st=!MP.open?'<b class="ost bad">📴 atsijungęs</b>':q>6000?'<b class="ost warn">⚠️ neatsiliepia</b>':'';
+  $('opp').innerHTML=`<span class="on">${opName}</span>${st}<div class="obar"><i style="width:${VS.surv?Math.min(100,o.q/3):pct}%"></i></div><span class="ot">${o.end?(o.end.win?'✅ '+fmt(o.end.ms):(VS.surv?'🧱 '+o.end.q:'❌')):(VS.surv?o.q+' 👥':pct+'%')+' · '+o.m+' ėj.'}</span>${VS.cfg.bo3?`<b class="osc">${VS.score[0]}:${VS.score[1]}</b>`:''}`}
 /* --- atakos: kombo → kliūtis draugui ant kelio --- */
 function vsAfterTap(){if(!VS.playing||!VS.cfg.atk)return;const e=game.exitCols;if(e.length<3||e.length-VS.combo<3)return;const k=e.length;
   if(e[k-1]===e[k-2]&&e[k-2]===e[k-3]){VS.combo=k;mpSend({t:'atk'});sfx('star',3);toast('⚔️ Kombo! Draugui užtvertas kelias','')}}
