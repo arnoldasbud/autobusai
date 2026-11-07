@@ -18,7 +18,7 @@ body.paused .st,body.paused .st *{animation-play-state:paused!important}.pm{disp
 .cd{font:900 84px system-ui;color:#fbbf24;line-height:1}.score{font:900 40px system-ui;color:#fbbf24}.vst{width:100%;border-collapse:collapse;font-size:14px}.vst td,.vst th{padding:5px;border-bottom:1px solid rgba(255,255,255,.08)}.vst td:first-child{text-align:left;color:#a9b6c3}
 .rcode{font:900 54px system-ui;letter-spacing:10px;color:#fbbf24}.rcin{font:900 40px system-ui;letter-spacing:12px;text-align:center;width:100%;border-radius:12px;border:0;padding:8px}
 .pbar{height:10px;background:rgba(255,255,255,.12);border-radius:6px;overflow:hidden}.pbar i{display:block;height:100%;width:0;background:#22c55e}button.alt{background:#0f766e}
-#upd{position:fixed;left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:60;display:none;align-items:center;gap:10px;background:#0f766e;color:#fff;border-radius:14px;padding:10px 12px;font:600 14px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.35)}#upd.show{display:flex}#upd b{flex:1}#upd button{border:0;border-radius:10px;padding:9px 12px;font:700 14px system-ui;background:#fff;color:#0f766e}#upd .x{background:transparent;color:#fff;padding:9px 6px}.ver{opacity:.6;font-size:12px;text-align:center;margin-top:10px}
+#upd{position:fixed;left:8px;right:8px;top:calc(58px + env(safe-area-inset-top));z-index:60;max-width:464px;margin:0 auto;display:none;align-items:center;gap:10px;background:#0f766e;color:#fff;border-radius:14px;padding:10px 12px;font:600 14px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.35)}#upd.show{display:flex}#upd b{flex:1}#upd button{border:0;border-radius:10px;padding:9px 12px;font:700 14px system-ui;background:#fff;color:#0f766e}#upd .x{background:transparent;color:#fff;padding:9px 6px}.ver{opacity:.6;font-size:12px;text-align:center;margin-top:10px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;color:#f2f5f8;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
 body{background-color:#9aa1a8}
@@ -249,7 +249,7 @@ function params(L){
     veh:ll>6?Math.min(.25,.06+D*.25):0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
   return {ll,W,H,rc,rb,n,colors,win,slots:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.3.4';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.3.5';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
