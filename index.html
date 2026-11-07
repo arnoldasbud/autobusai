@@ -165,7 +165,7 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
 .lv.nope{animation:shake .3s}
 .danger{background:#7f1d1d!important;border-color:#ef4444!important;color:#fff}
 .mfoot{display:flex;gap:8px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.1);flex-wrap:wrap}
-#toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.9);background:rgba(14,19,26,.88);padding:14px 22px;border-radius:16px;font-size:22px;font-weight:800;opacity:0;transition:all .35s;z-index:25;pointer-events:none;text-align:center}
+#toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.9);background:rgba(14,19,26,.88);padding:14px 22px;border-radius:16px;font-size:22px;font-weight:800;opacity:0;transition:all .35s;z-index:70;pointer-events:none;text-align:center}
 #toast small{display:block;font-size:13px;font-weight:500;color:#a9b6c3;margin-top:2px}
 #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 </style>
@@ -248,7 +248,7 @@ function params(L){
     veh:ll>6?Math.min(.25,.06+D*.25):0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
   return {ll,W,H,rc,rb,n,colors,win,slots:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.2.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.2.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -1299,7 +1299,7 @@ function openPause(){pauseGame();$('menu').classList.remove('show');const vs=VS.
 $('pause').onclick=openPause;
 // pauzė baigiasi, kai uždaromi visi langai
 setInterval(()=>{if(PZ.on&&!$('overlay').classList.contains('show')&&!$('menu').classList.contains('show'))resumeGame()},200);
-function openSettings(){showCard(`<h2>⚙️ Nustatymai</h2><div class="pm"><button id="tm">🎵 ${AU.on.m?'Muzika: įjungta':'Muzika: išjungta'}</button><button id="ts">🔔 ${AU.on.s?'Garsai: įjungti':'Garsai: išjungti'}</button><button id="tt">🧪 Testo režimas: ${testMode?'įjungtas':'išjungtas'}</button><button id="cu">🔄 Tikrinti atnaujinimus</button><button id="rs" class="danger">🗑️ Anuliuoti progresą</button><button id="sb">← Atgal</button></div><div class="ver">Versija ${VERSION}${UPD.latest&&verCmp(UPD.latest,VERSION)>0?' · yra nauja: '+UPD.latest:''}</div>`);
+function openSettings(){showCard(`<h2>⚙️ Nustatymai</h2><div class="pm"><button id="tm">🎵 ${AU.on.m?'Muzika: įjungta':'Muzika: išjungta'}</button><button id="ts">🔔 ${AU.on.s?'Garsai: įjungti':'Garsai: išjungti'}</button><button id="tt">🧪 Testo režimas: ${testMode?'įjungtas':'išjungtas'}</button><button id="cu">🔄 Tikrinti atnaujinimus</button><button id="rs" class="danger">🗑️ Anuliuoti progresą</button><button id="sb">← Atgal</button></div><p id="cus" style="font-size:14px;min-height:0"></p><div class="ver">Versija ${VERSION}${UPD.latest&&verCmp(UPD.latest,VERSION)>0?' · yra nauja: '+UPD.latest:''}</div>`);
   $('cu').onclick=()=>checkUpdate(true);$('sb').onclick=openPause;
   $('tm').onclick=()=>{AU.on.m=AU.on.m?0:1;auApply();openSettings()};
   $('ts').onclick=()=>{AU.on.s=AU.on.s?0:1;auApply();sfx('click');openSettings()};
@@ -1355,12 +1355,15 @@ var UPD={latest:null,reg:null};
 const verCmp=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d}return 0};
 const hosted=()=>/^https?:$/.test(location.protocol)&&!/claudeusercontent|claude\.ai/.test(location.hostname);
 async function checkUpdate(manual){
-  if(!hosted()){if(manual)toast('🔄 Atnaujinimai','Šioje peržiūroje netikrinama – tik įdiegtoje versijoje');return}
-  if(!navigator.onLine){if(manual)toast('📴 Nėra interneto','Atnaujinimą patikrinsiu, kai prisijungsi');return}
-  try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});const j=await r.json();UPD.latest=j.version;
-    if(verCmp(j.version,VERSION)>0){$('updt').textContent='Yra nauja versija '+j.version+(j.notes?' – '+j.notes:'');$('upd').classList.add('show')}
-    else if(manual)toast('✅ Naujausia versija',VERSION);
-  }catch(e){if(manual)toast('⚠️ Nepavyko patikrinti','Bandyk vėliau')}}
+  const say=(t,c)=>{if(!manual)return;const e=$('cus');if(e){e.innerHTML=t;e.style.color=c||''}else toast(t,'')};
+  say('⏳ Tikrinama…');
+  if(!hosted())return say('ℹ️ Šioje peržiūroje atnaujinimai netikrinami – tik įdiegtame žaidime.');
+  if(!navigator.onLine)return say('📴 Nėra interneto ryšio. Prisijunk ir bandyk dar kartą.','#fca5a5');
+  try{const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),8000);const r=await fetch('version.json?t='+Date.now(),{cache:'no-store',signal:ctl.signal});clearTimeout(tm);if(!r.ok)throw 0;const j=await r.json();UPD.latest=j.version;
+    if(verCmp(j.version,VERSION)>0){$('updt').textContent='Yra nauja versija '+j.version+(j.notes?' – '+j.notes:'');$('upd').classList.add('show');
+      say(`🆕 Yra nauja versija <b>${j.version}</b>${j.notes?' – '+j.notes:''}<br><button class="primary" id="cun" style="margin-top:8px;width:100%">Atnaujinti dabar</button>`,'#86efac');const b=$('cun');if(b)b.onclick=applyUpdate}
+    else say(`✅ Turi naujausią versiją (${VERSION})`,'#86efac');
+  }catch(e){say(navigator.onLine?'⚠️ Nepavyko pasiekti serverio. Patikrink internetą ir bandyk dar kartą.':'📴 Nėra interneto ryšio.','#fca5a5')}}
 async function applyUpdate(){
   $('updb').textContent='Atnaujinama…';
   try{if(UPD.reg){await UPD.reg.update()}const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
