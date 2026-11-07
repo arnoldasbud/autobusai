@@ -256,7 +256,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.5.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.5.3';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -674,7 +674,7 @@ let holdUntil=0,game,cell,U,M,WW=0,WH=0,startT=0,endT=0,gen=0,curWorld=null;cons
 
 function newGame(L,showWorld,vs){
   if(typeof PZ!=='undefined'){PZ.on=false;document.body.classList.remove('paused')}
-  if(L<1)L=1;if(!vs){while(L>1&&!playable(L))L--;if(typeof VS!=='undefined'&&VS.on){mpSend({t:'quit'});VS.on=false;VS.playing=false;VS.lock=false;VS.res=null;$('opp').classList.remove('on');$('boost').style.visibility=''}}
+  if(L<1)L=1;if(!vs&&typeof VS!=='undefined'&&VS&&!VS.on)VS.lock=false;if(!vs){while(L>1&&!playable(L))L--;if(typeof VS!=='undefined'&&VS.on){mpSend({t:'quit'});VS.on=false;VS.playing=false;VS.lock=false;VS.res=null;$('opp').classList.remove('on');$('boost').style.visibility=''}}
   gen++;level=L;if(!vs)store.set('busjam.level',level);$('menu').classList.remove('show');
   if(vs!=='coop'&&typeof coopOff==='function')coopOff();
   game=vs==='coop'?new CoopGame(level):new Game(level);startT=0;endT=0;
@@ -860,7 +860,9 @@ function defaultView(){const v=$('view');V.z=Math.max(zMin(),Math.min(1,Math.max
 (function(){
   const v=$('view'),P=new Map();let G=null;
   const rel=e=>{const r=v.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}};
-  v.addEventListener('pointerdown',e=>{if(e.target.closest('#zoomCtl'))return;try{v.setPointerCapture(e.pointerId)}catch(_){}P.set(e.pointerId,rel(e));
+  v.addEventListener('pointerdown',e=>{if(e.target.closest('#zoomCtl'))return;
+    // naujas gestas: išmetam „pamestus“ pirštus (jei kada nors negavom pointerup) – kitaip visi paspaudimai būtų laikomi dviejų pirštų mastelio keitimu
+    if(e.isPrimary)P.clear();try{v.setPointerCapture(e.pointerId)}catch(_){}P.set(e.pointerId,rel(e));
     if(P.size===1)G={t:'pan',s:rel(e),tx:V.tx,ty:V.ty,mv:0,tg:e.target};
     else if(P.size===2){const [a,b]=[...P.values()];G={t:'pinch',d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:V.z,m:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},tx:V.tx,ty:V.ty}}});
   v.addEventListener('pointermove',e=>{if(!P.has(e.pointerId)||!G)return;P.set(e.pointerId,rel(e));
@@ -872,7 +874,8 @@ function defaultView(){const v=$('view');V.z=Math.max(zMin(),Math.min(1,Math.max
     if(e.type==='pointerup'&&G&&G.t==='pan'&&P.size===1&&G.mv<=8){const bus=G.tg.closest&&G.tg.closest('.bus');if(bus)onTap(+bus.dataset.id,bus)}
     P.delete(e.pointerId);
     if(P.size===1){const p=[...P.values()][0];G={t:'pan',s:p,tx:V.tx,ty:V.ty,mv:99}}else if(!P.size)G=null};
-  v.addEventListener('pointerup',end);v.addEventListener('pointercancel',end);
+  v.addEventListener('pointerup',end);v.addEventListener('pointercancel',end);v.addEventListener('lostpointercapture',end);
+  const reset=()=>{P.clear();G=null};window.addEventListener('blur',reset);document.addEventListener('visibilitychange',reset);
   v.addEventListener('wheel',e=>{e.preventDefault();const p=rel(e);zoomAt(V.z*Math.exp(-e.deltaY*.0015),p.x,p.y)},{passive:false});
   const mid=()=>[v.clientWidth/2,v.clientHeight/2];
   $('zin').onclick=()=>zoomAt(V.z*1.25,...mid());$('zout').onclick=()=>zoomAt(V.z*.8,...mid());
