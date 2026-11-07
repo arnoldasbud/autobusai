@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Autobusų spūstis</title>
+<meta name="theme-color" content="#1e293b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<style>
+#upd{position:fixed;left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:60;display:none;align-items:center;gap:10px;background:#0f766e;color:#fff;border-radius:14px;padding:10px 12px;font:600 14px system-ui;box-shadow:0 6px 20px rgba(0,0,0,.35)}#upd.show{display:flex}#upd b{flex:1}#upd button{border:0;border-radius:10px;padding:9px 12px;font:700 14px system-ui;background:#fff;color:#0f766e}#upd .x{background:transparent;color:#fff;padding:9px 6px}.ver{opacity:.6;font-size:12px;text-align:center;margin-top:10px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;color:#f2f5f8;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+body{background-color:#9aa1a8}
+#app{max-width:480px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;position:relative;z-index:1}
+header{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px;background:rgba(14,19,26,.85);backdrop-filter:blur(4px);position:relative;z-index:5}
+.lvl{display:flex;align-items:center;gap:4px}
+#prev,#next{display:none}
+#lvlBtn{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1;padding:4px 8px}
+#lvlBtn b{font-size:16px}#lvlBtn small{font-size:11px;color:#a9b6c3}
+button{font:inherit;color:inherit;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:6px 10px;cursor:pointer}
+button:disabled{opacity:.3}
+button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:11px 18px}
+.stats{display:flex;gap:10px;font-size:14px;color:#a9b6c3;font-variant-numeric:tabular-nums}
+.stats b{color:#fff}
+#station{margin:0 10px;flex:none;position:relative;z-index:2}
+#platform{height:50px;position:relative;border-bottom:5px solid #f2c94c;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12)}
+#queue{position:absolute;left:6px;top:7px;right:56px;height:34px}
+#platform.two{height:66px}#platform.two #queue{top:12px}
+.st.grp::after{content:'🤝';position:absolute;left:9px;top:-5px;font-size:9px}
+#sign{position:absolute;right:6px;top:5px;width:44px;height:38px;border-radius:6px;background:#1e3a8a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:800;line-height:1.1;box-shadow:0 2px 3px rgba(0,0,0,.35)}
+#sign b{font-size:13px}
+#bays{display:grid;grid-template-columns:repeat(5,1fr);position:relative}
+#bays.shake{animation:shake .3s}
+.bay{position:relative;border-left:2px solid rgba(255,255,255,.6)}
+.bay:last-child{border-right:2px solid rgba(255,255,255,.6)}
+#hint.new{animation:hintp 1s infinite alternate;border-color:#facc15}@keyframes hintp{to{box-shadow:0 0 0 4px rgba(250,204,21,.35)}}
+#esczone{position:relative;display:none;border-top:2px dashed rgba(255,255,255,.35)}#esczone::before{content:"🚓 PALYDA";position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:900;letter-spacing:2px;color:rgba(250,204,21,.55)}
+.escp{position:absolute;transform-origin:50% 50%}
+.hl div .bb{margin-left:auto;flex:none;align-self:center}
+.hl{display:flex;flex-direction:column;gap:10px;text-align:left;max-height:60vh;overflow:auto}.hl div{display:flex;gap:10px;align-items:flex-start}.hl b{font-size:22px;line-height:1;flex:none;width:28px;text-align:center}.hl p{margin:0;color:#cbd5e1;font-size:14px}.hl p strong{color:#fff;display:block}
+.sp{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:20px;gap:2px;font-weight:800}
+.sp.rep{background:repeating-linear-gradient(45deg,rgba(250,204,21,.25) 0 10px,rgba(0,0,0,.15) 10px 20px);justify-content:center;padding:0}.sp.rep b{font-size:22px}.sp.rep span{background:rgba(15,20,26,.85);border-radius:8px;padding:1px 6px;font-size:12px}.sp.rep.done{background:none;animation:lkgone .8s forwards}
+.sp.col{box-shadow:inset 0 0 0 4px var(--c);background:linear-gradient(color-mix(in srgb,var(--c) 22%,transparent),color-mix(in srgb,var(--c) 8%,transparent))}
+.tmc{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);background:#0c4a6e;color:#fff;font-weight:800;font-size:12px;border-radius:8px;padding:1px 6px;z-index:3}.tmc.warn{background:#b91c1c;animation:pulse .5s infinite alternate}
+.sp.tmp{box-shadow:inset 0 0 0 3px rgba(56,189,248,.9);border-radius:4px;background:repeating-linear-gradient(0deg,rgba(56,189,248,.12) 0 8px,transparent 8px 16px);justify-content:flex-start;padding-top:6px}.sp.tmp b{font-size:18px;opacity:.85}
+.sp.sh{justify-content:flex-start;padding:0}.sp.sh .isl{position:absolute;left:4px;right:4px;border-radius:0 0 14px 14px;box-shadow:0 0 0 4px var(--curb,#c9ced4);background:var(--isl,#4f8a3f)}
+.sp.sh .isl{overflow:hidden}
+.bay .bl{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:10px;font-weight:900;letter-spacing:2px;color:rgba(250,204,21,.55)}
+.bbus{position:absolute;left:50%;top:5px;transform:translateX(-50%)}
+.bbus svg{display:block}
+.door{opacity:0;transition:opacity .2s}.open .door{opacity:1}
+.seats{position:absolute;left:50%;top:55%;max-height:92%;transform:translate(-50%,-50%);display:grid;grid-template-columns:repeat(2,9px);gap:4px;padding:3px;border-radius:6px;background:rgba(0,0,0,.18)}
+.seats i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.25)}
+.seats i.on{background:#fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.3)}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+#view{flex:1;position:relative;overflow:hidden;touch-action:none;z-index:1;margin:0 10px}
+#world{position:absolute;left:0;top:0;transform-origin:0 0}
+.ground{position:absolute;left:0;top:0;pointer-events:none}
+.bus{position:absolute;cursor:pointer;padding:2px}
+.bus svg{display:block;width:100%;height:100%;overflow:visible}
+#zoomCtl{position:absolute;right:8px;bottom:12px;display:flex;flex-direction:column;gap:6px;z-index:2}
+#zoomCtl button{width:40px;height:40px;padding:0;font-size:20px;font-weight:700;background:rgba(14,19,26,.72);border-color:rgba(255,255,255,.25)}
+#amb{position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:4;overflow:hidden}
+.fly{position:absolute;left:0;top:0;will-change:transform}
+.fly svg{display:block;overflow:visible}
+.puff{position:absolute;left:0;top:0;width:12px;height:12px;border-radius:50%;background:rgba(200,205,210,.75)}
+.obs{position:absolute;pointer-events:none;z-index:1}
+.obs .tape{position:absolute;inset:6px;border-radius:6px;opacity:.55}.obs .tape.v{background:repeating-linear-gradient(0deg,#ef4444 0 10px,#fff 10px 20px);left:42%;right:42%}.obs .tape.h{background:repeating-linear-gradient(90deg,#ef4444 0 10px,#fff 10px 20px);top:42%;bottom:42%}
+.plow{position:absolute;left:0;top:0;font-size:34px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.4))}
+.storm{position:absolute;pointer-events:none;z-index:2;border-radius:10px;opacity:0;transition:opacity .8s;background:repeating-linear-gradient(115deg,rgba(214,180,120,.9) 0 18px,rgba(194,160,100,.95) 18px 40px);background-size:200% 100%;animation:sand 2s linear infinite}
+.storm.warn{opacity:.25}.storm.on{opacity:.93}@keyframes sand{to{background-position:-200% 0}}
+.lgt{position:absolute;pointer-events:none;border-radius:6px;transition:background .2s}.lgt.red{background:rgba(239,68,68,.22);box-shadow:inset 0 0 0 2px rgba(239,68,68,.6)}
+.lamp{position:absolute;transform:translate(-50%,-50%);background:#111;border-radius:6px;padding:3px;display:flex;flex-direction:column;gap:2px;box-shadow:0 2px 3px rgba(0,0,0,.4)}.lamp i{width:9px;height:9px;border-radius:50%;background:#14532d}.lamp i:first-child{background:#450a0a}.lgt:not(.red) .lamp i:last-child{background:#22c55e;box-shadow:0 0 6px #22c55e}.lgt.red .lamp i:first-child{background:#ef4444;box-shadow:0 0 6px #ef4444}
+.obs .cnt{position:absolute;transform:translate(-50%,-50%);background:rgba(15,20,26,.88);color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:8px;white-space:nowrap}
+.obs.gone{animation:obgone .6s forwards}@keyframes obgone{30%{transform:scale(1.15)}to{transform:scale(.2);opacity:0}}
+.lv-ov{position:absolute;left:0;right:0;top:0;bottom:0;border-radius:12px;pointer-events:none;background:radial-gradient(ellipse 9px 6px at 20% 30%,#c2662d 90%,transparent),radial-gradient(ellipse 8px 5px at 60% 20%,#d9a032 90%,transparent),radial-gradient(ellipse 9px 6px at 80% 60%,#a8452a 90%,transparent),radial-gradient(ellipse 8px 6px at 35% 70%,#7aa23c 90%,transparent),radial-gradient(ellipse 9px 5px at 55% 85%,#d9a032 90%,transparent),radial-gradient(ellipse 7px 5px at 15% 85%,#c2662d 90%,transparent),#8a5a2b;background-size:44px 44px;box-shadow:0 3px 5px rgba(0,0,0,.35)}
+.mov{position:absolute;z-index:3;pointer-events:none;transition:left .1s linear,top .1s linear;display:flex;align-items:center;justify-content:center;font-size:24px}
+.mov.tram i{display:block;width:78%;height:92%;border-radius:8px;background:linear-gradient(90deg,#b91c1c 0 18%,#fef2f2 18% 82%,#b91c1c 82%);box-shadow:0 3px 4px rgba(0,0,0,.4);border:2px solid #7f1d1d}
+.ow{position:absolute;pointer-events:none;z-index:1;display:flex;align-items:center;justify-content:center}.ow b{font-size:22px;color:#fff;text-shadow:0 0 3px #000;transition:transform .4s;background:#1d4ed8;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:2px solid #fff}.ow span{position:absolute;font-size:10px;color:#fff;transform:translateY(22px);background:rgba(0,0,0,.6);border-radius:6px;padding:0 4px}
+.ani{position:absolute;pointer-events:none;z-index:2;overflow:visible}.ani .sign{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;background:#facc15;border:2px solid #111;border-radius:4px;padding:0 2px;opacity:.85;transition:opacity .3s}
+.ani .deer{position:absolute;font-size:26px;opacity:0;left:50%;top:50%;transform:translate(-50%,-50%)}.ani.on{background:rgba(250,204,21,.18);border-radius:6px}.ani.on .sign{opacity:0}
+.ani.on.v .deer{opacity:1;animation:deerx 2.6s linear}.ani.on.h .deer{opacity:1;animation:deery 2.6s linear}
+@keyframes deerx{from{transform:translate(-160%,-50%) scaleX(-1)}to{transform:translate(60%,-50%) scaleX(-1)}}@keyframes deery{from{transform:translate(-50%,-150%)}to{transform:translate(-50%,50%)}}
+.lk{position:absolute;inset:4px;border-radius:10px;display:flex;align-items:center;justify-content:center;pointer-events:none;font-weight:900;font-size:15px}
+.lk span{padding:2px 7px;border-radius:9px}
+.lk.ice span{background:rgba(255,255,255,.85)}
+.lk.ice{background:linear-gradient(135deg,rgba(235,250,255,.55),rgba(160,215,245,.28) 55%,rgba(235,250,255,.5));box-shadow:inset 0 0 0 2px rgba(255,255,255,.9);color:#1e3a5f}
+.lk.tow{background:repeating-linear-gradient(45deg,rgba(0,0,0,.28) 0 8px,rgba(250,204,21,.28) 8px 16px)}.lk.tow span,.lk.chain span{background:rgba(15,20,26,.8);color:#fff}
+.lk.heat{background:radial-gradient(circle,rgba(249,115,22,.45),rgba(239,68,68,.25))}.lk.heat span{background:#7c2d12;color:#fff}
+.lk.chain{background:rgba(30,30,35,.35)}
+.lk.gone{animation:lkgone .5s forwards}@keyframes lkgone{to{opacity:0;transform:scale(1.2)}}
+.bus.reveal svg{animation:rv .45s}@keyframes rv{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+.bus.nope{animation:shake .3s}
+#vipb{position:fixed;z-index:6;pointer-events:none;background:#111827;color:#f2c94c;border:2px solid #f2c94c;border-radius:12px;padding:3px 8px;font-weight:800;font-size:13px;transform:translate(-50%,-100%);display:none;white-space:nowrap}
+#vipb.warn{background:#7f1d1d;color:#fff;border-color:#fca5a5;animation:pulse .5s infinite alternate}@keyframes pulse{to{transform:translate(-50%,-100%) scale(1.1)}}
+.burst{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;pointer-events:none}
+/* žmogeliukai */
+.st{position:absolute;left:0;top:0;width:18px;height:32px;transition:transform .28s linear}
+.st svg{display:block;overflow:visible}
+.st .fig{transform-box:view-box;transform-origin:9px 31px;transform:scaleX(var(--f,1))}
+.st .l1,.st .l2{transform-box:view-box;transform-origin:9px 21px}
+.st .a1,.st .a2{transform-box:view-box;transform-origin:9px 13px}
+.st .hd{transform-box:view-box;transform-origin:9px 9px}
+.st.i1 .fig{animation:bob 1.9s ease-in-out infinite var(--d)}
+.st.i2 .hd{animation:look 3.4s ease-in-out infinite var(--d)}
+.st.i3 .a2{animation:wave 5s ease-in-out infinite var(--d)}
+.st.i4 .fig{animation:turn 6s steps(1) infinite var(--d)}
+.st.i5 .l2{animation:tap 1.3s ease-in-out infinite var(--d)}
+.st.i6 .hd{animation:look 2.6s ease-in-out infinite var(--d)}.st.i6 .fig{animation:bob 2.3s ease-in-out infinite var(--d)}
+@keyframes bob{0%,100%{transform:scaleX(var(--f,1))}50%{transform:scaleX(var(--f,1)) translateY(-1.3px)}}
+@keyframes look{0%,35%,100%{transform:rotate(0)}45%,70%{transform:rotate(16deg)}80%,90%{transform:rotate(-12deg)}}
+@keyframes wave{0%,76%,100%{transform:rotate(0)}81%,95%{transform:rotate(-155deg)}86%{transform:rotate(-120deg)}91%{transform:rotate(-160deg)}}
+@keyframes turn{0%{transform:scaleX(-1)}55%{transform:scaleX(1)}}
+@keyframes tap{0%,55%,100%{transform:rotate(0)}65%,85%{transform:rotate(-20deg)}75%{transform:rotate(-4deg)}}
+.st.walk .fig{animation:wb .34s ease-in-out infinite}
+.st.old.walk .l1,.st.old.walk .l2,.st.old.walk .a1,.st.old.walk .a2{animation-duration:.8s}
+.st.walk .l1,.st.walk .a2{animation:sw .34s ease-in-out infinite alternate}
+.st.walk .l2,.st.walk .a1{animation:sw .34s ease-in-out infinite alternate-reverse}
+.st.walk .hd{animation:none}
+@keyframes sw{from{transform:rotate(-26deg)}to{transform:rotate(26deg)}}
+@keyframes wb{0%,100%{transform:scaleX(var(--f,1))}50%{transform:scaleX(var(--f,1)) translateY(-1.6px)}}
+/* aplinka */
+.cloud{position:absolute;top:0;left:0;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.16),rgba(0,0,0,0));animation:drift linear infinite}
+@keyframes drift{from{transform:translate(-110%,var(--y))}to{transform:translate(110vw,var(--y))}}
+.flake{position:absolute;top:0;border-radius:50%;background:#fff;opacity:.9;animation:fall linear infinite}
+@keyframes fall{from{transform:translate(0,-5vh)}to{transform:translate(var(--dx),105vh)}}
+.leaf{position:absolute;top:0;width:9px;height:5px;border-radius:50%;animation:leaf linear infinite}
+@keyframes leaf{from{transform:translate(0,-5vh) rotate(0)}50%{transform:translate(calc(var(--dx)*.5 + 20px),50vh) rotate(260deg)}to{transform:translate(var(--dx),105vh) rotate(520deg)}}
+#overlay{position:fixed;inset:0;background:rgba(10,14,20,.72);display:none;align-items:center;justify-content:center;z-index:30}
+#overlay.show{display:flex}
+.card{background:#1f2a36;border-radius:18px;padding:22px;width:min(330px,88vw);text-align:center;display:flex;flex-direction:column;gap:12px}
+.card h2{margin:0;font-size:22px}
+.card p{margin:0;color:#a9b6c3}
+.stars{font-size:36px;letter-spacing:4px;color:#fbbf24}.stars span{color:#4b5563}
+.sbrk{display:flex;flex-direction:column;gap:4px;font-size:14px;color:#6b7280}.sbrk .on{color:#fbbf24}
+#chal{position:absolute;left:8px;bottom:12px;z-index:2;background:rgba(14,19,26,.8);border-radius:10px;padding:5px 9px;font-size:12px;font-weight:700;pointer-events:none;max-width:70%}#chal .ok{color:#86efac}#chal .bad{color:#fca5a5;text-decoration:line-through}#chal .par{font-weight:600;color:#cbd5e1;margin-top:2px}
+.worlds{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.worlds button{padding:12px 6px}
+#menu{position:fixed;inset:0;z-index:28;background:#121a23;display:none;flex-direction:column;max-width:480px;margin:0 auto;touch-action:pan-y}
+#menu.show{display:flex}
+.mtop{display:flex;align-items:center;gap:10px;padding:12px 12px 4px;font-size:18px}.mtop span{color:#fbbf24;font-size:15px;margin-left:auto}
+.mhead{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;flex:none}
+.tab{flex:none;white-space:nowrap}.tab.on{background:#3b82f6;border-color:#3b82f6}
+.mbody{flex:1;overflow-y:auto;padding:0 12px 14px}
+.chap{display:flex;justify-content:space-between;margin:14px 0 8px;color:#a9b6c3;font-size:13px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.lv{height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;border-radius:12px}
+.lv b{font-size:18px}.lv i{font-style:normal;font-size:11px;color:#fbbf24;letter-spacing:1px}.lv i span{color:#4b5563}
+.lv.k-boss{background:rgba(249,115,22,.16);border-color:rgba(249,115,22,.55)}
+.lv.k-big{background:rgba(168,85,247,.22);border-color:rgba(168,85,247,.7)}
+.lv.k-mega{background:linear-gradient(135deg,#7c3aed,#db2777);border-color:#f0abfc}
+.lv.cur{outline:3px solid #3b82f6;outline-offset:1px}
+.lv.lock{opacity:.4}.lv.lock i{color:#cbd5e1}
+.lv.nope{animation:shake .3s}
+.danger{background:#7f1d1d!important;border-color:#ef4444!important;color:#fff}
+.mfoot{display:flex;gap:8px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.1);flex-wrap:wrap}
+#toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.9);background:rgba(14,19,26,.88);padding:14px 22px;border-radius:16px;font-size:22px;font-weight:800;opacity:0;transition:all .35s;z-index:25;pointer-events:none;text-align:center}
+#toast small{display:block;font-size:13px;font-weight:500;color:#a9b6c3;margin-top:2px}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+</style>
+</head>
+<body>
+<div id="amb"></div>
+<div id="app">
+  <header>
+    <div class="lvl"><button id="prev">◀</button><button id="lvlBtn"><b id="lvlLabel">Lygis 1</b><small id="worldLabel"></small></button><button id="next">▶</button></div>
+    <div class="stats"><span>⏱ <b id="time">0:00</b></span><span>Ėj. <b id="moves">0</b></span></div>
+    <div style="display:flex;gap:6px"><button id="boost" title="Pagalbos">🧰</button><button id="hint" title="Užuominos">💡</button><button id="restart" title="Iš naujo">↻</button></div>
+  </header>
+  <div id="station">
+    <div id="platform"><div id="queue"></div><div id="sign">🚏<b id="more">0</b></div></div>
+    <div id="bays"></div>
+    <div id="esczone"></div>
+  </div>
+  <div id="view"><div id="world"></div><div id="chal"></div><div id="zoomCtl"><button id="snd">🔊</button><button id="zin">+</button><button id="zout">−</button><button id="zfit">⤢</button></div></div>
+</div>
+<div id="fx"></div>
+<div id="toast"></div>
+<div id="menu"></div>
+<div id="upd"><b id="updt"></b><button id="updb">Atnaujinti</button><button class="x" id="updx">✕</button></div>
+<div id="vipb"></div>
+<div id="overlay"><div class="card" id="card"></div></div>
+
+<script>
+/* ===================== ŽAIDIMO VARIKLIS (be grafikos) =====================
+   Deterministinis: tas pats lygio numeris -> tas pats išdėstymas.
+   Veiksmai: tap(busId), markReady(slot,busId), step(). Multiplayer'iui pakaks siųsti tap'us.
+   Aikštelė gali turėti vidinius kelius (rc - stulpeliai, rb - eilutės kiekvienoje juostoje): autobusas išvažiuoja,
+   kai kelias iki artimiausio kelio arba krašto laisvas. */
+const COLORS=['#ef4444','#3b82f6','#22c55e','#eab308','#a855f7','#f97316','#ec4899','#14b8a6','#23262e','#8f99a6','#1e293b','#fbbf24'];  // 8 – VIP, 9 – paslėpta spalva, 10 – palyda, 11 – mokyklinis (vaikai)
+const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function ranges(n,cuts){const o=[];let a=0;for(const c of [...cuts,n]){if(c>a)o.push([a,c-1]);a=c+1}return o}
+/* kelių tinklas: rc – vertikalūs keliai per visą aukštį; rb[i] – horizontalūs keliai i-tojoje juostoje
+   (tarp vertikalių kelių), skirtingose juostose skirtingame aukštyje -> T sankryžos, įvairaus dydžio kvartalai */
+function roadNet(W,rc,rb){const band=new Array(W).fill(-1);ranges(W,rc).forEach(([a,b],i)=>{for(let x=a;x<=b;x++)band[x]=i});
+  const RC=new Set(rc),RB=rb.map(r=>new Set(r));return (x,y)=>RC.has(x)||(band[x]>=0&&RB[band[x]].has(y))}
+/* Pasaulis = 100 lygių (4 skyriai po 25). ll – lygis pasaulyje; naujas pasaulis prasideda nuo nulio.
+   Kas 5-as – bosas, kas 25-as – didysis bosas, 100-as – bosų bosas. Sunkumas D kyla laipteliais per skyrius. */
+function params(L){
+  const ll=(L-1)%100+1,ch=Math.floor((ll-1)/25),cl=(ll-1)%25,pr=rng(L*977+5);
+  const mega=ll===100,big=ll%25===0,boss=ll%5===0,easy=!boss&&ll>5&&ll%5===1;
+  const D=Math.min(1,ch*.2+cl/25*.3+(mega?.3:big?.15:boss?.08:0));
+  // didesni kvartalai (mažiau vidinių kelių) -> autobusai labiau trukdo vieni kitiems
+  let W,H,nrc=0;
+  if(ll<=2){W=5;H=6}
+  else if(ll<6){W=6;H=8}
+  else if(ll<15){W=7;H=8+Math.floor(ll/6)}
+  else if(ll<30){W=9;H=8+Math.floor(ll/6)}
+  else if(ll<55){W=11;nrc=1;H=Math.min(24,8+Math.floor(ll/6))}
+  else{W=14;nrc=2;H=Math.min(24,8+Math.floor(ll/6))}
+  const rc=[];
+  if(nrc===1)rc.push(4+Math.floor(pr()*3));
+  if(nrc===2){const a=4+Math.floor(pr()*2);rc.push(a,a+5+Math.floor(pr()*Math.min(2,W-a-9)))}
+  const rb=ranges(W,rc).map(()=>{const rows=[];if(H>=13){let y=5+Math.floor(pr()*3);while(y<=H-5){rows.push(y);y+=6+Math.floor(pr()*4)}}return rows});
+  const P=ranges(W,rc).reduce((t,[a,b],i)=>t+(b-a+1)*(H-rb[i].length),0),roads=rc.length+rb.flat().length>0;
+  const dv=roads?2.05:2.3;
+  let n=ll<=2?4+ll:Math.min(Math.floor(P/dv),Math.round(8+ll*.9+D*12),80);
+  if(boss)n=Math.min(Math.floor(P/(dv-.25)),Math.round(n*(mega?1.3:big?1.2:1.12)),90);
+  if(easy)n=Math.round(n*.8);
+  const colors=ll<=2?2:Math.min(7,3+Math.round(D*4)+(boss?1:0));
+  const vipN=boss?((big||mega)?2:1):0;
+  // bosai: eilė sumaišyta taip, kad reikia visų vietų – įveikiama tik tinkama tvarka, klaidos beveik neatleidžiamos
+  const win=ll<=2?2:boss&&ll>=10?5-vipN:Math.min(5-vipN,4,2+Math.round(D*2.5)+(boss?1:0));
+  // mechanikos: 1 skyrius – jokių, 2 – pirmoji pasaulio, 3 – antroji, 4 – visos; vėlesni pasaulių ratai – mišinys
+  const wi=Math.floor((L-1)/100),wk=wi%4,f=.5+cl/25*.5,CHM=[[['obst','oneway'],['lights','truck','tram'],['obst','lights','truck','locked','tram','oneway']],
+       [['roadblk','leaves'],['hidden','animals','mud'],['roadblk','hidden','animals','mud','leaves']],
+       [['obst','heat'],['hidden','caravan'],['obst','hidden','storm','heat','caravan']],
+       [['locked','freeze'],['ice','plow'],['locked','ice','obst','freeze','plow']]][wk],on=new Set(ch>0?CHM[ch-1]:[]);
+  if(wi>=4&&ch>0)['obst','hidden','locked','lights','truck','storm','ice','animals','mud','leaves','tram','oneway','caravan','heat','plow','freeze'].forEach(m=>{if(pr()<.3)on.add(m)});
+  const vip=boss?(mega?'all':['pax','bus','esc'][Math.floor(ll/5)%3]):null;
+  const specials=[];if(ll>6&&pr()<Math.min(.6,.2+D*.6)){const k=Math.min(2,5-win-vipN);for(let i=0;i<k;i++)if(pr()<.75)specials.push(['repair','color','short','temp'][Math.floor(pr()*4)])}
+  const mech={on:[...on],obst:(on.has('obst')||on.has('roadblk'))?Math.round((1+P/60)*f)+1:0,lights:on.has('lights')?2+Math.round(f*2):0,
+    hidden:on.has('hidden')?.18+.2*f:0,locked:on.has('locked')?.08+.1*f:0,vip,vipN,first:cl===0&&ch>0,specials,truck:on.has('truck')?1+Math.round(f*1.5):0,storm:on.has('storm'),ice:on.has('ice')?.12+.12*f:0,stroller:ll>8&&pr()<.35?1+Math.round(D*2):0,animals:on.has('animals')?2+Math.round(f):0,tram:on.has('tram'),caravan:on.has('caravan'),oneway:on.has('oneway')?2:0,heat:on.has('heat'),plow:on.has('plow'),freeze:on.has('freeze'),mud:on.has('mud')?.06+.08*f:0,leaves:on.has('leaves')?.2+.2*f:0,
+    veh:ll>6?Math.min(.25,.06+D*.25):0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
+  return {ll,W,H,rc,rb,n,colors,win,slots:5,long:0.45,boss,easy,big,mega,roads,mech};
+}
+const VERSION='1.0.0';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
+/* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
+function segOf(W,H,rc,rb,x,y){
+  const bands=ranges(W,rc),isV=x===-1||x===W||rc.includes(x);
+  if(isV&&y>=0&&y<H){const rows=new Set();
+    if(x===-1)(rb[0]||[]).forEach(r=>rows.add(r));else if(x===W)(rb[bands.length-1]||[]).forEach(r=>rows.add(r));
+    else{const i=rc.indexOf(x);(rb[i]||[]).forEach(r=>rows.add(r));(rb[i+1]||[]).forEach(r=>rows.add(r))}
+    if(rows.has(y))return null;let a=y,b=y;while(a-1>=0&&!rows.has(a-1))a--;while(b+1<H&&!rows.has(b+1))b++;
+    const cells=[];for(let k=a;k<=b;k++)cells.push([x,k]);return {key:'v'+x+'_'+a,line:'v'+x,cells,vert:true}}
+  if(y===H){if(x<0||x>=W||rc.includes(x))return null;let a=x,b=x;while(a-1>=0&&!rc.includes(a-1))a--;while(b+1<W&&!rc.includes(b+1))b++;
+    const cells=[];for(let k=a;k<=b;k++)cells.push([k,H]);return {key:'b'+a,line:'b'+a,cells,vert:false}}
+  const bi=bands.findIndex(([a,b])=>x>=a&&x<=b);if(bi<0)return null;const [a,b]=bands[bi],cells=[];for(let k=a;k<=b;k++)cells.push([k,y]);
+  return {key:'h'+y+'_'+bi,line:'h'+y+'_'+bi,cells,vert:false};
+}
+function generate(L){
+  const p=params(L),road=roadNet(p.W,p.rc,p.rb),M=p.mech,W=p.W,H=p.H;
+  const rayBlk=(b,occ)=>{const [dx,dy]=DIRS[b.dir];for(let x=b.fx+dx,y=b.fy+dy;x>=0&&y>=0&&x<W&&y<H&&!road(x,y);x+=dx,y+=dy)if(occ[y*W+x]!==-1)return true;return false};
+  let best=null;
+  for(let attempt=0;attempt<10;attempt++){
+    const r=rng(L*7919+attempt*104729+13),occ=new Array(W*H).fill(-1),buses=[];
+    const place=(len,tries,strict)=>{
+      for(let t=0;t<tries;t++){
+        const dir=Math.floor(r()*4),fx=Math.floor(r()*W),fy=Math.floor(r()*H),[dx,dy]=DIRS[dir],cells=[];let ok=true;
+        for(let i=0;i<len;i++){const x=fx-dx*i,y=fy-dy*i;if(x<0||y<0||x>=W||y>=H||road(x,y)||occ[y*W+x]!==-1){ok=false;break}cells.push([x,y])}
+        if(!ok)continue;
+        let pl=0;for(let x=fx+dx,y=fy+dy;x>=0&&y>=0&&x<W&&y<H&&!road(x,y);x+=dx,y+=dy,pl++)if(occ[y*W+x]!==-1){ok=false;break}
+        if(!ok)continue;
+        if(strict&&p.ll>3&&pl<2&&r()<.7)continue;   // daugiau autobusų, kuriems reikia pravažiuoti pro kitus
+        const id=buses.length;cells.forEach(([x,y])=>occ[y*W+x]=id);
+        buses.push({id,fx,fy,dir,len,cells,cap:len===3?6:4,color:0,lock:0,hidden:false,kind:'n'});return true}
+      return false};
+    const popLast=()=>{const q=buses.pop();if(q)q.cells.forEach(([x,y])=>occ[y*W+x]=-1);return q};
+    for(let tries=0;tries<14000&&buses.length<p.n;tries+=40){const tx=M.veh&&r()<M.veh*.35;if(place(tx?1:r()<p.long?3:2,40,true)&&tx){const t=buses[buses.length-1];t.kind='taxi';t.cap=2}}
+    let vip=-1,esc=[];
+    const vips=[];
+    if(M.vip){if(M.vipN>1)for(let k=0;k<4;k++)popLast();for(let v=0;v<M.vipN;v++){let got=-1;for(let k=0;k<15;k++){if(place(2,3000,false)){got=buses.length-1;break}if(v>0||!popLast())break}if(got>=0)vips.push(got)}if(!vips.length)continue;vip=vips[0];
+      if(M.vip==='esc'||M.vip==='all')for(let e=0;e<2;e++){if(!place(1,4000,false))break;const b=buses[buses.length-1];b.kind='esc';b.cap=0;b.color=ESCC;esc.push(b.id)}}
+    const blocked=buses.filter(b=>rayBlk(b,occ)).length,sc=Math.min(buses.length,p.n+(M.vip?3:0))*10+blocked*4;
+    if(!best||sc>best.sc)best={sc,buses,r,vip,esc,vips};
+  }
+  if(!best)throw new Error('generate failed '+L);
+  const {buses,r,vip,esc}=best,vips=best.vips||[],cols=shuffle([...Array(8).keys()],r).slice(0,p.colors);
+  const norm=buses.filter(b=>b.kind==='n'&&!vips.includes(b.id)),order=shuffle(norm.map(b=>b.id),r);
+  order.forEach((id,i)=>buses[id].color=i<cols.length?cols[i]:cols[Math.floor(r()*cols.length)]);
+  norm.forEach(b=>{if(b.len===3&&r()<M.veh){if(r()<.5){b.kind='dd';b.cap=8}else{b.kind='school';b.cap=9;b.color=KIDC}}else if(b.len===2&&r()<M.veh*.8){b.kind='car';b.cap=3;b.len=1;b.cells=b.cells.slice(0,1)}});   // lengvoji mašina: 1 langelis, 3 vietos
+  const sol=buses.map(b=>b.id).reverse(),queue=[];   // eskortas ir VIP – pirmieji sprendime
+  sol.forEach((id,k)=>{const b=buses[id];if(b.kind==='esc'||vips.includes(id))return;
+    if(M.locked&&k>=2&&r()<M.locked)b.lock=Math.min(k,2+Math.floor(r()*4));
+    if(M.hidden&&r()<M.hidden)b.hidden=true;else if(M.leaves&&b.len>1&&r()<M.leaves)b.leafy=true});
+  const ns=sol.filter(id=>!vips.includes(id)&&buses[id].kind!=='esc');
+  for(let i=0;i<ns.length;i+=p.win){
+    const chunk=[];ns.slice(i,i+p.win).forEach(id=>{for(let k=0;k<buses[id].cap;k++)chunk.push(buses[id].color)});
+    queue.push(...shuffle(chunk,r));
+  }
+  if(M.vip&&(M.vip==='esc')&&!esc.length)M.vip='pax';
+  vips.forEach(v=>{const b=buses[v];b.color=VIPC;b.cap=4;b.esc=esc.length});
+  if(vips.length){const Q=queue.length,fr=vips.length>1?[.06,.16,.28,.4,.52,.64,.78,.93]:[.1,.37,.64,.93];fr.map(f=>Math.round(Q*f)).reverse().forEach(pos=>queue.splice(pos,0,VIPC))}
+  // vežimėliai: du iš eilės tos pačios spalvos keleiviai, kurie sprendime lipa į tą patį autobusą, tampa vienu (užima 2 vietas)
+  const wt=[];const simSlots=()=>{const so=[],sl=[];let q=0;const dr=()=>{for(;q<queue.length;){const w=wt[q]||1,s3=sl.find(o=>o.c===queue[q]&&o.cap-o.f>=w);if(!s3)break;s3.f+=w;so[q]=sl.indexOf(s3);q++}};
+    sol.forEach(id=>{dr();if(buses[id].cap)sl.push({c:buses[id].color,cap:buses[id].cap,f:0})});dr();return so};
+  if(M.stroller){let so=simSlots(),n=0;for(let i=queue.length-3;i>2&&n<M.stroller;i-=Math.max(3,Math.floor(queue.length/(M.stroller+1)))){
+    for(let j=i;j>Math.max(0,i-12);j--){if(queue[j]!==VIPC&&queue[j]===queue[j+1]&&so[j]===so[j+1]&&!wt[j]&&!wt[j+1]){queue.splice(j+1,1);wt.splice(j+1,1);wt[j]=2;n++;so=simSlots();break}}}}
+  // sprendimo simuliacija: kiek keleivių būna įlipę, kai išvažiuoja kiekvienas autobusas
+  const qiAt=[],sl=[];let qi=0;const drain=()=>{for(;qi<queue.length;){const w=wt[qi]||1,s=sl.find(o=>o.c===queue[qi]&&o.cap-o.f>=w);if(!s)break;s.f+=w;qi++}};
+  const tapAt=[];sol.forEach((id,k)=>{drain();qiAt[id]=qi;tapAt[id]=k;if(buses[id].cap)sl.push({c:buses[id].color,cap:buses[id].cap,f:0})});
+  const segs=new Map();
+  buses.forEach(b=>{const [dx,dy]=DIRS[b.dir];let x=b.fx+dx,y=b.fy+dy;while(x>=0&&y>=0&&x<W&&y<H&&!road(x,y)){x+=dx;y+=dy}
+    if(y<0)return;const sg=segOf(W,H,p.rc,p.rb,x,y);if(!sg)return;const e=segs.get(sg.key)||{...sg,min:1e9,mk:1e9,n:0};e.min=Math.min(e.min,qiAt[b.id]);e.mk=Math.min(e.mk,tapAt[b.id]);e.n++;segs.set(sg.key,e)});
+  const robs=[],lights=[],usedL=new Set();
+  if(M.obst){const cand=[...segs.values()].filter(e=>e.min>=4).sort((a,b)=>b.min*(1+b.n*.4)-a.min*(1+a.n*.4));
+    for(const e of cand){if(robs.length>=M.obst)break;if(usedL.has(e.line)||r()<.2)continue;usedL.add(e.line);
+      robs.push({cells:e.cells,vert:e.vert,t:Math.max(3,Math.floor(e.min*(.55+.45*r()))),on:true})}}
+  if(M.truck){const cand=shuffle([...segs.values()].filter(e=>!usedL.has(e.line)&&e.mk>=3),r);
+    for(const e of cand){if(robs.filter(o=>o.kind==='truck').length>=M.truck)break;usedL.add(e.line);robs.push({kind:'truck',cells:e.cells,vert:e.vert,t:Math.max(2,Math.floor(e.mk*(.5+.3*r()))),on:true})}}
+  // judančios kliūtys: tramvajus (tiesia linija) ir kupranugarių karavanas (ratu)
+  const movers=[];const lineCells=k=>{const o=[];if(k==='L')for(let y=0;y<H;y++)o.push([-1,y]);else if(k==='B')for(let x=-1;x<=W;x++)o.push([x,H]);else if(k==='R')for(let y=H-1;y>=0;y--)o.push([W,y]);else for(let y=0;y<H;y++)o.push([k,y]);return o};
+  if(M.tram){const k=p.rc.length?p.rc[Math.floor(r()*p.rc.length)]:'B';movers.push({kind:'tram',cells:lineCells(k),len:3,period:9000+Math.floor(r()*3000),off:Math.floor(r()*9000),ping:false})}
+  if(M.caravan){movers.push({kind:'caravan',cells:[...lineCells('L'),...lineCells('B'),...lineCells('R')],len:3,period:26000,off:Math.floor(r()*26000),ping:true})}
+  const oneway=[];if(M.oneway){const cand=shuffle([...segs.values()].filter(e=>!usedL.has(e.line)&&e.n>=2),r);for(const e of cand){if(oneway.length>=M.oneway)break;usedL.add(e.line);oneway.push({cells:e.cells,vert:e.vert,dir:r()<.5?1:-1,period:12000,off:Math.floor(r()*12000)})}}
+  const segList=[...segs.values()].map(e=>({cells:e.cells,vert:e.vert,line:e.line}));
+  const animals=[];if(M.animals){const cand=shuffle([...segs.values()].filter(e=>!usedL.has(e.line)&&e.n>=1),r);
+    for(const e of cand){if(animals.length>=M.animals)break;usedL.add(e.line);const g=7000+Math.floor(r()*6000),rd=2600;animals.push({cells:e.cells,vert:e.vert,g,rd,off:Math.floor(r()*(g+rd))})}}
+  if(M.lights){const cand=shuffle([...segs.values()].filter(e=>!usedL.has(e.line)&&e.n>=2),r);
+    for(const e of cand){if(lights.length>=M.lights)break;usedL.add(e.line);const g=5000+Math.floor(r()*3000),rd=3000+Math.floor(r()*1500);lights.push({cells:e.cells,vert:e.vert,g,rd,off:Math.floor(r()*(g+rd))})}}
+  const mud=[];if(M.mud){for(let t=0;t<300&&mud.length<Math.round(W*H*M.mud);t++){const x=Math.floor(r()*W),y=Math.floor(r()*H);if(!road(x,y)&&!mud.includes(y*W+x))mud.push(y*W+x)}}
+  const ice=[];if(M.ice){
+    for(let t=0;t<300&&ice.length<Math.round(W*H*M.ice);t++){let x=Math.floor(r()*W),y=Math.floor(r()*H);for(let k=0;k<4;k++){if(x>=0&&y>=0&&x<W&&y<H&&!road(x,y)&&!ice.includes(y*W+x))ice.push(y*W+x);x+=Math.floor(r()*3)-1;y+=Math.floor(r()*3)-1}}}
+  // ypatingos vietos stotelėje (dešinėje pusėje)
+  const stype=Array(p.slots).fill(null);M.specials.forEach((t,i)=>{const si=p.slots-1-i;
+    stype[si]=t==='repair'?{type:'repair',n:2+Math.floor(r()*3)}:t==='temp'?{type:'temp',sec:14}:t==='color'?{type:'color',color:cols[Math.floor(r()*cols.length)]}:{type:'short'}});
+  // mini iššūkis (tik tie, kurie šiame lygyje prasmingi)
+  const mudS=new Set(mud),mudBus=buses.filter(b=>{const [dx,dy]=DIRS[b.dir];if(b.cells.some(([x,y])=>mudS.has(y*W+x)))return true;for(let x=b.fx+dx,y=b.fy+dy;x>=0&&y>=0&&x<W&&y<H&&!road(x,y);x+=dx,y+=dy)if(mudS.has(y*W+x))return true;return false}).length;
+  let chal=null;
+  if(M.chal){const cc={};norm.forEach(b=>cc[b.color]=(cc[b.color]||0)+1);
+    const el=['slots','first','clean','slots','clean'];if(Object.values(cc).some(v=>v>=3))el.push('combo');
+    if(stype.some(t=>t&&t.type!=='short'))el.push('frugal','frugal');if(buses.some(b=>b.lock>0)||esc.length)el.push('quiet','quiet');
+    const tp=el[Math.floor(r()*el.length)];
+    if(tp==='moves')chal={type:'moves',n:buses.length+2+mudBus};
+    else if(tp==='time')chal={type:'time',s:Math.round(queue.length*.34+buses.length*1.6)};
+    else if(tp==='slots')chal={type:'slots',n:4};
+    else if(tp==='first'){const occ2=new Array(W*H).fill(-1);buses.forEach(b=>b.cells.forEach(([x,y])=>occ2[y*W+x]=b.id));
+      const free=norm.filter(b=>!rayBlk(b,occ2)&&!b.lock&&b.color<8);chal=free.length?{type:'first',color:free[Math.floor(r()*free.length)].color}:{type:'clean',s:20}}
+    else chal={type:tp,s:20}}
+  // modifikatoriai: dvi eilės, lėtas senjoras, draugų grupė
+  let mod=M.mod,senior=-1,groups={};
+  if(mod==='senior'){for(let t=0;t<50;t++){const i=Math.floor(queue.length*(.15+.6*r()));if(queue[i]!==VIPC){senior=i;break}}if(senior<0)mod=null}
+  if(mod==='friends'){let ok=false;
+    // trejetas iš eilės tos pačios spalvos, kuris sprendime telpa į vieną autobusą
+    const slotOf=[];const sl3=[];let qq=0;const dr=()=>{for(;qq<queue.length;){const w3=wt[qq]||1,s3=sl3.find(o=>o.c===queue[qq]&&o.cap-o.f>=w3);if(!s3)break;s3.f+=w3;slotOf[qq]=sl3.indexOf(s3);qq++}};
+    sol.forEach(id=>{dr();if(buses[id].cap)sl3.push({c:buses[id].color,cap:buses[id].cap,f:0})});dr();
+    for(let i=0;i+2<queue.length;i++){if(queue[i]!==VIPC&&!wt[i]&&!wt[i+1]&&!wt[i+2]&&queue[i]===queue[i+1]&&queue[i]===queue[i+2]&&slotOf[i]===slotOf[i+1]&&slotOf[i]===slotOf[i+2]){
+      const b=sl3[slotOf[i]],before=queue.slice(0,i).reduce((t,c,j)=>t+(slotOf[j]===slotOf[i]?(wt[j]||1):0),0);if(b.cap-before>=3){groups[i]=3;ok=true;if(Object.keys(groups).length>=2)break;i+=2}}}
+    if(!ok)mod=null}
+  const parMoves=buses.length+mudBus+1+Math.floor(buses.length/15),parTime=Math.round(queue.length*.34+buses.length*1.6);
+  return {parMoves,parTime,W,H,rc:p.rc,rb:p.rb,blk:[],obst:[],robs,lights,animals,mud,movers,oneway,segList,stype,chal,mod,senior,groups,wt,ice,sol,vips,storm:M.storm,buses,queue,nSlots:p.slots,boss:p.boss,easy:p.easy,big:p.big,mega:p.mega,mech:M,vipId:vip,esc};
+}
+class Game{
+  constructor(L,noCheck){
+    Object.assign(this,generate(L));this.level=L;this.road=roadNet(this.W,this.rc,this.rb);
+    this.occ=new Array(this.W*this.H).fill(-1);
+    this.buses.forEach(b=>b.cells.forEach(([x,y])=>this.occ[y*this.W+x]=b.id));
+    this.inLot=new Set(this.buses.map(b=>b.id));
+    this.slots=Array(this.nSlots).fill(null);this.qi=0;this.done=new Uint8Array(this.queue.length);this.hd=[0,1];this.moves=0;this.bumps=0;this.status='play';this.maxSlots=0;this.firstColor=null;this.exitCols=[];this.usedSpecial=false;this.lockTaps=0;this.cleanFail=false;this.readyAt={};this.grpSlot=-1;this.grpLeft=0;this.iceS=new Set(this.ice);this.mudS=new Set(this.mud);this.crane=false;
+    // dvi eilės: patikrinam, ar sprendimas veikia, kai keleiviai lipa iš bet kurios eilės; jei ne – lygis be dviejų eilių
+    if(this.mod==='twoq'&&!noCheck&&!Game.solves(L))this.mod=null;
+  }
+  static solves(L){const g=new Game(L,true);const drain=()=>{for(let k=0;k<5000;k++){const e=g.step();if(!e||e.win||e.lose)break}};
+    for(const id of g.buses.map(b=>b.id).reverse()){drain();if(g.status!=='play')break;let r=g.tap(id);if(r.mud)r=g.tap(id);if(!r.ok)return false;if(r.slot>=0)g.markReady(r.slot,id)}
+    drain();return g.status==='win'}
+  isRoad(x,y){return this.road(x,y)}
+  inCells(list,x,y){return list.findIndex(o=>(o.on!==false)&&o.cells.some(c=>c[0]===x&&c[1]===y))}
+  obsOn(x,y){return this.robs.some(o=>o.on&&o.cells.some(c=>c[0]===x&&c[1]===y))}
+  red(i,now,list){const l=(list||this.lights)[i];if(now==null)return false;return ((now+l.off)%(l.g+l.rd))>=l.g}
+  moverAt(i,now){const m=this.movers[i],N=m.cells.length;if(now==null)return [];let ph=((now+m.off)%m.period)/m.period,p;
+    if(m.ping){ph=ph<.5?ph*2:2-ph*2;p=Math.round(ph*(N-m.len))}else p=Math.floor(ph*(N+m.len*2))-m.len;
+    const o=[];for(let k=0;k<m.len;k++){const j=p+k;if(j>=0&&j<N)o.push(m.cells[j])}return o}
+  owDir(i,now){const w=this.oneway[i];if(now==null)return 0;return Math.floor((now+w.off)/w.period)%2?-w.dir:w.dir}
+  afterMove(id){this.buses.forEach(q=>{if(q.heat>0&&q.id!==id)q.heat--})}
+  mudOn(b){if(b.mudDone)return false;const [dx,dy]=DIRS[b.dir];if(b.cells.some(([x,y])=>this.mudS.has(y*this.W+x)))return true;for(let x=b.fx+dx,y=b.fy+dy;x>=0&&y>=0&&x<this.W&&y<this.H&&!this.isRoad(x,y);x+=dx,y+=dy)if(this.mudS.has(y*this.W+x))return true;return false}
+  ray(b){const [dx,dy]=DIRS[b.dir];let gap=0,x=b.fx+dx,y=b.fy+dy;
+    for(;x>=0&&y>=0&&x<this.W&&y<this.H&&!this.isRoad(x,y);x+=dx,y+=dy,gap++)if(this.occ[y*this.W+x]!==-1)return {blocked:true,gap,by:this.occ[y*this.W+x]};
+    return {x,y,gap}}
+  accepts(i,b){const t=this.stype[i];if(!t||t.type==='temp')return true;if(t.type==='repair')return t.n<=0;if(t.type==='color')return b.color===t.color;return b.len===2}
+  tap(id,now){
+    if(this.status!=='play'||!this.inLot.has(id))return {ignored:true};
+    const b=this.buses[id];if(this.crane&&b.kind!=='esc')return this.craneTap(id);if(b.heat>0){this.lockTaps++;return {locked:true,heat:b.heat}}if(b.lock>0){this.lockTaps++;return {locked:true,n:b.lock}}if(b.esc>0){this.lockTaps++;return {locked:true,esc:b.esc}}
+    const ry=this.ray(b);if(ry.blocked){this.moves++;this.bumps++;this.afterMove(id);if(this.mech.heat)b.heat=2;const cl=this.truckClear();
+      if(ry.gap>0&&this.iceS.has(b.fy*this.W+b.fx)&&this.trySlide(b,ry.gap))return {...ry,slid:true,cleared:cl};return {...ry,cleared:cl}}
+    const ob=this.inCells(this.robs,ry.x,ry.y);if(ob>=0){this.moves++;this.bumps++;this.afterMove(id);if(this.mech.heat)b.heat=2;return {blocked:true,gap:ry.gap,by:-4,ob,cleared:this.truckClear()}}
+    const bump=(o)=>{this.moves++;this.bumps++;this.afterMove(id);if(this.mech.heat)b.heat=2;return {blocked:true,gap:ry.gap,...o,cleared:this.truckClear()}};
+    for(let i=0;i<this.movers.length;i++)if(this.moverAt(i,now).some(c=>c[0]===ry.x&&c[1]===ry.y))return bump({by:-7,mover:i});
+    const ow=this.inCells(this.oneway,ry.x,ry.y);if(ow>=0&&now!=null){const [dx,dy]=DIRS[b.dir],rt=[-dy,dx],w=this.oneway[ow],ad=this.owDir(ow,now),ax=w.vert?[0,ad]:[ad,0];if(rt[0]*ax[0]+rt[1]*ax[1]<0)return bump({by:-8,ow})}
+    const ai=this.inCells(this.animals,ry.x,ry.y);if(ai>=0&&this.red(ai,now,this.animals)){this.moves++;this.bumps++;return {blocked:true,gap:ry.gap,by:-6,animal:ai,cleared:this.truckClear()}}
+    if(this.mudOn(b)){b.mudDone=true;this.moves++;return {mud:true,cleared:this.truckClear()}}
+    const li=this.inCells(this.lights,ry.x,ry.y);if(li>=0&&this.red(li,now)){this.moves++;this.bumps++;return {blocked:true,gap:ry.gap,by:-5,light:li,cleared:this.truckClear()}}
+    let si=-1;if(b.kind!=='esc'){si=this.slots.findIndex((s,i)=>!s&&this.accepts(i,b));if(si<0)return {noslot:true}}
+    this.moves++;this.afterMove(id);b.cells.forEach(([cx,cy])=>this.occ[cy*this.W+cx]=-1);this.inLot.delete(id);b.hidden=false;
+    if(si>=0){if(this.stype[si]&&this.stype[si].type!=='short')this.usedSpecial=true;if(b.color!==VIPC)this.exitCols.push(b.color);this.slots[si]={busId:id,color:b.color,cap:b.cap,filled:b.carry||0,ready:false};b.carry=0;this.maxSlots=Math.max(this.maxSlots,this.slots.filter(Boolean).length);if(this.firstColor==null&&b.color!==VIPC)this.firstColor=b.color}
+    const unlocks=[];this.inLot.forEach(o=>{const q=this.buses[o];if(q.lock>0){q.lock--;unlocks.push(o)}if(b.kind==='esc'&&q.esc>0){q.esc--;unlocks.push(o)}});
+    return {ok:true,slot:si,ex:ry.x,ey:ry.y,unlocks,esc:b.kind==='esc',cleared:this.truckClear()};
+  }
+  truckClear(){const c=[];this.robs.forEach((o,i)=>{if(o.on&&o.kind==='truck'&&this.moves>=o.t){o.on=false;c.push(i)}});return c}
+  solOk(){const occ=this.occ.slice(),W=this.W,H=this.H;
+    for(const id of this.sol){if(!this.inLot.has(id))continue;const b=this.buses[id],[dx,dy]=DIRS[b.dir];
+      for(let x=b.fx+dx,y=b.fy+dy;x>=0&&y>=0&&x<W&&y<H&&!this.isRoad(x,y);x+=dx,y+=dy)if(occ[y*W+x]!==-1)return false;
+      b.cells.forEach(([x,y])=>occ[y*W+x]=-1)}return true}
+  trySlide(b,gap){const [dx,dy]=DIRS[b.dir],old=b.cells.map(c=>[...c]),of=[b.fx,b.fy];
+    b.cells.forEach(([x,y])=>this.occ[y*this.W+x]=-1);b.cells=b.cells.map(([x,y])=>[x+dx*gap,y+dy*gap]);b.fx+=dx*gap;b.fy+=dy*gap;b.cells.forEach(([x,y])=>this.occ[y*this.W+x]=b.id);
+    if(this.solOk())return true;
+    b.cells.forEach(([x,y])=>this.occ[y*this.W+x]=-1);b.cells=old;[b.fx,b.fy]=of;b.cells.forEach(([x,y])=>this.occ[y*this.W+x]=b.id);return false}
+  returnBus(si){const s=this.slots[si];if(!s||this.status!=='play')return false;const b=this.buses[s.busId];
+    if(s.filled>=s.cap||b.cells.some(([x,y])=>this.occ[y*this.W+x]!==-1))return false;
+    b.cells.forEach(([x,y])=>this.occ[y*this.W+x]=b.id);this.inLot.add(b.id);b.carry=s.filled;this.slots[si]=null;return true
+  }
+  reveal(){const o=[];this.inLot.forEach(id=>{const b=this.buses[id];if((b.hidden||b.leafy)&&!this.ray(b).blocked){b.hidden=false;b.leafy=false;o.push(id)}});return o}
+  craneTap(id){const b=this.buses[id],si=this.slots.findIndex((s,i)=>!s&&this.accepts(i,b));if(si<0)return {noslot:true};this.crane=false;
+    this.moves++;b.cells.forEach(([cx,cy])=>this.occ[cy*this.W+cx]=-1);this.inLot.delete(id);b.hidden=false;b.leafy=false;b.lock=0;b.esc=0;
+    this.slots[si]={busId:id,color:b.color,cap:b.cap,filled:b.carry||0,ready:false};b.carry=0;this.maxSlots=Math.max(this.maxSlots,this.slots.filter(Boolean).length);if(b.color!==VIPC)this.exitCols.push(b.color);
+    const unlocks=[];this.inLot.forEach(o=>{const q=this.buses[o];if(q.lock>0){q.lock--;unlocks.push(o)}});return {ok:true,crane:true,slot:si,unlocks,cleared:this.truckClear()}}
+  addPlow(seg,now){this.robs.push({kind:'plow',cells:seg.cells,vert:seg.vert,t:this.qi+5,dl:now+25000,on:true});return this.robs.length-1}
+  addSlot(){this.slots.push(null);this.stype.push(null);this.nSlots++}
+  fail(reason){if(this.status==='play'){this.status='lose';this.reason=reason}}
+  markReady(si,busId,now){const s=this.slots[si];if(s&&s.busId===busId){s.ready=true;if(now!=null)this.readyAt[busId]=now}}
+  fronts(){if(this.mod!=='twoq')return this.qi<this.queue.length?[this.qi]:[];return this.hd.filter(h=>h<this.queue.length).sort((a,b)=>a-b)}
+  stuck(){return this.slots.every((s,i)=>s?s.ready:(this.stype[i]&&this.stype[i].type==='repair'&&this.stype[i].n>0))}
+  step(now){
+    if(this.status!=='play')return null;
+    if(this.qi>=this.queue.length){this.status='win';return {win:true}}
+    // dvi eilės: lipti gali pirmasis iš bet kurios eilės (lyginiai indeksai – viršutinė, nelyginiai – apatinė)
+    const cands=this.mod==='twoq'?this.fronts():[this.qi];let si=-1,qx=cands[0];
+    for(const q of cands){const c=this.queue[q],gs=this.groups[q],w=this.wt[q]||1;
+      const k=this.grpLeft>0?this.grpSlot:this.slots.findIndex(s=>s&&s.ready&&s.color===c&&s.cap-s.filled>=(gs||w));
+      if(k>=0&&this.slots[k]){si=k;qx=q;break}}
+    if(si<0){if(this.stuck()){this.status='lose';this.reason='slots';return {lose:true}}return null}
+    const gs=this.groups[qx],w=this.wt[qx]||1;
+    if(gs){this.grpSlot=si;this.grpLeft=gs-1}else if(this.grpLeft>0)this.grpLeft--;
+    const s=this.slots[si];s.filled+=w;const idx=qx;this.done[qx]=1;this.qi++;
+    if(this.mod==='twoq'){const r=qx%2;let h=this.hd[r];while(h<this.queue.length&&this.done[h])h+=2;this.hd[r]=h}
+    const cleared=[];this.robs.forEach((o,i)=>{if(o.on&&o.kind!=='truck'&&this.qi>=o.t){o.on=false;cleared.push(i)}});
+    if(s.filled>=s.cap){this.slots[si]=null;if(now!=null&&this.readyAt[s.busId]!=null&&s.color!==VIPC&&now-this.readyAt[s.busId]>20000)this.cleanFail=true;const rep=[];this.stype.forEach((t,i)=>{if(t&&t.type==='repair'&&t.n>0){t.n--;rep.push(i)}});
+      return {board:si,idx,busId:s.busId,depart:true,cleared,rep,w}}
+    return {board:si,idx,busId:s.busId,cleared,w};
+  }
+  chalOk(elapsed){const c=this.chal;if(!c)return true;
+    if(c.type==='moves')return this.moves<=c.n;if(c.type==='time')return elapsed<=c.s*1000;if(c.type==='slots')return this.maxSlots<=c.n;
+    if(c.type==='combo'){const e=this.exitCols;for(let i=0;i+2<e.length;i++)if(e[i]===e[i+1]&&e[i]===e[i+2])return true;return false}
+    if(c.type==='clean')return !this.cleanFail;if(c.type==='frugal')return !this.usedSpecial;if(c.type==='quiet')return this.lockTaps===0;
+    return this.firstColor===c.color}
+  // 4 žvaigždutės: įveikta, laikas, ėjimai (atsitrenkimai – irgi ėjimai), spec. užduotis
+  stars(elapsed){return 1+(elapsed<=this.parTime*1000?1:0)+(this.moves<=this.parMoves?1:0)+(this.chalOk(elapsed)?1:0)}
+}
+
+/* ===================== PASAULIAI IR TEKSTŪROS ===================== */
+const svgUrl=s=>`data:image/svg+xml,${encodeURIComponent(s)}`,css=u=>`url("${u}")`;
+const X="xmlns='http://www.w3.org/2000/svg'";
+const f1=v=>v.toFixed(1);
+function tile(base,seed,fn){const r=rng(seed);return svgUrl(`<svg ${X} width='100' height='100'><rect width='100' height='100' fill='${base}'/>${fn(r)}</svg>`)}
+function specks(r,n,cols,a,b){let s='';for(let i=0;i<n;i++)s+=`<circle cx='${f1(r()*100)}' cy='${f1(r()*100)}' r='${(a+r()*(b-a)).toFixed(2)}' fill='${cols[Math.floor(r()*cols.length)]}'/>`;return s}
+function tree(x,y,R,c1,c2,c3){return `<circle cx='${x+R*.25}' cy='${y+R*.3}' r='${R}' fill='rgba(0,0,0,.22)'/><circle cx='${x}' cy='${y}' r='${R}' fill='${c1}'/><circle cx='${x-R*.3}' cy='${y-R*.25}' r='${R*.62}' fill='${c2}'/><circle cx='${x-R*.4}' cy='${y-R*.4}' r='${R*.3}' fill='${c3}'/>`}
+function pine(x,y,R){let s=`<circle cx='${x+R*.3}' cy='${y+R*.3}' r='${R}' fill='rgba(40,60,80,.18)'/>`;for(let k=0;k<8;k++){const a=k*Math.PI/4;s+=`<ellipse cx='${f1(x+Math.cos(a)*R*.55)}' cy='${f1(y+Math.sin(a)*R*.55)}' rx='${f1(R*.5)}' ry='${f1(R*.28)}' transform='rotate(${k*45} ${f1(x+Math.cos(a)*R*.55)} ${f1(y+Math.sin(a)*R*.55)})' fill='#2c5643'/>`}return s+`<circle cx='${x}' cy='${y}' r='${R*.45}' fill='#3a6b54'/><circle cx='${x-R*.2}' cy='${y-R*.2}' r='${R*.25}' fill='#f4f8fb'/><circle cx='${x+R*.45}' cy='${y+R*.1}' r='${R*.18}' fill='#f4f8fb'/>`}
+const WORLDS=[
+ {name:'Miestas',emoji:'🏙️',curb:'#c9ced4',amb:'clouds',
+  out:tile('#a3a9b0',11,r=>{let s='';for(let i=0;i<=100;i+=12.5)s+=`<path d='M${i} 0V100M0 ${i}H100' stroke='#959ba3' stroke-width='.7'/>`;return s+specks(r,30,['#8f959c','#b3b8be'],.4,.9)}),
+  decor:[(x,y,R)=>`<rect x='${x-R*1.05}' y='${y-R*1.05}' width='${R*2.1}' height='${R*2.1}' rx='${R*.2}' fill='#6b5a44'/>`+tree(x,y,R,'#2f6b34','#3f8a43','#5fae5c'),(x,y,R)=>tree(x,y,R*.8,'#2f6b34','#3f8a43','#5fae5c'),(x,y,R)=>`<rect x='${x-R*.9}' y='${y-R*.3}' width='${R*1.8}' height='${R*.6}' rx='3' fill='rgba(0,0,0,.2)' transform='translate(3 3)'/><rect x='${x-R*.9}' y='${y-R*.3}' width='${R*1.8}' height='${R*.6}' rx='3' fill='#8a5a33'/><path d='M${x-R*.8} ${y} H${x+R*.8}' stroke='#6e4626' stroke-width='2'/>`],
+  lot:tile('#4b515a',12,r=>specks(r,320,['#3e434b','#585e68','#61686f','#444a52'],.25,.9)+`<ellipse cx='30' cy='65' rx='8' ry='5' fill='#33383f' opacity='.6'/><ellipse cx='78' cy='22' rx='6' ry='4' fill='#33383f' opacity='.5'/><path d='M60 80 l6 -3' stroke='#d8d8d0' stroke-width='1.2' opacity='.25'/>`),
+  road:tile('#31363d',13,r=>specks(r,260,['#2a2e34','#3a3f46','#41464d'],.25,.8)),
+  plat:tile('#cdd2d8',14,r=>{let s='';for(let i=0;i<=100;i+=10)s+=`<path d='M${i} 0V100M0 ${i}H100' stroke='#b9bfc6' stroke-width='.8'/>`;return s})},
+ {name:'Miškas',emoji:'🌲',curb:'#8b7656',amb:'leaves',
+  out:tile('#3f6d36',21,r=>specks(r,200,['#4b7d3f','#355f2e','#577f3f'],.4,1.2)),
+  decor:[(x,y,R)=>tree(x,y,R,'#24502a','#2f6b34','#4d9246'),(x,y,R)=>tree(x,y,R*.85,'#2a5a2c','#3a7a3a','#5aa052'),(x,y,R)=>tree(x,y,R*.5,'#2f6b34','#4a8a40','#6fb15f')+`<circle cx='${x+R*.7}' cy='${y+R*.5}' r='${R*.13}' fill='#d94b4b'/><circle cx='${x+R*.66}' cy='${y+R*.46}' r='${R*.04}' fill='#fff'/>`],
+  lot:tile('#86735a',22,r=>{let s=specks(r,520,['#6f5e47','#9a876a','#a99777','#5f503c','#b3a283'],.35,1.3);for(let i=0;i<6;i++){const x=r()*100,y=r()*100;s+=`<path d='M${f1(x)} ${f1(y)}l-2 -5M${f1(x)} ${f1(y)}l0 -6M${f1(x)} ${f1(y)}l2 -5' stroke='#55803f' stroke-width='1.2' stroke-linecap='round'/>`}return s}),
+  road:tile('#5a4934',23,r=>specks(r,300,['#4d3e2c','#66543d','#705d45'],.3,1)),
+  plat:tile('#a3865e',24,r=>{let s='';for(let i=0;i<=100;i+=9)s+=`<path d='M${i} 0V100' stroke='#86694a' stroke-width='1.2'/>`;return s+specks(r,30,['#8f7350'],.3,.8)})},
+ {name:'Dykuma',emoji:'🏜️',curb:'#b9976a',amb:'clouds',
+  out:tile('#e2c28c',31,r=>{let s=specks(r,120,['#d5b277','#ecd3a2'],.3,1);for(let i=0;i<5;i++){const y=10+i*20;s+=`<path d='M0 ${y} Q25 ${y-5} 50 ${y} T100 ${y}' stroke='#d3ae72' stroke-width='1.4' fill='none'/>`}
+    return s}),
+  decor:[(x,y,R)=>`<circle cx='${x+R*.2}' cy='${y+R*.2}' r='${R*.55}' fill='rgba(0,0,0,.15)'/><circle cx='${x}' cy='${y}' r='${R*.5}' fill='#5b8a3c'/><circle cx='${x}' cy='${y}' r='${R*.25}' fill='#6fa04b'/><circle cx='${x+R*.45}' cy='${y-R*.35}' r='${R*.22}' fill='#5b8a3c'/><circle cx='${x-R*.45}' cy='${y+R*.3}' r='${R*.2}' fill='#5b8a3c'/>`,
+    (x,y,R)=>`<ellipse cx='${x+3}' cy='${y+3}' rx='${R*.7}' ry='${R*.45}' fill='rgba(0,0,0,.15)'/><ellipse cx='${x}' cy='${y}' rx='${R*.7}' ry='${R*.45}' fill='#b8925e'/><ellipse cx='${x-R*.15}' cy='${y-R*.1}' rx='${R*.45}' ry='${R*.25}' fill='#c9a46e'/>`],
+  lot:tile('#cfae76',32,r=>specks(r,380,['#c09d64','#dabb86','#b48f58','#e2c697'],.3,1.1)),
+  road:tile('#7a6a55',33,r=>specks(r,260,['#6e5f4b','#857560','#8f7f68'],.3,.9)),
+  plat:tile('#e8d6ad',34,r=>{let s='';for(let i=0;i<=100;i+=12.5)s+=`<path d='M${i} 0V100M0 ${i}H100' stroke='#d3bf92' stroke-width='.9'/>`;return s})},
+ {name:'Žiema',emoji:'❄️',curb:'#eef3f8',amb:'snow',
+  out:tile('#eef3f8',41,r=>specks(r,140,['#dbe6f0','#ffffff','#e3ecf4'],.4,1.4)),
+  decor:[(x,y,R)=>pine(x,y,R),(x,y,R)=>pine(x,y,R*.75),(x,y,R)=>`<circle cx='${x+3}' cy='${y+3}' r='${R*.45}' fill='rgba(60,80,100,.18)'/><circle cx='${x}' cy='${y}' r='${R*.45}' fill='#fff' stroke='#d5e0ea'/><circle cx='${x}' cy='${y}' r='${R*.28}' fill='#fff' stroke='#d5e0ea'/><path d='M${x} ${y} l${R*.35} ${R*.08}' stroke='#f97316' stroke-width='2.5' stroke-linecap='round'/>`],
+  lot:tile('#94a2b0',42,r=>{let s=specks(r,300,['#8593a1','#a3b0bd','#7d8b99'],.25,.9);for(let i=0;i<5;i++){const x=r()*100,y=r()*100;s+=`<ellipse cx='${f1(x)}' cy='${f1(y)}' rx='${f1(4+r()*8)}' ry='${f1(2+r()*4)}' fill='#f2f6fa' opacity='.75'/>`}
+    return s+`<path d='M10 0 Q14 50 8 100M18 0 Q22 50 16 100' stroke='#7c8a98' stroke-width='1.6' fill='none' opacity='.5'/>`}),
+  road:tile('#5f6c78',43,r=>specks(r,240,['#56626d','#6a7783','#e8eef4'],.3,.9)),
+  plat:tile('#f5f8fb',44,r=>{let s='';for(let i=0;i<=100;i+=10)s+=`<path d='M${i} 0V100M0 ${i}H100' stroke='#dfe7ef' stroke-width='.8'/>`;return s})},
+];
+const wIdx=L=>Math.floor((L-1)/100),lLoc=L=>(L-1)%100+1,worldOf=L=>WORLDS[wIdx(L)%WORLDS.length];
+const kindOf=L=>{const l=lLoc(L);return l===100?'mega':l%25===0?'big':l%5===0?'boss':'n'},KICON={n:'',boss:' 🔥',big:' 👑',mega:' 💀'};
+
+/* ===================== GRAFIKA ===================== */
+function shade(hex,amt){let n=parseInt(hex.slice(1),16),c=[n>>16,n>>8&255,n&255];const t=amt<0?0:255,p=Math.abs(amt);c=c.map(v=>Math.round(v+(t-v)*p));return `rgb(${c})`}
+/* stogo dekoracijos pagal pasaulį */
+function roofDeco(wn,H,len){
+  const m=H/2;
+  if(wn==='Miškas')return len===3
+    ?`<path d="M28 34V${H-34}M72 34V${H-34}" stroke="#6b4a2b" stroke-width="3"/><ellipse cx="57" cy="${m}" rx="13" ry="${H*.33}" fill="#e46b2c" stroke="#9a3d12" stroke-width="2"/><path d="M57 ${m-H*.25}V${m+H*.25}" stroke="#9a3d12" stroke-width="2"/><rect x="25" y="${H-62}" width="22" height="18" rx="5" fill="#4f7a3a"/>`
+    :`<path d="M28 36V${H-36}M72 36V${H-36}" stroke="#6b4a2b" stroke-width="3"/><rect x="31" y="${H-74}" width="38" height="20" rx="7" fill="#4f7a3a"/><rect x="34" y="${H-52}" width="26" height="14" rx="3" fill="#8a5a33"/>`;
+  if(wn==='Dykuma')return `<rect x="24" y="36" width="52" height="${H-72}" rx="4" fill="none" stroke="#5b4a38" stroke-width="2.5"/><path d="M24 ${m}H76M50 36V${H-36}" stroke="#5b4a38" stroke-width="1.5"/><circle cx="50" cy="${H-56}" r="15" fill="#222"/><circle cx="50" cy="${H-56}" r="7" fill="#9ca3af"/><rect x="58" y="44" width="12" height="17" rx="2" fill="#c0392b"/><rect x="18" y="${H-24}" width="64" height="8" rx="4" fill="rgba(214,180,120,.55)"/>`;
+  if(wn==='Žiema')return `<path d="M22 38 Q34 30 46 36 Q58 30 70 36 Q78 34 79 44 Q66 52 52 47 Q38 54 22 47Z" fill="#f8fbff" opacity=".95"/><path d="M24 ${H-46} Q36 ${H-54} 50 ${H-48} Q64 ${H-55} 77 ${H-46} Q78 ${H-36} 64 ${H-38} Q50 ${H-32} 36 ${H-38} Q24 ${H-35} 24 ${H-46}Z" fill="#f8fbff" opacity=".95"/><circle cx="30" cy="16" r="3" fill="#fff"/><circle cx="66" cy="18" r="2.5" fill="#fff"/><circle cx="62" cy="${H/2+18}" r="4" fill="#fff" opacity=".9"/>`;
+  return `<rect x="33" y="${H-74}" width="34" height="26" rx="4" fill="#e6e9ed" stroke="#a3abb5" stroke-width="1.5"/><path d="M37 ${H-67}H63M37 ${H-61}H63M37 ${H-55}H63" stroke="#a3abb5" stroke-width="1.4"/>`;
+}
+function carInnerOld(ci,arrow,taxi=true){const c=COLORS[ci],dk=shade(c,-.42),lt=shade(c,.3);
+  return `<rect x="10" y="2" width="80" height="98" rx="22" fill="rgba(0,0,0,.28)"/><g fill="#111417"><rect x="8" y="14" width="9" height="18" rx="3"/><rect x="83" y="14" width="9" height="18" rx="3"/><rect x="8" y="68" width="9" height="18" rx="3"/><rect x="83" y="68" width="9" height="18" rx="3"/></g>
+  <rect x="13" y="3" width="74" height="94" rx="20" fill="${c}" stroke="${dk}" stroke-width="3"/><path d="M20 30 Q50 18 80 30 L76 40 H24Z" fill="#203347"/><path d="M24 76 H76 L79 84 Q50 92 21 84Z" fill="#203347"/>
+  <rect x="24" y="42" width="52" height="32" rx="6" fill="${lt}"/>${taxi?`<rect x="34" y="50" width="32" height="15" rx="3" fill="#facc15" stroke="#111" stroke-width="1.5"/><path d="M38 50v15M46 50v15M54 50v15M62 50v15" stroke="#111" stroke-width="3" stroke-dasharray="3.75 3.75"/>`:`<rect x="34" y="47" width="32" height="22" rx="4" fill="#2b3f55" opacity=".8"/><path d="M37 50 L46 50 L38 60Z" fill="#fff" opacity=".35"/><path d="M27 44v28M73 44v28" stroke="${dk}" stroke-width="2.5" opacity=".6"/>`}
+  <rect x="17" y="5" width="12" height="5" rx="2" fill="#fff7cf"/><rect x="71" y="5" width="12" height="5" rx="2" fill="#fff7cf"/>${arrow?`<path d="M38 64 L50 46 L62 64" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path d="M38 64 L50 46 L62 64" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`:''}`}
+
+const ARW=(cy,s=1)=>{const a=`M${50-12*s} ${cy+9*s} L50 ${cy-9*s} L${50+12*s} ${cy+9*s}`;return `<path d="${a}" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="${12*s}" stroke-linecap="round" stroke-linejoin="round"/><path d="${a}" fill="none" stroke="#fff" stroke-width="${7*s}" stroke-linecap="round" stroke-linejoin="round"/>`};
+const WHEELS=(ys,x1=8,x2=83,w=9,h=18)=>`<g fill="#111417">${ys.map(y=>`<rect x="${x1}" y="${y}" width="${w}" height="${h}" rx="3"/><rect x="${x2}" y="${y}" width="${w}" height="${h}" rx="3"/>`).join('')}</g>`;
+// lengvoji mašina (spalvota) ir taksi (balta su geltonu TAXI ženklu, šonuose – keleivių spalva)
+function carInner(ci,arrow,taxi=true){const c=COLORS[ci],body=taxi?'#f4f6f8':c,dk=taxi?'#9aa5b1':shade(c,-.42),lt=taxi?'#ffffff':shade(c,.3),g='cg'+ci+(taxi?'t':'c');
+  return `<defs><linearGradient id="${g}" x1="0" x2="1"><stop offset="0" stop-color="${dk}"/><stop offset=".18" stop-color="${body}"/><stop offset=".5" stop-color="${lt}"/><stop offset=".82" stop-color="${body}"/><stop offset="1" stop-color="${dk}"/></linearGradient></defs>
+  <rect x="11" y="2" width="78" height="98" rx="22" fill="rgba(0,0,0,.28)"/>${WHEELS([13,68])}
+  <ellipse cx="11" cy="34" rx="4" ry="3" fill="${dk}"/><ellipse cx="89" cy="34" rx="4" ry="3" fill="${dk}"/>
+  <rect x="14" y="3" width="72" height="94" rx="20" fill="url(#${g})" stroke="${dk}" stroke-width="2.5"/>
+  ${taxi?`<rect x="15.5" y="18" width="7" height="66" rx="3" fill="${c}"/><rect x="77.5" y="18" width="7" height="66" rx="3" fill="${c}"/><path d="M15.5 30h7M15.5 42h7M15.5 54h7M15.5 66h7M77.5 30h7M77.5 42h7M77.5 54h7M77.5 66h7" stroke="#111" stroke-width="3" opacity=".55"/>`:`<path d="M32 7 Q50 4 68 7M34 9 V24M66 9 V24" stroke="${dk}" stroke-width="1.6" fill="none" opacity=".5"/>`}
+  <path d="M22 30 Q50 22 78 30 L74 40 H26Z" fill="#203347"/><path d="M28 31 H42 L35 38 H27Z" fill="#fff" opacity=".2"/>
+  <rect x="26" y="40" width="48" height="33" rx="6" fill="${taxi?'#e9edf1':shade(c,-.12)}"/>
+  <path d="M26 74 H74 L77 83 Q50 89 23 83Z" fill="#203347"/>
+  ${taxi?`<rect x="31" y="58" width="38" height="13" rx="3" fill="#facc15" stroke="#111" stroke-width="1.5"/><text x="50" y="68.2" text-anchor="middle" font-size="10" font-weight="900" font-family="system-ui,sans-serif" fill="#111">TAXI</text>`:''}
+  <rect x="18" y="4" width="12" height="5" rx="2" fill="#fff7cf"/><rect x="70" y="4" width="12" height="5" rx="2" fill="#fff7cf"/>
+  <rect x="19" y="92" width="11" height="4" rx="2" fill="#dc2626"/><rect x="70" y="92" width="11" height="4" rx="2" fill="#dc2626"/>
+  ${arrow?ARW(taxi?48:56,taxi?.8:1):''}`}
+// palydos džipas
+function jeepInner(arrow){const c='#26303d',dk='#10151c';
+  return `<rect x="8" y="2" width="84" height="98" rx="10" fill="rgba(0,0,0,.3)"/>${WHEELS([12,66],5,84,11,22)}
+  <rect x="17" y="-1" width="66" height="6" rx="2" fill="#0b0f14"/><path d="M22 0v5M30 0v5M70 0v5M78 0v5" stroke="#3b4656" stroke-width="2"/>
+  <rect x="12" y="3" width="76" height="92" rx="7" fill="${c}" stroke="${dk}" stroke-width="2.5"/>
+  <path d="M30 6 V22 M70 6 V22" stroke="#3b4656" stroke-width="2"/>
+  <rect x="18" y="25" width="64" height="10" rx="2" fill="#203347"/>
+  <rect x="19" y="37" width="62" height="46" rx="3" fill="#323e4e"/>
+  <path d="M24 40 V80 M76 40 V80" stroke="#556173" stroke-width="2.5"/><path d="M24 48 H76 M24 74 H76" stroke="#556173" stroke-width="1.5"/>
+  <rect x="30" y="39" width="40" height="8" rx="3" fill="#0b0f14"/><rect x="31.5" y="40.5" width="17" height="5" rx="2" fill="#3b82f6"/><rect x="51.5" y="40.5" width="17" height="5" rx="2" fill="#ef4444"/>
+  <circle cx="50" cy="94" r="8" fill="#0b0f14"/><circle cx="50" cy="94" r="3.5" fill="#556173"/>
+  <rect x="15" y="4" width="11" height="6" rx="2" fill="#fff7cf"/><rect x="74" y="4" width="11" height="6" rx="2" fill="#fff7cf"/>
+  <rect x="14" y="89" width="9" height="5" rx="2" fill="#dc2626"/><rect x="77" y="89" width="9" height="5" rx="2" fill="#dc2626"/>
+  ${arrow?ARW(64,.9):''}`}
+// VIP limuzinas (2 langeliai)
+function limoInner(len,arrow){const H=100*len,c='#191b21',dk='#050608',lt='#3a3e48';
+  return `<defs><linearGradient id="limg" x1="0" x2="1"><stop offset="0" stop-color="${dk}"/><stop offset=".2" stop-color="${c}"/><stop offset=".5" stop-color="${lt}"/><stop offset=".8" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient></defs>
+  <rect x="13" y="2" width="74" height="${H-1}" rx="20" fill="rgba(0,0,0,.3)"/>${WHEELS([20,H-40],9,82,9,20)}
+  <ellipse cx="13" cy="50" rx="4" ry="3" fill="${dk}"/><ellipse cx="87" cy="50" rx="4" ry="3" fill="${dk}"/>
+  <rect x="15" y="3" width="70" height="${H-6}" rx="18" fill="url(#limg)" stroke="#000" stroke-width="2"/>
+  <path d="M33 8 Q50 5 67 8M36 10 V36M64 10 V36" stroke="#4b5060" stroke-width="1.6" fill="none"/><circle cx="50" cy="9" r="2.6" fill="#f2c94c"/>
+  <path d="M21 44 Q50 36 79 44 L75 55 H25Z" fill="#1d2e42"/><path d="M27 45 H41 L35 52 H26Z" fill="#fff" opacity=".18"/>
+  <rect x="24" y="55" width="52" height="${H-100}" rx="6" fill="#121318"/>
+  <path d="M18.5 50 V${H-44} M81.5 50 V${H-44}" stroke="#e7c35a" stroke-width="2.2"/>
+  ${Array.from({length:Math.max(1,Math.floor((H-110)/26))},(_,i)=>`<rect x="16" y="${62+i*26}" width="3" height="18" rx="1" fill="#2c4058"/><rect x="81" y="${62+i*26}" width="3" height="18" rx="1" fill="#2c4058"/>`).join('')}
+  <path d="M25 ${H-44} H75 L78 ${H-34} Q50 ${H-28} 22 ${H-34}Z" fill="#1d2e42"/>
+  <path d="M38 ${H/2+(arrow?28:8)} l4 -16 l8 10 l8 -10 l4 16 Z" fill="#f2c94c" stroke="#a87b16" stroke-width="1.5"/>
+  <rect x="19" y="4" width="11" height="5" rx="2" fill="#fff7cf"/><rect x="70" y="4" width="11" height="5" rx="2" fill="#fff7cf"/>
+  <rect x="19" y="${H-8}" width="11" height="4" rx="2" fill="#dc2626"/><rect x="70" y="${H-8}" width="11" height="4" rx="2" fill="#dc2626"/>
+  ${arrow?ARW(H/2-22):''}`}
+// mokyklinis autobusas su ilgu priekiu (veža tik vaikus)
+function schoolInner(ci,len,arrow){const H=100*len,c=COLORS[ci],dk=shade(c,-.45),lt=shade(c,.3),g='sg'+ci;let win='';
+  for(let y=80;y<H-34;y+=24)win+=`<rect x="8.5" y="${y}" width="6" height="18" rx="1.5"/><rect x="85.5" y="${y}" width="6" height="18" rx="1.5"/>`;
+  return `<defs><linearGradient id="${g}" x1="0" x2="1"><stop offset="0" stop-color="${dk}"/><stop offset=".13" stop-color="${c}"/><stop offset=".5" stop-color="${lt}"/><stop offset=".87" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient></defs>
+  <rect x="3" y="44" width="94" height="${H-40}" rx="12" fill="rgba(0,0,0,.28)"/><rect x="20" y="2" width="60" height="56" rx="10" fill="rgba(0,0,0,.28)"/>
+  ${WHEELS([22],13,78,9,20)}${WHEELS([H-62],3,88,9,20)}
+  <rect x="19" y="-2" width="62" height="7" rx="2" fill="#1a1a1a"/>
+  <rect x="22" y="2" width="56" height="56" rx="10" fill="url(#${g})" stroke="${dk}" stroke-width="2"/>
+  <g stroke="#1a1a1a" stroke-width="2.4"><path d="M36 6 H64 M36 10 H64 M36 14 H64"/></g>
+  <rect x="24" y="4" width="9" height="6" rx="2" fill="#fff7cf"/><rect x="67" y="4" width="9" height="6" rx="2" fill="#fff7cf"/>
+  <rect x="7" y="50" width="86" height="${H-54}" rx="10" fill="url(#${g})" stroke="${dk}" stroke-width="2"/>
+  <rect x="13" y="53" width="74" height="15" rx="4" fill="#203347"/><path d="M18 54 H36 L28 66 H15Z" fill="#fff" opacity=".2"/>
+  <g fill="#1f3247">${win}</g>
+  <path d="M16.5 74 V${H-14} M83.5 74 V${H-14}" stroke="#1a1a1a" stroke-width="3"/>
+  <rect x="20" y="74" width="60" height="${H-96}" rx="6" fill="${lt}" opacity=".45"/>
+  <rect x="38" y="96" width="24" height="16" rx="2" fill="${shade(c,-.15)}" stroke="${dk}"/><rect x="38" y="${H-80}" width="24" height="16" rx="2" fill="${shade(c,-.15)}" stroke="${dk}"/>
+  <circle cx="14" cy="72" r="3" fill="#ef4444"/><circle cx="86" cy="72" r="3" fill="#ef4444"/><circle cx="14" cy="${H-14}" r="3" fill="#f59e0b"/><circle cx="86" cy="${H-14}" r="3" fill="#f59e0b"/>
+  <polygon points="-3,88 3,82 9,82 9,82 9,100 3,100 -3,94" fill="#dc2626" stroke="#fff" stroke-width="1.5"/>
+  <text x="50" y="${H/2+(arrow?40:0)}" transform="rotate(-90 50 ${H/2+(arrow?40:0)})" text-anchor="middle" dominant-baseline="middle" font-size="17" font-weight="900" font-family="system-ui,sans-serif" fill="#1a1a1a" opacity=".8">SCHOOL</text>
+  <rect x="11" y="${H-8}" width="10" height="4" rx="2" fill="#dc2626"/><rect x="79" y="${H-8}" width="10" height="4" rx="2" fill="#dc2626"/>
+  ${arrow?ARW(32,.9):''}`}
+function busInner(ci,len,arrow,kind){
+  if(kind==='esc'||ci===ESCC)return jeepInner(arrow);
+  if(ci===VIPC)return limoInner(len,arrow);
+  if(kind==='school')return schoolInner(ci,len,arrow);
+  if(kind==='taxi'||kind==='car'||len===1)return carInner(ci,arrow,kind==='taxi');
+  const wn=curWorld?curWorld.name:'Miestas',vip=ci===VIPC,hid=ci===HIDC,esc=ci===ESCC;
+  const c=COLORS[ci],H=100*len,dk=shade(c,-.42),md=shade(c,-.15),lt=shade(c,vip?.12:.3),g='bg'+ci;let win='';
+  for(let y=30;y<H-32;y+=25)win+=`<rect x="9.5" y="${y}" width="6" height="20" rx="1.5"/><rect x="84.5" y="${y}" width="6" height="20" rx="1.5"/>`;
+  const mid=H/2,chev=`<path d="M34 ${mid+11} L50 ${mid-9} L66 ${mid+11}" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><path d="M34 ${mid+11} L50 ${mid-9} L66 ${mid+11}" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const deco=vip?`<path d="M16 32V${H-32}M84 32V${H-32}" stroke="#e7c35a" stroke-width="3"/><path d="M36 ${arrow?H-50:mid+8} l4 -16 l7 9 l3 -12 l3 12 l7 -9 l4 16 Z" fill="#f2c94c" stroke="#a87b16" stroke-width="1.5"/>`
+    :esc?`<rect x="30" y="${arrow?36:mid-8}" width="40" height="14" rx="4" fill="#111"/><rect x="32" y="${arrow?38:mid-6}" width="17" height="10" rx="3" fill="#3b82f6"/><rect x="51" y="${arrow?38:mid-6}" width="17" height="10" rx="3" fill="#ef4444"/>`
+    :kind==='dd'?`<rect x="20" y="34" width="60" height="${H-68}" rx="6" fill="${dk}" opacity=".35"/><g fill="#d5ecff" opacity=".45">${Array.from({length:Math.floor((H-80)/26)},(_,i)=>`<rect x="25" y="${42+i*26}" width="50" height="14" rx="3"/>`).join('')}</g><text x="50" y="${H-48}" text-anchor="middle" font-size="22" font-weight="900" fill="#facc15" font-family="system-ui">2</text>`
+    :kind==='school'?`<rect x="18" y="34" width="64" height="${H-68}" rx="6" fill="#facc15" opacity=".55"/><path d="M18 ${H*.4}H82M18 ${H*.6}H82" stroke="#111" stroke-width="5"/><polygon points="88,${H*.3} 95,${H*.3} 99,${H*.3+5} 99,${H*.3+12} 95,${H*.3+16} 88,${H*.3+16} 84,${H*.3+12} 84,${H*.3+5}" fill="#dc2626" stroke="#fff" stroke-width="1.5"/>`
+    :kind==='mini'?`<rect x="26" y="40" width="48" height="${H-80}" rx="8" fill="#fff" opacity=".35"/><path d="M14 ${H-40}H86" stroke="#fff" stroke-width="5" opacity=".7"/>`
+    :hid?`<text x="50" y="${arrow?mid-14:mid+14}" text-anchor="middle" font-size="40" font-weight="900" fill="#fff" opacity=".9" font-family="system-ui">?</text>`:roofDeco(wn,H,len);
+  return `<defs><linearGradient id="${g}" x1="0" x2="1"><stop offset="0" stop-color="${dk}"/><stop offset=".13" stop-color="${c}"/><stop offset=".5" stop-color="${lt}"/><stop offset=".87" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>
+  <linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b94ba"/><stop offset="1" stop-color="#1b2f46"/></linearGradient></defs>
+  <rect x="2" y="-1" width="96" height="${H+5}" rx="19" fill="rgba(0,0,0,.28)"/>
+  <g fill="#111417"><rect x="3" y="${H*.11}" width="9" height="19" rx="3"/><rect x="88" y="${H*.11}" width="9" height="19" rx="3"/><rect x="3" y="${H*.79}" width="9" height="19" rx="3"/><rect x="88" y="${H*.79}" width="9" height="19" rx="3"/></g>
+  <rect x="-1" y="15" width="10" height="6" rx="2.5" fill="${dk}"/><rect x="91" y="15" width="10" height="6" rx="2.5" fill="${dk}"/>
+  <rect x="7" y="2" width="86" height="${H-4}" rx="15" fill="url(#${g})"/>
+  <rect x="11" y="0" width="78" height="6" rx="3" fill="#2a2f36"/><rect x="13" y="${H-6}" width="74" height="6" rx="3" fill="#2a2f36"/>
+  <path d="M13 27 Q13 9 28 8 H72 Q87 9 87 27 Z" fill="url(#gl)"/><path d="M21 11 H40 L31 24 H17Z" fill="#fff" opacity=".2"/>
+  <g fill="#1f3247">${win}</g>
+  <rect x="18" y="31" width="64" height="${H-60}" rx="7" fill="${lt}" opacity=".5"/>
+  <rect x="40" y="35" width="20" height="10" rx="2" fill="${md}" stroke="${dk}" stroke-width="1"/>
+  ${deco}${arrow?chev:''}
+  <rect x="24" y="${H-18}" width="52" height="9" rx="3" fill="url(#gl)"/>
+  <rect x="11" y="2" width="11" height="5" rx="2" fill="#fff7cf"/><rect x="78" y="2" width="11" height="5" rx="2" fill="#fff7cf"/>
+  <rect x="11" y="${H-8}" width="10" height="4" rx="2" fill="#dc2626"/><rect x="79" y="${H-8}" width="10" height="4" rx="2" fill="#dc2626"/>
+  <rect class="door" x="88" y="29" width="6" height="24" rx="1.5" fill="#0b0f14"/>`;
+}
+const busSVG=(ci,len,arrow,kind)=>`<svg viewBox="0 0 100 ${100*len}" width="100%" height="100%" overflow="visible">${busInner(ci,len,arrow,kind)}</svg>`;
+function lotBusSVG(b){
+  const L=100*b.len,h=b.dir%2===1;
+  const tr=['',`translate(${L},0) rotate(90)`,`translate(100,${L}) rotate(180)`,`translate(0,100) rotate(-90)`][b.dir];
+  return `<svg viewBox="0 0 ${h?L:100} ${h?100:L}"><g transform="${tr}">${busInner(b.hidden?HIDC:b.color,b.len,true,b.kind)}</g></svg>`;
+}
+const SK=['#f3d2b1','#e0b48c','#c68c5e','#8d5a3b'],PA=['#2d3748','#1e3a5f','#4a3b2a','#3f3f46','#52525b'],HA=['#2b1d14','#5a3a1e','#d9b26a','#1a1a1a','#8b3a1a'];
+function hr(n){n=Math.imul(n^0x9e3779b9,0x85ebca6b);n^=n>>>13;n=Math.imul(n,0xc2b2ae35);n^=n>>>16;return (n>>>0)/4294967296}
+function makeStick(ci,seed,old){
+  const wn=curWorld?curWorld.name:'Miestas',vip=ci===VIPC,kid=ci===KIDC;
+  const h=k=>hr(seed*13+k),c=vip?'#1f2937':kid?['#ff2d55','#00b7ff','#2ee05a','#b84dff','#ff3cac','#00e0c6','#ff7a00'][Math.floor(h(9)*7)]:COLORS[ci],sk=SK[Math.floor(h(1)*4)],pa=vip?'#111827':kid?['#1d4ed8','#e11d48','#059669','#7c3aed','#f59e0b'][Math.floor(h(2)*5)]:PA[Math.floor(h(2)*5)],ha=HA[Math.floor(h(3)*5)],pony=h(4)<.35;
+  const bag=ci===KIDC||(wn==='Miškas'?h(7)<.8:h(7)<.3),puffy=wn==='Žiema';
+  const e=document.createElement('div');e.className='st i'+(1+Math.floor(h(5)*6));e.dataset.c=ci;e.dataset.s=seed;
+  e.style.setProperty('--d',(-h(6)*6).toFixed(2)+'s');
+  let hat='',neck='';const sr=old===true;
+  if(vip)hat=`<rect x="5.6" y="-2.6" width="6.8" height="6" rx="1" fill="#111827"/><rect x="5.6" y="1.6" width="6.8" height="1.4" fill="#f2c94c"/><rect x="3.4" y="3" width="11.2" height="1.6" rx=".8" fill="#111827"/>`,neck=`<path d="M8 11 L9 14 L10 11Z" fill="#f2c94c"/>`;
+  else if(wn==='Miškas')hat=`<path d="M3 5.6 H15 L13.2 3.4 Q9 .4 4.8 3.4Z" fill="${['#6b7d3a','#8a6d3b','#5a6b4a'][Math.floor(h(8)*3)]}"/>`;
+  else if(wn==='Dykuma')hat=`<ellipse cx="9" cy="4.4" rx="7.6" ry="1.6" fill="#d9b46a"/><path d="M5.6 4.4 Q6 .8 9 .8 Q12 .8 12.4 4.4Z" fill="#e3c27e"/><rect x="9.6" y="5.3" width="4" height="1.5" rx=".7" fill="#111"/>`;
+  else if(wn==='Žiema'){const bc=['#e5e7eb','#1f2937','#b91c1c','#1e40af'][Math.floor(h(8)*4)];hat=`<path d="M4.4 5.4 Q4.6 .6 9 .6 Q13.4 .6 13.6 5.4Z" fill="${bc}"/><rect x="4.2" y="4.4" width="9.6" height="1.8" rx=".9" fill="${shade(bc.length===7?bc:'#e5e7eb',-.2)}"/><circle cx="9" cy="0" r="1.8" fill="#fff"/>`;neck=`<rect x="5.2" y="9.4" width="7.6" height="2.6" rx="1.2" fill="${shade(c,-.35)}"/><rect x="10.4" y="10.6" width="2" height="4.6" rx="1" fill="${shade(c,-.35)}"/>`}
+  if(kid)hat=`<path d="M4.4 5.4 Q4.6 .8 9 .8 Q13.4 .8 13.6 5.4Z" fill="#fbbf24"/><rect x="9" y="4.4" width="6.2" height="1.6" rx=".8" fill="#f59e0b"/>`;
+  if(old==='pram'){neck=`<g><rect x="12.5" y="18" width="8" height="6" rx="2.5" fill="#60a5fa"/><path d="M12.5 18 Q16 13 20.5 18" fill="#2563eb"/><circle cx="14" cy="26" r="1.6" fill="#111"/><circle cx="19.5" cy="26" r="1.6" fill="#111"/><path d="M10.5 16 L12.5 19" stroke="#111" stroke-width="1.2"/></g>`;e.dataset.pram=1}
+  if(sr){hat=`<path d="M4.6 5.6 A4.4 4.4 0 0 1 13.4 5 Q12 2.6 9 2.4 Q5.6 2.6 4.6 5.6Z" fill="#e5e7eb"/>`;neck=`<path d="M12.5 15 L14.5 31" stroke="#7a5230" stroke-width="1.6" stroke-linecap="round"/>`;e.classList.add('old');e.dataset.old=1}
+  const hair=hat?'':`<path d="M4.6 6.2 A4.4 4.4 0 0 1 13.4 5.2 Q12.4 1.9 9 1.6 Q5.2 1.9 4.6 6.2Z" fill="${ha}"/>${pony?`<circle cx="4.2" cy="7.6" r="1.8" fill="${ha}"/>`:''}`;
+  e.innerHTML=`<svg width="18" height="32" viewBox="0 0 18 32"><g class="fig"><g${kid?' transform="translate(2.2 7.2) scale(.76)"':''}>
+  <line class="l1" x1="9" y1="21" x2="7" y2="30.5" stroke="${kid?sk:pa}" stroke-width="${kid?2.8:3.2}" stroke-linecap="round"/>
+  <line class="l2" x1="9" y1="21" x2="11" y2="30.5" stroke="${kid?shade(sk,-.12):shade(pa,-.25)}" stroke-width="${kid?2.8:3.2}" stroke-linecap="round"/>${kid?`<rect x="5.2" y="20" width="7.6" height="5.2" rx="1.6" fill="${pa}"/><circle cx="7" cy="30.6" r="1.7" fill="#fff"/><circle cx="11" cy="30.6" r="1.7" fill="#fff"/>`:''}
+  <line class="a1" x1="9" y1="13" x2="7.5" y2="20.5" stroke="${shade(c,-.3)}" stroke-width="${puffy?3.4:2.7}" stroke-linecap="round"/>
+  ${bag?`<rect x="${wn==='Miškas'?1.8:2.6}" y="11" width="${wn==='Miškas'?5.4:4.5}" height="${wn==='Miškas'?10:8}" rx="1.6" fill="${wn==='Miškas'?'#7a5a32':shade(pa,.25)}"/>`:''}
+  <rect x="${puffy?4.6:5.5}" y="10.5" width="${puffy?8.8:7}" height="12" rx="${puffy?4:3.2}" fill="${c}"/>${vip?`<path d="M9 10.5 V22" stroke="#f2c94c" stroke-width=".8"/>`:''}
+  <line class="a2" x1="9" y1="13" x2="10.5" y2="20.5" stroke="${c}" stroke-width="${puffy?3.4:2.7}" stroke-linecap="round"/>
+  <g class="hd"><circle cx="9" cy="6" r="4.4" fill="${sk}"/>${hair}<circle cx="11.7" cy="6.3" r=".65" fill="#3b2a20"/>${hat}</g>${neck}
+  </g></g></svg>`;if(kid)e.classList.add('kid');
+  return e;
+}
+
+/* ===================== VALDYMAS ===================== */
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let unlocked=store.get('busjam.unlocked',1),level=store.get('busjam.level',1),best=store.get('busjam.stars',{});
+let holdUntil=0,game,cell,U,M,WW=0,WH=0,startT=0,endT=0,gen=0,curWorld=null;const qEls=new Map(),V={z:1,tx:0,ty:0};
+
+function newGame(L,showWorld){
+  if(L<1)L=1;while(L>1&&!playable(L))L--;
+  gen++;level=L;store.set('busjam.level',level);$('menu').classList.remove('show');
+  game=new Game(level);startT=0;endT=0;
+  const w=worldOf(level);
+  $('lvlLabel').textContent='Lygis '+lLoc(level)+KICON[kindOf(level)];$('worldLabel').textContent=w.emoji+' '+w.name+(wIdx(level)>=WORLDS.length?' '+(Math.floor(wIdx(level)/WORLDS.length)+1):'');
+  $('prev').disabled=level<=1;$('next').disabled=!playable(level+1);
+  $('overlay').classList.remove('show');$('fx').innerHTML='';
+  $('queue').innerHTML='';qEls.clear();$('platform').classList.toggle('two',game.mod==='twoq');
+  if(curWorld!==w){curWorld=w;buildAmbient(w)}musicFor(w);setTimeout(updChal,0);
+  layout();buildBays();buildWorld();defaultView();renderQueue();renderStats();
+  const kd=kindOf(level);
+  if(showWorld||lLoc(level)===1)toast(w.emoji+' '+w.name,'Pasaulis '+(wIdx(level)+1));
+  else if(kd!=='n'){toast({boss:'🔥 Bosas',big:'👑 Didysis bosas',mega:'💀 Bosų bosas'}[kd],{pax:'VIP keleiviai laukia neilgai',bus:'VIP autobusas laukia neilgai',esc:'VIP išvažiuos tik po palydos 🚓',all:'VIP: palyda, nekantrūs keleiviai ir autobusas'}[game.mech.vip]);setTimeout(()=>sfx('boss'),300)}
+  else if(game.mech.first&&game.mech.on.length)toast(game.mech.on.map(m=>mechName(m,w.name)).join(' · '),MECHSUB[game.mech.on[game.mech.on.length-1]]);
+  else if((WW*V.z>$('view').clientWidth+2||WH*V.z>$('view').clientHeight+2)&&!store.get('busjam.panHint',0)){store.set('busjam.panHint',1);toast('👆 Slink pirštu','Dviem pirštais – mastelis')}
+  VIP.paxT=0;VIP.busDl=0;VIP.last=-1;plowT=0;setTimeout(revealAll,50);
+  const hi=hintItems(),seen=store.get('busjam.seenHints',{}),fresh=hi.filter(h=>h[0]!=='chal'&&!seen[h[0]]);
+  $('hint').classList.toggle('new',hi.some(h=>h[0]!=='chal'&&h[0]!=='basic'));
+  if(fresh.length){const g0=gen;setTimeout(()=>{if(gen===g0&&game.moves===0)showHints()},900)}
+}
+function mechName(m,wn){return {obst:{Miestas:'🚧 Kelio darbai',Miškas:'🌲 Užvirtę medžiai',Dykuma:'🪨 Akmenys ant kelio',Žiema:'☃️ Pusnys ant kelio'}[wn],locked:{Miestas:'🔧 Sugedę autobusai',Žiema:'❄️ Užšalę autobusai'}[wn]||'🔒 Užrakinti autobusai',
+  lights:'🚦 Šviesoforai',animals:'🦌 Gyvūnai ant kelio',tram:'🚋 Tramvajus',oneway:'➜ Vienos krypties gatvės',caravan:'🐪 Karavanas',heat:'🔥 Perkaitę varikliai',plow:'🚜 Sniego valytuvas',freeze:'🥶 Užšąla laukdami',mud:'🟫 Purvo balos',leaves:'🍂 Lapų krūvos',truck:'🚚 Pristatymo sunkvežimiai',storm:'🌪️ Smėlio audra',ice:'🧊 Slidus ledas',hidden:{Miškas:'🌫️ Rūkas slepia spalvas',Dykuma:'🏜️ Smėlis slepia spalvas'}[wn]||'❓ Paslėptos spalvos',roadblk:{Miškas:'🌲 Užvirtę medžiai'}[wn]||'🚧 Uždaryti keliai'}[m]}
+const MECHSUB={tram:'Saugokis pravažiuojančio tramvajaus',oneway:'Išvažiavę autobusai suka į dešinę',caravan:'Lėtai juda išoriniu keliu',heat:'Atsitrenkęs autobusas 2 ėjimus stovi',plow:'Kartais užpila išvažiavimą',freeze:'Laisvi autobusai užšąla po 40 s',leaves:'Matai tik autobusų priekius',animals:'Kartais per kelią pereina elniai',mud:'Pirmas paspaudimas – užstringa',lights:'Degant raudonai autobusas neišvažiuos',obst:'Kliūtis dings, kai įlips nurodytas keleivių skaičius',roadblk:'Medį nupjaus, kai įlips nurodytas keleivių skaičius',locked:'Skaičius mažėja, kai išvažiuoja kiti autobusai',hidden:'Spalva paaiškėja, kai kelias laisvas'};
+function chalText(c){const cn=['raudoną','mėlyną','žalią','geltoną','violetinį','oranžinį','rožinį','žalsvą'];
+  return {moves:`Įveik per ${c.n} ėjimų`,time:`Įveik per ${fmt((c.s||0)*1000)}`,slots:'Neužpildyk visų 5 vietų',first:`Pirmą išleisk ${cn[c.color]} autobusą`,
+    combo:'Kombo: 3 tos pačios spalvos autobusai iš eilės',clean:'Nė vienas autobusas stotelėje ne ilgiau 20 s'+(game&&game.vips&&game.vips.length?' (VIP neskaičiuojamas)':''),frugal:'Nenaudok ypatingų vietų stotelėje',quiet:'Nespausk užrakintų autobusų'}[c.type]}
+function updChal(){const e=$('chal');e.style.display='block';if(!game.chal){const el=startT?(endT||performance.now())-startT:0;e.innerHTML=parLine(el);e.className='';return}
+  const c=game.chal,el=startT?(endT||performance.now())-startT:0,ok=game.chalOk(el);
+  const lost=!ok&&(c.type!=='time'||el>c.s*1000)&&(c.type!=='first'||game.firstColor!=null)&&c.type!=='combo';
+  let pr='';if(c.type==='moves')pr=` (${game.moves}/${c.n})`;else if(c.type==='time')pr=` (${fmt(Math.max(0,c.s*1000-el))})`;else if(c.type==='slots')pr=` (maks. ${game.maxSlots}/4)`;else if(c.type==='combo'){const e=game.exitCols;let run=0;for(let i=e.length-1;i>=0&&e[i]===e[e.length-1];i--)run++;pr=ok?' ✓':` (${Math.min(run,3)}/3)`}
+  e.innerHTML=`<div class="${lost?'bad':(game.status==='win'&&ok?'ok':'')}">🎯 ${chalText(c)+pr}</div>`+parLine(el);e.className=''}
+function parLine(el){const tOk=el<=game.parTime*1000,mOk=game.moves<=game.parMoves;return `<div class="par"><span class="${tOk?'':'bad'}">⏱ ${fmt(Math.max(0,game.parTime*1000-el))}</span> · <span class="${mOk?'':'bad'}">👣 ${game.moves}/${game.parMoves}</span></div>`}
+setInterval(()=>{if(game&&startT&&!endT)updChal()},500);
+function hintItems(){const g=game,wn=curWorld.name,o=[],on=new Set(g.mech.on);
+  if(lLoc(level)<=3)o.push(['basic','👆','Kaip žaisti','Paspausk autobusą – jis važiuos rodyklės kryptimi, jei kelias laisvas. Keleiviai lipa į savo spalvos autobusą. Jei stotelė užsipildo, o pirmam keleiviui nėra autobuso – pralaimi.']);
+  if(g.robs.length)o.push(['obst_'+wn,{Miestas:'🚧',Miškas:'🌲',Dykuma:'🪨',Žiema:'☃️'}[wn]||'🚧',mechName(on.has('roadblk')?'roadblk':'obst',wn).replace(/^\S+ /,''),'Uždaro visą kvartalo išvažiavimą. Ten stovintys autobusai atsitrenks. Kliūtis dings, kai įlips nurodytas keleivių skaičius 👥.']);
+  if(g.lights.length)o.push(['lights','🚦','Šviesoforai','Kai dega raudona, autobusas iš tos atkarpos neišvažiuos ir atsitrenks. Lauk žalios.']);
+  if(g.buses.some(b=>b.lock>0))o.push(['locked_'+wn,{Miestas:'🔧',Žiema:'❄️'}[wn]||'🔒',mechName('locked',wn).replace(/^\S+ /,''),'Skaičius rodo, kiek kitų autobusų turi išvažiuoti, kol šis galės judėti.']);
+  if(g.buses.some(b=>b.hidden))o.push(['hidden','❓',mechName('hidden',wn).replace(/^\S+ /,''),'Pilko autobuso spalva paaiškėja tik tada, kai jo kelias tampa laisvas.']);
+  const vm=g.vipId>=0&&g.mech.vip;
+  if(vm==='pax'||vm==='all'||vm==='esc')o.push(['vip_pax','🎩','VIP keleiviai','Keleivis su cilindru eilės priekyje laukia tik 10 s. Iki tol jo juodas VIP autobusas turi stovėti stotelėje.']);
+  if(vm==='bus'||vm==='all')o.push(['vip_bus','👑','Nekantrus VIP autobusas','Atvykęs į stotelę VIP autobusas laukia ribotą laiką; laikmatis atsinaujina, kai įlipa VIP keleivis. Neatvežk jo per anksti.']);
+  if(vm==='esc'||vm==='all')o.push(['vip_esc','🚓','VIP palyda','VIP autobusas neišvažiuos, kol neišvažiuos abu juodi palydos automobiliai. Jie lauks stotelėje ir išvažiuos kartu su VIP.']);
+  const st=g.stype.filter(Boolean).map(t=>t.type);
+  if(st.includes('color'))o.push(['sp_color','🟧','Spalvota vieta','Paryškinta spalva vieta stotelėje tinka tik tos spalvos autobusui.']);
+  if(st.includes('short'))o.push(['sp_short','🌳','Sutrumpinta vieta','Vieta su žaliąja salele tinka tik trumpiems (2 langelių) autobusams.']);
+  if(st.includes('repair'))o.push(['sp_repair','🚧','Remontuojama vieta','Bus atidaryta, kai iš stotelės išvažiuos nurodytas skaičius autobusų 🔧.']);
+  if(g.movers.some(m=>m.kind==='tram'))o.push(['tram','🚋','Tramvajus','Bėgiais retkarčiais pravažiuoja tramvajus. Autobusas, išvažiuojantis tuo metu į jo kelią, atsitrenkia.']);
+  if(g.movers.some(m=>m.kind==='caravan'))o.push(['caravan','🐪','Kupranugarių karavanas','Lėtai eina išoriniu keliu pirmyn ir atgal. Kur jis yra, ten išvažiuoti negalima.']);
+  if(g.oneway.length)o.push(['oneway','➜','Vienos krypties gatvės','Išvažiavęs autobusas suka į dešinę. Jei mėlyna rodyklė rodo priešingai – atsitrenks. Kryptis keičiasi kas 12 s (⇄ rodo, po kiek).']);
+  if(g.mech.heat)o.push(['heat','🔥','Perkaitę varikliai','Atsitrenkęs autobusas perkaista ir 2 tavo ėjimus negali važiuoti.']);
+  if(g.mech.plow)o.push(['plow','🚜','Sniego valytuvas','Kas ~35 s valytuvas supila pusnį ant kurio nors išvažiavimo. Ji dingsta įlipus 5 keleiviams arba po 25 s.']);
+  if(g.mech.freeze)o.push(['freeze','🥶','Užšąla laukdami','Autobusas, kurio kelias laisvas, bet jo neliečiai ilgiau nei 40 s, užšąla – atšils išvažiavus 2 kitiems.']);
+  if(g.animals.length)o.push(['animals','🦌','Gyvūnai ant kelio','Retkarčiais per kelią pereina elniai – tuo metu iš tos atkarpos autobusai neišvažiuoja (ženklas 🦌 rodo, kur).']);
+  if(g.mud.length)o.push(['mud','🟫','Purvo balos','Autobusas, kurio kelyje ar po kuriuo yra bala, pirmą kartą užstringa – spausk antrą kartą.']);
+  if(g.buses.some(b=>b.leafy))o.push(['leaves','🍂','Lapų krūvos','Lapai uždengia autobuso galą – matai tik priekį ir kryptį, bet ne ilgį. Atsidengia, kai kelias laisvas.']);
+  if(g.boss&&lLoc(level)>=10)o.push(['bosshard','🔥','Bosas: tik tinkama tvarka','Keleivių eilė sumaišyta taip, kad stotelėje reikia visų vietų. Klaidos beveik neatleidžiamos – suklydus gali padėti 🧰 pagalbos už ★.']);
+  if(g.robs.some(o=>o.kind==='truck'))o.push(['truck','🚚','Pristatymo sunkvežimis','Užstoja kvartalo išvažiavimą ir išvažiuos po nurodyto tavo ėjimų skaičiaus.']);
+  if(g.storm)o.push(['storm','🌪️','Smėlio audra','Kas 30 s smėlio audra uždengia kairę aikštelės pusę – tada ten esančių autobusų paspausti negalima.']);
+  if(g.ice.length)o.push(['ice','🧊','Slidus ledas','Autobusas, stovintis ant ledo, užuot atsitrenkęs nuslysta iki kliūties – taip pakeičia aikštelę.']);
+  if(g.vips.length>1)o.push(['vip2','👑','Du VIP autobusai','Šiame lygyje du VIP autobusai ir 8 VIP keleiviai – abu užima vietą stotelėje.']);
+  if(g.buses.some(b=>b.kind==='taxi'))o.push(['taxi','🚕','Taksi','Užima vieną langelį, telpa tik 2 keleiviai.']);
+  if(g.buses.some(b=>b.kind==='school'))o.push(['school','🚸','Mokyklinis autobusas','Geltonas, ilgu priekiu ir su STOP ženklu. Veža tik vaikus (su geltonomis kepuraitėmis) – telpa 9. Vaikai į kitus autobusus nelipa.']);
+  if(g.wt.some(Boolean))o.push(['pram','👶','Keleivis su vežimėliu','Užima 2 vietas – autobuse turi būti bent 2 laisvos vietos.']);
+  if(st.includes('temp'))o.push(['sp_temp','⏱','Laikina vieta','Autobusas gali stovėti tik 14 s. Jei nespėja prisipildyti – grįžta į aikštelę su jau įlipusiais keleiviais.']);
+  if(g.buses.some(b=>b.kind==='dd'))o.push(['veh_dd','🚌','Dviaukštis autobusas','Pažymėtas „2“ ant stogo – telpa 8 keleiviai.']);
+  if(g.buses.some(b=>b.kind==='car'))o.push(['veh_car','🚗','Lengvoji mašina','Užima vieną langelį, telpa 3 keleiviai (be taksi ženklo).']);
+  if(g.mod==='twoq')o.push(['mod_twoq','👥','Dvi eilės','Keleiviai stovi dviem eilėmis. Lipti gali pirmas iš bet kurios eilės – nereikia laukti, kol atvažiuos autobusas kitam.']);
+  if(g.mod==='senior')o.push(['mod_senior','🧓','Lėtas senjoras','Senjoras su lazdele eina lėtai – kol jis lipa, visa eilė laukia.']);
+  if(g.mod==='friends')o.push(['mod_friends','🤝','Draugų grupė','Trys draugai (pažymėti 🤝) lipa tik į tą patį autobusą – jame turi būti bent 3 laisvos vietos.']);
+  if(g.chal)o.push(['chal','🎯','Iššūkis: '+chalText(g.chal),'Įvykdęs gausi ★. Iš viso 4 ★: už įveiktą lygį, už laiką, už ėjimų skaičių (atsitrenkimai – irgi ėjimai) ir už šią užduotį.']);
+  return o}
+function showHints(){const it=hintItems();showCard(`<h2>💡 Šiame lygyje</h2><div class="hl">${it.map(h=>`<div><b>${h[1]}</b><p><strong>${h[2]}</strong>${h[3]}</p></div>`).join('')}</div><button class="primary" id="hok">Supratau</button>`);
+  $('hok').onclick=()=>$('overlay').classList.remove('show');$('hint').classList.remove('new');
+  const seen=store.get('busjam.seenHints',{});it.forEach(h=>seen[h[0]]=1);store.set('busjam.seenHints',seen)}
+function toast(t,s){const el=$('toast');el.innerHTML=t+(s?`<small>${s}</small>`:'');el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2600)}
+function layout(){
+  const w=worldOf(level),vw=$('view').clientWidth;
+  cell=Math.max(44,Math.min(58,Math.floor(vw/(game.W+3.4))));M=Math.round(cell*.7);U=Math.round(cell*.86);
+  document.documentElement.style.setProperty('--curb',w.curb);
+  document.body.style.backgroundImage=css(w.out);document.body.style.backgroundSize=cell*4.2+'px';
+  $('platform').style.background=css(w.plat);$('platform').style.backgroundSize=cell*2+'px';
+  $('bays').style.backgroundImage=css(w.road);$('bays').style.backgroundSize=cell*4+'px';
+  $('bays').style.height=U*3+30+'px';
+  const ez=$('esczone');ez.innerHTML='';ez.style.display=game.esc&&game.esc.length?'block':'none';ez.style.height=Math.round(U*1.25)+'px';ez.style.backgroundImage=css(w.road);ez.style.backgroundSize=cell*4+'px';
+}
+/* pasaulio koordinatės: viršuje pagrindinis kelias (y=-1), aikštelė y=0..H-1, apačioje žiedas (y=H);
+   x=-1 ir x=W – šoniniai žiedo keliai. Visas kelių tinklas piešiamas kaip vienas paviršius su užapvalintomis sankryžomis. */
+const wx=x=>M+(x+1.5)*cell,wy=y=>(y+1.5)*cell;
+function div(cls,st){const d=document.createElement('div');d.className=cls;Object.assign(d.style,st);return d}
+function buildWorld(){
+  const w=worldOf(level),{W,H,rc,rb}=game,bands=ranges(W,rc),wd=$('world'),vw=$('view').clientWidth,px=v=>v+'px',C=cell;
+  const ringW=(W+2)*C;M=Math.max(Math.round(C*1.4),Math.ceil((vw/0.75-ringW)/2));
+  WW=ringW+2*M;WH=Math.max((H+2)*C+Math.round(C*1.6),Math.ceil($('view').clientHeight/0.75));
+  const ox=M+C,oy=C,xL=M,xR=M+ringW,yB=(H+2)*C,rf=C*.6,Rr=C*1.15,f=v=>v.toFixed(1);
+  wd.innerHTML='';Object.assign(wd.style,{width:px(WW),height:px(WH)});
+  const pat=(id,u,sz)=>`<pattern id="${id}" patternUnits="userSpaceOnUse" width="${sz}" height="${sz}"><image href="${u}" width="${sz}" height="${sz}"/></pattern>`;
+  // kelių paviršius
+  const road=`M0 0H${WW}V${C}H${xR+rf}Q${xR} ${C} ${xR} ${C+rf}V${yB-Rr}Q${xR} ${yB} ${xR-Rr} ${yB}H${xL+Rr}Q${xL} ${yB} ${xL} ${yB-Rr}V${C+rf}Q${xL} ${C} ${xL-rf} ${C}H0Z`;
+  const curb=`M${WW} ${C}H${xR+rf}Q${xR} ${C} ${xR} ${C+rf}V${yB-Rr}Q${xR} ${yB} ${xR-Rr} ${yB}H${xL+Rr}Q${xL} ${yB} ${xL} ${yB-Rr}V${C+rf}Q${xL} ${C} ${xL-rf} ${C}H0`;
+  let g='';
+  for(const [bi,[x0,x1]] of bands.entries())for(const [y0,y1] of ranges(H,rb[bi]))
+    g+=`<rect x="${ox+x0*C}" y="${oy+y0*C}" width="${(x1-x0+1)*C}" height="${(y1-y0+1)*C}" rx="${C*.35}" fill="url(#pL)" stroke="${w.curb}" stroke-width="5"/>`
+     +`<rect x="${ox+x0*C+5}" y="${oy+y0*C+5}" width="${(x1-x0+1)*C-10}" height="${(y1-y0+1)*C-10}" rx="${C*.28}" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="6"/>`;
+  // žymėjimas
+  const gp=C*.2,X0=wx(-1),X1=wx(W),Y1=wy(H),r=Rr-C/2,top=C+C*.5;
+  let d=`M0 ${C/2}H${WW}M${X0} ${top}V${Y1-r}Q${X0} ${Y1} ${X0+r} ${Y1}H${X1-r}Q${X1} ${Y1} ${X1} ${Y1-r}V${top}`;
+  for(const c of rc)d+=`M${wx(c)} ${top}V${oy+H*C-C*.45}`;
+  bands.forEach(([a,b],bi)=>{for(const rw of rb[bi])d+=`M${ox+a*C+C*.45} ${wy(rw)}H${ox+(b+1)*C-C*.45}`});
+  let z='';const zb=(x,y,a,b)=>{z+=`<rect x="${f(x)}" y="${f(y)}" width="${f(a)}" height="${f(b)}" rx="1" fill="rgba(255,255,255,.6)"/>`};
+  for(const c of [-1,W,...rc]){const x=c<0?xL:c===W?xR-C:ox+c*C;for(let k=0;k<5;k++)zb(x+C*(.08+k*.19),C+C*.06,C*.1,C*.3);
+    g+=`<rect x="${x+2}" y="${C+C*.42}" width="${C-4}" height="3" fill="rgba(255,255,255,.55)"/>`}
+  for(const c of rc)for(let k=0;k<5;k++)zb(ox+c*C+C*(.08+k*.19),oy+H*C-C*.36,C*.1,C*.3);
+  bands.forEach(([a,b],bi)=>{for(const rw of rb[bi])for(const xe of [ox+a*C+C*.04,ox+(b+1)*C-C*.34])for(let k=0;k<5;k++)zb(xe,oy+rw*C+C*(.08+k*.19),C*.3,C*.1)});
+  // dekoracijos tik ten, kur nėra kelio
+  const rg=rng(level*31+7),R0=C*.62;let dec='';const pts=[];
+  const zones=[[R0+4,xL-R0-8,C+R0+6,WH-R0-4],[xR+R0+8,WW-R0-4,C+R0+6,WH-R0-4],[R0+4,WW-R0-4,yB+R0+8,WH-R0-4]];
+  for(const [a,b,c2,e] of zones){if(b<=a||e<=c2)continue;const area=(b-a+2*R0)*(e-c2+2*R0),cnt=Math.round(area/(C*C*4.5));
+    for(let i=0,tries=0;i<cnt&&tries<cnt*8;tries++){const x=a+rg()*(b-a),y=c2+rg()*(e-c2),R=R0*(.7+rg()*.5);
+      if(pts.some(q=>Math.hypot(q[0]-x,q[1]-y)<(q[2]+R)*.95))continue;pts.push([x,y,R]);i++;
+      dec+=w.decor[Math.floor(rg()*w.decor.length)](x,y,Math.min(R,(b>a?R0*1.2:R)))}}
+  wd.innerHTML=`<svg class="ground" width="${WW}" height="${WH}" viewBox="0 0 ${WW} ${WH}"><defs>${pat('pO',w.out,C*4.2)}${pat('pR',w.road,C*4)}${pat('pL',w.lot,C*4)}</defs>
+   <rect width="${WW}" height="${WH}" fill="url(#pO)"/>${dec}<path d="${road}" fill="url(#pR)"/><path d="${curb}" fill="none" stroke="${w.curb}" stroke-width="5"/>
+   ${g}<path d="${d}" stroke="rgba(255,255,255,.5)" stroke-width="2.5" fill="none" stroke-dasharray="${C*.3} ${C*.22}"/>${z}
+   ${game.obst.map(k=>{const x=k%W,y=Math.floor(k/W),rd=game.blk.includes(k);return obstSVG(w.name,ox+(x+.5)*C,oy+(y+.5)*C,C,rd,rc.includes(x))}).join('')}</svg>`;
+  game.inLot.forEach(id=>{
+    const b=game.buses[id],xs=b.cells.map(c=>c[0]),ys=b.cells.map(c=>c[1]),mx=Math.min(...xs),my=Math.min(...ys);
+    const el=div('bus',{left:px(ox+mx*C),top:px(oy+my*C),width:px((Math.max(...xs)-mx+1)*C),height:px((Math.max(...ys)-my+1)*C)});
+    el.dataset.id=id;el.innerHTML=lotBusSVG(b)+lockHTML(b)+leafHTML(b);wd.appendChild(el);
+  });
+  const segBox=o=>{const xs=o.cells.map(c=>wx(c[0])),ys=o.cells.map(c=>wy(c[1]));return {x0:Math.min(...xs)-C/2,y0:Math.min(...ys)-C/2,x1:Math.max(...xs)+C/2,y1:Math.max(...ys)+C/2}};
+  game.robs.forEach((o,i)=>{if(!o.on)return;const bx=segBox(o),mc=o.cells[Math.floor(o.cells.length/2)];
+    const e=div('obs',{left:px(bx.x0),top:px(bx.y0),width:px(bx.x1-bx.x0),height:px(bx.y1-bx.y0)});e.dataset.o=i;
+    const cx=wx(mc[0])-bx.x0,cy=wy(mc[1])-bx.y0;
+    e.innerHTML=`<div class="tape ${o.vert?'v':'h'}"></div><svg width="${bx.x1-bx.x0}" height="${bx.y1-bx.y0}" overflow="visible" style="position:absolute;left:0;top:0">${o.kind==='truck'?truckSVG(cx,cy,C,o.vert):obstSVG(w.name,cx,cy,C,true,o.vert)}</svg><span class="cnt" style="left:${cx}px;top:${cy-C*.62}px">${obsLabel(o)}</span>`;wd.appendChild(e)});
+  // ledas ir smėlio audra
+  if(game.mud.length){const md=document.createElementNS('http://www.w3.org/2000/svg','svg');md.setAttribute('class','ground');md.setAttribute('width',WW);md.setAttribute('height',WH);
+    md.innerHTML=game.mud.map(k=>{const x=ox+(k%W)*C+C/2,y=oy+Math.floor(k/W)*C+C/2,r=hr(k*7+level);return `<ellipse cx="${x}" cy="${y}" rx="${C*(.36+r*.1)}" ry="${C*(.28+r*.08)}" fill="#5b4126" opacity=".85"/><ellipse cx="${x-C*.08}" cy="${y-C*.06}" rx="${C*.18}" ry="${C*.1}" fill="#7a5a3a" opacity=".8"/><circle cx="${x+C*.2}" cy="${y+C*.12}" r="${C*.05}" fill="#a07a50"/>`}).join('');
+    wd.insertBefore(md,wd.children[1])}
+  game.movers.forEach((m,i)=>{if(m.kind==='tram'){const rl=document.createElementNS('http://www.w3.org/2000/svg','svg');rl.setAttribute('class','ground');rl.setAttribute('width',WW);rl.setAttribute('height',WH);
+      const a=m.cells[0],z=m.cells[m.cells.length-1],v=a[0]===z[0];let d='';for(const o of [-.18,.18]){d+=v?`M${wx(a[0])+o*C} ${wy(a[1])-C/2}V${wy(z[1])+C/2}`:`M${wx(a[0])-C/2} ${wy(a[1])+o*C}H${wx(z[0])+C/2}`}
+      rl.innerHTML=`<path d="${d}" stroke="#9ca3af" stroke-width="3"/><path d="${d}" stroke="#e5e7eb" stroke-width="1"/>`;wd.insertBefore(rl,wd.children[2]||null)}
+    for(let k=0;k<m.len;k++){const e=div('mov '+m.kind,{width:px(C*.9),height:px(C*.9),display:'none'});e.dataset.m=i;e.dataset.k=k;e.innerHTML=m.kind==='tram'?'<i></i>':'🐪';wd.appendChild(e)}});
+  game.oneway.forEach((o,i)=>{const bx=segBox(o),e=div('ow',{left:px(bx.x0),top:px(bx.y0),width:px(bx.x1-bx.x0),height:px(bx.y1-bx.y0)});e.dataset.w=i;e.innerHTML='<b>➜</b><span>⇄</span>';wd.appendChild(e)});
+  game.animals.forEach((l,i)=>{const bx=segBox(l),e=div('ani',{left:px(bx.x0),top:px(bx.y0),width:px(bx.x1-bx.x0),height:px(bx.y1-bx.y0)});e.dataset.a=i;e.classList.add(l.vert?'v':'h');
+    e.innerHTML=`<div class="sign">🦌</div><div class="deer">🦌</div>`;wd.appendChild(e)});
+  if(game.ice.length){const ic=document.createElementNS('http://www.w3.org/2000/svg','svg');ic.setAttribute('class','ground');ic.setAttribute('width',WW);ic.setAttribute('height',WH);
+    ic.innerHTML=game.ice.map(k=>{const x=ox+(k%W)*C,y=oy+Math.floor(k/W)*C;return `<rect x="${x+2}" y="${y+2}" width="${C-4}" height="${C-4}" rx="${C*.3}" fill="rgba(190,230,255,.55)" stroke="rgba(255,255,255,.8)" stroke-width="1.5"/><path d="M${x+C*.25} ${y+C*.3}l${C*.18} ${C*.1}M${x+C*.55} ${y+C*.6}l${C*.2} -${C*.08}" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/>`}).join('');
+    wd.insertBefore(ic,wd.children[1])}
+  if(game.storm){const st=div('storm',{left:px(ox),top:px(oy),width:px(W*C/2+C*.5),height:px(H*C)});st.id='storm';wd.appendChild(st)}
+  game.lights.forEach((l,i)=>{const bx=segBox(l),e=div('lgt',{left:px(bx.x0),top:px(bx.y0),width:px(bx.x1-bx.x0),height:px(bx.y1-bx.y0)});e.dataset.l=i;
+    e.innerHTML=`<div class="lamp" style="${l.vert?'left:50%;top:-14px':'left:-14px;top:50%'}"><i></i><i></i></div>`;wd.appendChild(e)});
+}
+/* kliūtys: aikštelėje ir ant kelių */
+function obsLabel(o){return o.kind==='truck'?'🚚 '+Math.max(0,o.t-game.moves)+' ėj.':'👥 '+(o.t-game.qi)}
+function truckSVG(x,y,S,vert){const r=vert?0:90,f=v=>v.toFixed(1);return `<g transform="translate(${f(x)} ${f(y)}) rotate(${r})"><rect x="${f(-S*.42+3)}" y="${f(-S*.8+4)}" width="${f(S*.84)}" height="${f(S*1.6)}" rx="6" fill="rgba(0,0,0,.3)"/>
+  <rect x="${f(-S*.42)}" y="${f(-S*.8)}" width="${f(S*.84)}" height="${f(S*.42)}" rx="7" fill="#e11d48"/><rect x="${f(-S*.34)}" y="${f(-S*.74)}" width="${f(S*.68)}" height="${f(S*.14)}" rx="3" fill="#bfdbfe"/>
+  <rect x="${f(-S*.44)}" y="${f(-S*.36)}" width="${f(S*.88)}" height="${f(S*1.14)}" rx="4" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><text x="0" y="${f(S*.28)}" text-anchor="middle" font-size="${f(S*.32)}" font-family="system-ui">📦</text></g>`}
+function obstSVG(wn,x,y,S,onRoad,vert){
+  const f=v=>v.toFixed(1),cone=(cx,cy)=>`<circle cx="${f(cx+2)}" cy="${f(cy+2)}" r="${f(S*.14)}" fill="rgba(0,0,0,.25)"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(S*.14)}" fill="#f97316"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(S*.09)}" fill="#fff"/><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(S*.05)}" fill="#f97316"/>`;
+  const barrier=(rot)=>{let st='';for(let i=0;i<5;i++)st+=`<rect x="${f(-S*.42+i*S*.168)}" y="${f(-S*.1)}" width="${f(S*.168)}" height="${f(S*.2)}" fill="${i%2?'#fff':'#ef4444'}"/>`;
+    return `<g transform="translate(${f(x)} ${f(y)}) rotate(${rot})"><rect x="${f(-S*.42+3)}" y="${f(-S*.1+3)}" width="${f(S*.84)}" height="${f(S*.2)}" fill="rgba(0,0,0,.25)"/>${st}</g>`+cone(x-S*.32,y+S*.3)+cone(x+S*.32,y-S*.3)};
+  if(onRoad&&wn!=='Dykuma'&&wn!=='Žiema'){
+    if(wn==='Miškas'){const r=vert?0:90;return `<g transform="translate(${f(x)} ${f(y)}) rotate(${r})"><rect x="${f(-S*.5+3)}" y="${f(-S*.12+4)}" width="${f(S)}" height="${f(S*.24)}" rx="${f(S*.1)}" fill="rgba(0,0,0,.28)"/><rect x="${f(-S*.5)}" y="${f(-S*.12)}" width="${f(S)}" height="${f(S*.24)}" rx="${f(S*.1)}" fill="#7a5230"/><path d="M${f(-S*.35)} ${f(-S*.04)}H${f(S*.1)}M${f(-S*.2)} ${f(S*.05)}H${f(S*.3)}" stroke="#5a3a20" stroke-width="2"/><circle cx="${f(-S*.5)}" cy="0" r="${f(S*.12)}" fill="#c89b62" stroke="#7a5230" stroke-width="2"/><circle cx="${f(S*.42)}" cy="${f(-S*.1)}" r="${f(S*.24)}" fill="#2f6b34"/><circle cx="${f(S*.52)}" cy="${f(S*.12)}" r="${f(S*.2)}" fill="#3f8a43"/><circle cx="${f(S*.36)}" cy="${f(S*.18)}" r="${f(S*.14)}" fill="#5fae5c"/></g>`}
+    return barrier(vert?0:90);
+  }
+  if(wn==='Miestas')return barrier(0);
+  if(wn==='Dykuma')return `<ellipse cx="${f(x+3)}" cy="${f(y+4)}" rx="${f(S*.4)}" ry="${f(S*.3)}" fill="rgba(0,0,0,.2)"/><path d="M${f(x-S*.38)} ${f(y+S*.1)} Q${f(x-S*.3)} ${f(y-S*.32)} ${f(x)} ${f(y-S*.3)} Q${f(x+S*.36)} ${f(y-S*.26)} ${f(x+S*.38)} ${f(y+S*.06)} Q${f(x+S*.2)} ${f(y+S*.34)} ${f(x-S*.1)} ${f(y+S*.3)}Z" fill="#9c8063"/><path d="M${f(x-S*.2)} ${f(y-S*.12)} Q${f(x)} ${f(y-S*.26)} ${f(x+S*.18)} ${f(y-S*.1)}" stroke="#bfa588" stroke-width="3" fill="none"/>`;
+  if(wn==='Žiema')return `<ellipse cx="${f(x+3)}" cy="${f(y+4)}" rx="${f(S*.44)}" ry="${f(S*.34)}" fill="rgba(80,110,140,.25)"/><circle cx="${f(x-S*.16)}" cy="${f(y+S*.05)}" r="${f(S*.28)}" fill="#f4f8fc"/><circle cx="${f(x+S*.15)}" cy="${f(y-S*.06)}" r="${f(S*.3)}" fill="#fbfdff"/><circle cx="${f(x+S*.05)}" cy="${f(y+S*.18)}" r="${f(S*.22)}" fill="#eef4fa"/>`;
+  return `<circle cx="${f(x+3)}" cy="${f(y+3)}" r="${f(S*.32)}" fill="rgba(0,0,0,.25)"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.32)}" fill="#8a5a33"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.25)}" fill="#c89b62"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.15)}" fill="none" stroke="#a87c4a" stroke-width="1.5"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.06)}" fill="#a87c4a"/>`;
+}
+function leafHTML(b){if(!b.leafy)return '';const C=cell,st=['top','right','bottom','left'][b.dir];return `<div class="lv-ov" style="${st}:${C}px"></div>`}
+const LOCKSKIN={'Žiema':['ice','❄'],'Miestas':['tow','🔧']};
+function lockHTML(b){if(b.heat>0)return `<div class="lk heat"><span>🔥 ${b.heat}</span></div>`;if(b.esc>0)return `<div class="lk chain"><span>🚓 ${b.esc}</span></div>`;if(!(b.lock>0))return '';const [cls,ic]=LOCKSKIN[curWorld.name]||['chain','🔒'];return `<div class="lk ${cls}"><span>${ic} ${b.lock}</span></div>`}
+/* --- slinkimas ir mastelis --- */
+function zMin(){const v=$('view');return Math.min(1,v.clientWidth/WW,v.clientHeight/WH)}
+function applyV(){const v=$('view'),vw=v.clientWidth,vh=v.clientHeight,sw=WW*V.z,sh=WH*V.z;
+  V.tx=sw<=vw?(vw-sw)/2:Math.min(0,Math.max(vw-sw,V.tx));V.ty=sh<=vh?0:Math.min(0,Math.max(vh-sh,V.ty));
+  $('world').style.transform=`translate(${V.tx}px,${V.ty}px) scale(${V.z})`}
+function zoomAt(nz,px,py){nz=Math.max(zMin(),Math.min(1.8,nz));const ax=(px-V.tx)/V.z,ay=(py-V.ty)/V.z;V.z=nz;V.tx=px-ax*nz;V.ty=py-ay*nz;applyV()}
+function defaultView(){const v=$('view');V.z=Math.max(zMin(),Math.min(1,Math.max(.75,v.clientWidth/WW)));V.tx=(v.clientWidth-WW*V.z)/2;V.ty=0;applyV()}
+(function(){
+  const v=$('view'),P=new Map();let G=null;
+  const rel=e=>{const r=v.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}};
+  v.addEventListener('pointerdown',e=>{if(e.target.closest('#zoomCtl'))return;try{v.setPointerCapture(e.pointerId)}catch(_){}P.set(e.pointerId,rel(e));
+    if(P.size===1)G={t:'pan',s:rel(e),tx:V.tx,ty:V.ty,mv:0,tg:e.target};
+    else if(P.size===2){const [a,b]=[...P.values()];G={t:'pinch',d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:V.z,m:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},tx:V.tx,ty:V.ty}}});
+  v.addEventListener('pointermove',e=>{if(!P.has(e.pointerId)||!G)return;P.set(e.pointerId,rel(e));
+    if(G.t==='pan'&&P.size===1){const p=rel(e),dx=p.x-G.s.x,dy=p.y-G.s.y;G.mv=Math.max(G.mv,Math.hypot(dx,dy));if(G.mv>8){V.tx=G.tx+dx;V.ty=G.ty+dy;applyV()}}
+    else if(G.t==='pinch'&&P.size>=2){const [a,b]=[...P.values()],m={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+      const nz=Math.max(zMin(),Math.min(1.8,G.z*Math.hypot(a.x-b.x,a.y-b.y)/G.d)),ax=(G.m.x-G.tx)/G.z,ay=(G.m.y-G.ty)/G.z;
+      V.z=nz;V.tx=m.x-ax*nz;V.ty=m.y-ay*nz;applyV()}});
+  const end=e=>{if(!P.has(e.pointerId))return;
+    if(e.type==='pointerup'&&G&&G.t==='pan'&&P.size===1&&G.mv<=8){const bus=G.tg.closest&&G.tg.closest('.bus');if(bus)onTap(+bus.dataset.id,bus)}
+    P.delete(e.pointerId);
+    if(P.size===1){const p=[...P.values()][0];G={t:'pan',s:p,tx:V.tx,ty:V.ty,mv:99}}else if(!P.size)G=null};
+  v.addEventListener('pointerup',end);v.addEventListener('pointercancel',end);
+  v.addEventListener('wheel',e=>{e.preventDefault();const p=rel(e);zoomAt(V.z*Math.exp(-e.deltaY*.0015),p.x,p.y)},{passive:false});
+  const mid=()=>[v.clientWidth/2,v.clientHeight/2];
+  $('zin').onclick=()=>zoomAt(V.z*1.25,...mid());$('zout').onclick=()=>zoomAt(V.z*.8,...mid());
+  $('snd').onclick=()=>{auInit();const on=AU.on.s||AU.on.m?0:1;AU.on.s=on;AU.on.m=on;auApply()};
+  $('zfit').onclick=()=>{if(V.z>zMin()+.01)zoomAt(zMin(),0,0);else defaultView()};
+})();
+function buildBays(){const s=$('bays');s.innerHTML='';s.style.gridTemplateColumns=`repeat(${game.nSlots},1fr)`;for(let i=0;i<game.nSlots;i++){const d=document.createElement('div');d.className='bay';d.innerHTML='<span class="bl">BUS</span>';s.appendChild(d)}renderSpecial()}
+function renderSpecial(){const bays=$('bays').children;game.stype.forEach((t,i)=>{const d=bays[i];let m=d.querySelector('.sp');if(!t){if(m)m.remove();return}
+  if(!m){m=document.createElement('div');m.className='sp';d.appendChild(m)}
+  if(t.type==='repair'){m.className='sp rep'+(t.n<=0?' done':'');m.innerHTML=t.n>0?`<b>🚧</b><span>🔧 ${t.n}</span>`:'<span>✓</span>';if(t.n<=0)setTimeout(()=>m.remove(),900)}
+  else if(t.type==='temp'){m.className='sp tmp';m.innerHTML='<b>⏱</b>'}
+  else if(t.type==='color'){m.className='sp col';m.style.setProperty('--c',COLORS[t.color]);m.innerHTML=''}
+  else if(!m.querySelector('.isl')){m.className='sp sh';const wn=curWorld.name,isl={Miestas:'#6b9a55',Miškas:'#3f6d36',Dykuma:'#d6b77f',Žiema:'#f1f6fa'}[wn]||'#6b9a55',bw=d.clientWidth-8,bh=U+14;
+    m.innerHTML=`<div class="isl" style="top:0;height:${bh}px;--isl:${isl}"><svg width="${bw}" height="${bh}" style="position:absolute;inset:0">${islandDeco(wn,bw,bh)}</svg></div>`}})}
+function islandDeco(wn,w,h){const T=(x,y,R,a,b,c)=>tree(x,y,R,a,b,c);
+  if(wn==='Miškas')return T(w*.32,h*.42,h*.3,'#24502a','#2f6b34','#4d9246')+`<circle cx="${w*.74}" cy="${h*.62}" r="${h*.13}" fill="#8a5a33"/><circle cx="${w*.74}" cy="${h*.62}" r="${h*.09}" fill="#c89b62"/><circle cx="${w*.7}" cy="${h*.28}" r="3" fill="#d94b4b"/>`;
+  if(wn==='Dykuma')return `<circle cx="${w*.34}" cy="${h*.45}" r="${h*.2}" fill="#5b8a3c"/><circle cx="${w*.34}" cy="${h*.45}" r="${h*.1}" fill="#6fa04b"/><circle cx="${w*.48}" cy="${h*.3}" r="${h*.08}" fill="#5b8a3c"/><ellipse cx="${w*.74}" cy="${h*.6}" rx="${h*.17}" ry="${h*.11}" fill="#9c8063"/><ellipse cx="${w*.7}" cy="${h*.56}" rx="${h*.1}" ry="${h*.06}" fill="#bfa588"/>`;
+  if(wn==='Žiema')return pine(w*.33,h*.45,h*.28)+`<circle cx="${w*.74}" cy="${h*.62}" r="${h*.15}" fill="#fff" stroke="#d5e0ea"/><circle cx="${w*.74}" cy="${h*.62}" r="${h*.09}" fill="#fff" stroke="#d5e0ea"/><path d="M${w*.74} ${h*.62}l${h*.12} 2" stroke="#f97316" stroke-width="2.5" stroke-linecap="round"/>`;
+  return `<rect x="${w*.14}" y="${h*.22}" width="${w*.36}" height="${h*.52}" rx="5" fill="#7a5a3c"/>`+[0,1,2,3].map(i=>`<circle cx="${w*(.2+i*.08)}" cy="${h*(.36+(i%2)*.2)}" r="${h*.07}" fill="${['#f472b6','#facc15','#f87171','#a78bfa'][i]}"/>`).join('')+T(w*.72,h*.48,h*.24,'#2f6b34','#3f8a43','#5fae5c')}
+function clampY(){return $('view').getBoundingClientRect().top+cell*V.z*.5}
+function roadY(){return Math.max(toScreen(0,cell/2).y,clampY())}
+function bayTop(si){const t=game.stype[si];return t&&t.type==='short'?U+22:5}
+function bayCenter(si,len){const r=$('bays').children[si].getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+bayTop(si)+U*len/2}}
+function toScreen(x,y){const r=$('world').getBoundingClientRect();return {x:r.left+x*V.z,y:r.top+y*V.z}}
+function buildAmbient(w){
+  const a=$('amb');a.innerHTML='';const r=rng(99);
+  if(w.amb==='snow')for(let i=0;i<45;i++){const s=document.createElement('span');s.className='flake';const z=2+r()*4;
+    Object.assign(s.style,{left:r()*100+'vw',width:z+'px',height:z+'px',animationDuration:6+r()*8+'s',animationDelay:-r()*14+'s',opacity:.5+r()*.5});s.style.setProperty('--dx',(r()*60-30)+'px');a.appendChild(s)}
+  else{
+    for(let i=0;i<3;i++){const s=document.createElement('span');s.className='cloud';const z=260+r()*220;
+      Object.assign(s.style,{width:z+'px',height:z*.6+'px',animationDuration:45+r()*35+'s',animationDelay:-r()*60+'s'});s.style.setProperty('--y',r()*80+'vh');a.appendChild(s)}
+    if(w.amb==='leaves')for(let i=0;i<9;i++){const s=document.createElement('span');s.className='leaf';
+      Object.assign(s.style,{left:r()*100+'vw',background:['#c2662d','#d9a032','#7aa23c','#a8452a'][i%4],animationDuration:10+r()*8+'s',animationDelay:-r()*18+'s'});s.style.setProperty('--dx',(r()*120-60)+'px');a.appendChild(s)}
+  }
+}
+
+/* --- maršrutas keliais (BFS) --- */
+function route(sx,sy,bayX){
+  const {W,H}=game,isR=(x,y)=>x>=-1&&x<=W&&y>=-1&&y<=H&&(x===-1||x===W||y===H||y===-1||game.isRoad(x,y))&&!game.obsOn(x,y);
+  const k=(x,y)=>(y+1)*(W+2)+x+1,dist=new Map([[k(sx,sy),0]]),prev=new Map(),q=[[sx,sy]];
+  while(q.length){const [x,y]=q.shift();for(const [dx,dy] of DIRS){const nx=x+dx,ny=y+dy,kk=k(nx,ny);if(!isR(nx,ny)||dist.has(kk))continue;dist.set(kk,dist.get(k(x,y))+1);prev.set(kk,[x,y]);q.push([nx,ny])}}
+  let bestC=Infinity,bt=null;
+  for(let x=-1;x<=W;x++){const d=dist.get(k(x,-1));if(d==null)continue;const c=d*cell*V.z+Math.abs(toScreen(wx(x),0).x-bayX);if(c<bestC){bestC=c;bt=[x,-1]}}
+  const path=[];for(let cur=bt;cur;cur=prev.get(k(...cur)))path.unshift(cur);
+  return path;
+}
+function compress(p){return p.filter((q,i)=>{if(i===0||i===p.length-1)return true;const a=p[i-1],b=p[i+1];return !((a.x===q.x&&q.x===b.x)||(a.y===q.y&&q.y===b.y))})}
+/* --- judėjimas: glotnūs posūkiai --- */
+function roundCorners(p,R){
+  const o=[p[0]];
+  for(let i=1;i<p.length-1;i++){const a=p[i-1],c=p[i],n=p[i+1],d1=Math.hypot(c.x-a.x,c.y-a.y),d2=Math.hypot(n.x-c.x,n.y-c.y);
+    if(d1<1||d2<1){o.push(c);continue}
+    const r=Math.min(R,d1/2,d2/2),A={x:c.x+(a.x-c.x)*r/d1,y:c.y+(a.y-c.y)*r/d1},B={x:c.x+(n.x-c.x)*r/d2,y:c.y+(n.y-c.y)*r/d2};
+    for(let k=0;k<=8;k++){const t=k/8;o.push({x:(1-t)**2*A.x+2*(1-t)*t*c.x+t*t*B.x,y:(1-t)**2*A.y+2*(1-t)*t*c.y+t*t*B.y,s:c.s})}}
+  o.push(p[p.length-1]);return o;
+}
+function headings(segs){
+  const out=[];
+  for(const sg of segs){let p=sg.pts.filter((q,i,arr)=>i===0||Math.hypot(q.x-arr[i-1].x,q.y-arr[i-1].y)>0.3);
+    p.forEach((q,i)=>{const n=p[i+1],pv=p[i-1];const dx=n?n.x-q.x:q.x-pv.x,dy=n?n.y-q.y:q.y-pv.y;
+      out.push({x:q.x,y:q.y,a:Math.atan2(dx,-dy)*180/Math.PI+(sg.back?180:0),s:q.s})})}
+  for(let i=0;i<out.length;i++){if(out[i].s==null)out[i].s=i?out[i-1].s:1;if(i){const pa=out[i-1].a;out[i].a=pa+(((out[i].a-pa)%360+540)%360-180)}}
+  return out;
+}
+function animatePath(el,pts,speed,maxDur=3200){
+  const seg=[0];for(let i=1;i<pts.length;i++)seg.push(seg[i-1]+Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y)+0.01);
+  const tot=seg[seg.length-1]||1,w=parseFloat(el.style.width),h=parseFloat(el.style.height);
+  const kf=pts.map((p,i)=>({offset:seg[i]/tot,transform:`translate(${p.x-w/2}px,${p.y-h/2}px) rotate(${p.a}deg) scale(${p.s})`}));
+  el.style.transform=kf[0].transform;
+  return el.animate(kf,{duration:Math.min(maxDur,Math.max(450,tot/speed*1000)),easing:'cubic-bezier(.45,0,.4,1)',fill:'both'});
+}
+function puffs(x,y,ang,n=3){
+  const rad=ang*Math.PI/180;
+  for(let i=0;i<n;i++){const p=document.createElement('div');p.className='puff';$('fx').appendChild(p);
+    const dx=-Math.sin(rad)*(14+i*6)+(Math.random()*8-4),dy=Math.cos(rad)*(14+i*6)+(Math.random()*8-4);
+    p.animate([{transform:`translate(${x-6}px,${y-6}px) scale(.4)`,opacity:.9},{transform:`translate(${x-6+dx}px,${y-6+dy}px) scale(${1.6+i*.4})`,opacity:0}],{duration:650,delay:i*90,easing:'ease-out',fill:'both'}).onfinish=()=>p.remove()}
+}
+/* palyda: išvažiavusi laukia stotelės „palydos“ zonoje ir išvažiuoja kartu su VIP */
+function escSpot(k){const r=$('esczone').getBoundingClientRect();return {x:r.right-U*1.3-k*U*2.4,y:r.top+r.height/2,rel:r}}
+function flyAway(b,res,el){
+  const rr=el.getBoundingClientRect(),cx=rr.left+rr.width/2,cy=rr.top+rr.height/2,base=cell*V.z,cy0=clampY();el.remove();
+  const k=$('esczone').children.length+$('fx').querySelectorAll('.fly.escf').length,sp=escSpot(k);
+  const rp=compress(route(res.ex,res.ey,sp.x+U*2).map(([x,y])=>toScreen(wx(x),wy(y))));rp.forEach(q=>{q.y=Math.max(q.y,cy0)});
+  const T=rp[rp.length-1].y,wp=compress([{x:cx,y:cy},...rp,{x:sp.x+U*2.2,y:T},{x:sp.x+U*2.2,y:sp.y},{x:sp.x,y:sp.y,s:U/base}]);
+  const pts=headings([{pts:roundCorners(wp,base*.7)}]),f=makeFly(b,base);f.classList.add('escf');sfx('horn');
+  animatePath(f,pts,650).onfinish=()=>{f.remove();const e=document.createElement('div');e.className='escp';e.dataset.bid=b.id;
+    Object.assign(e.style,{width:U+'px',height:U*2+'px',left:(sp.x-sp.rel.left-U/2)+'px',top:(sp.y-sp.rel.top-U)+'px',transform:'rotate(-90deg)'});
+    e.innerHTML=busSVG(b.color,b.len,false,b.kind);$('esczone').appendChild(e)};
+}
+function escortsLeave(){const T=roadY();[...$('esczone').children].forEach((e,k)=>{const b=game.buses[+e.dataset.bid],r=e.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;e.remove();
+  const pts=headings([{pts:roundCorners([{x,y},{x:x-U*1.2,y},{x:x-U*1.2,y:T},{x:innerWidth+U*4,y:T}],U*.7).map((q,i,a)=>({...q,s:1}))}]);
+  pts.forEach(q=>q.s=1);const f=makeFly(b,U);setTimeout(()=>{sfx('horn');animatePath(f,pts,520).onfinish=()=>f.remove()},700+k*350);f.style.transform=`translate(${x-U/2}px,${y-U}px) rotate(-90deg)`})}
+function craneLift(b,res,el){const rr=el.getBoundingClientRect(),cx=rr.left+rr.width/2,cy=rr.top+rr.height/2,base=cell*V.z,bc=bayCenter(res.slot,b.len),a0=[0,90,180,-90][b.dir];el.remove();
+  const f=makeFly(b,base),w=base,h=base*b.len,s1=U/base;f.style.zIndex=9;
+  f.animate([{transform:`translate(${cx-w/2}px,${cy-h/2}px) rotate(${a0}deg) scale(1)`},{transform:`translate(${cx-w/2}px,${cy-h/2-20}px) rotate(${a0}deg) scale(1.25)`,offset:.25},{transform:`translate(${bc.x-w/2}px,${bc.y-h/2-30}px) rotate(0deg) scale(${s1*1.2})`,offset:.8},{transform:`translate(${bc.x-w/2}px,${bc.y-h/2}px) rotate(0deg) scale(${s1})`}],{duration:1300,easing:'ease-in-out',fill:'forwards'}).onfinish=()=>{f.remove();game.markReady(res.slot,b.id,performance.now());renderSlots();sfx('arrive')}}
+/* --- pagalbos už žvaigždutes --- */
+const BOOST=[{id:'crane',ic:'🏗️',name:'Kranas',cost:6,txt:'Pakelia bet kurį autobusą – net užstotą ar užrakintą – tiesiai į stotelę.'},
+  {id:'slot',ic:'➕',name:'Papildoma vieta',cost:5,txt:'Šiam lygiui stotelėje atsiranda 6-a vieta.'},
+  {id:'clear',ic:'🧹',name:'Nuvalyti kliūtį',cost:4,txt:'Iš karto pašalina vieną kliūtį ant kelio.'}];
+function starBank(){let e=0;for(const k in best)e+=best[k]||0;return e-store.get('busjam.spent',0)}
+function showBoost(){const bank=starBank();showCard(`<h2>🧰 Pagalbos</h2><p>Turi ★ ${bank}${testMode?' · testo režime nemokamai':''}</p><div class="hl">${BOOST.map(b=>`<div><b>${b.ic}</b><p><strong>${b.name} – ${b.cost}★</strong>${b.txt}</p><button class="bb" data-b="${b.id}" ${(!testMode&&bank<b.cost)||game.status!=='play'||(b.id==='clear'&&!game.robs.some(o=>o.on))||(b.id==='slot'&&game.nSlots>5)?'disabled':''}>Naudoti</button></div>`).join('')}</div><button id="bx">Uždaryti</button>`);
+  $('bx').onclick=()=>$('overlay').classList.remove('show');
+  document.querySelectorAll('.bb').forEach(bt=>bt.onclick=()=>{const B=BOOST.find(x=>x.id===bt.dataset.b);if(!testMode)store.set('busjam.spent',store.get('busjam.spent',0)+B.cost);$('overlay').classList.remove('show');sfx('unlock');
+    if(B.id==='crane'){game.crane=true;toast('🏗️ Paspausk autobusą','Kranas jį pakels į stotelę')}
+    else if(B.id==='slot'){game.addSlot();buildBays();renderSlots();toast('➕ Atsirado 6-a vieta','')}
+    else{const o=game.robs.find(o=>o.on);if(o){o.on=false;updObs([0])}}})}
+function makeFly(b,base){const f=document.createElement('div');f.className='fly';f.style.width=base+'px';f.style.height=base*b.len+'px';f.innerHTML=busSVG(b.color,b.len,false,b.kind);$('fx').appendChild(f);return f}
+function flyToBay(b,res,el){
+  const si=res.slot,rr=el.getBoundingClientRect(),cx=rr.left+rr.width/2,cy=rr.top+rr.height/2,a0=[0,90,180,-90][b.dir];
+  el.animate([{transform:'translate(0,0)'},{transform:'translate(1px,-1px)'},{transform:'translate(-1px,1px)'},{transform:'translate(0,0)'}],{duration:150});
+  const cy0=clampY(),bc=bayCenter(si,b.len),base=cell*V.z,wp=[{x:cx,y:cy}];
+  const rp=compress(route(res.ex,res.ey,bc.x).map(([x,y])=>toScreen(wx(x),wy(y))));
+  rp.forEach(q=>{q.y=Math.max(q.y,cy0)});wp.push(...rp);const T=rp[rp.length-1].y;
+  wp.push({x:bc.x,y:T},{x:bc.x,y:bc.y,s:U/base});
+  const pts=headings([{pts:roundCorners(compress(wp),base*.75)}]);
+  const rear=base*b.len/2,rad=a0*Math.PI/180;
+  setTimeout(()=>{if(!el.isConnected)return;el.remove();puffs(cx-Math.sin(rad)*rear,cy+Math.cos(rad)*rear,a0);
+    const f=makeFly(b,base),g=gen;sfx('drive');
+    animatePath(f,pts,560).onfinish=()=>{
+      const go=()=>{if(g!==gen){f.remove();return}
+        if($('bays').children[si].querySelector('.bbus.leaving'))return setTimeout(go,120);
+        f.remove();game.markReady(si,b.id,performance.now());renderSlots();sfx('arrive')};go()}},150);
+}
+function departBay(cur){
+  cur.classList.remove('open');
+  const b=game.buses[+cur.dataset.bid],r=cur.getBoundingClientRect(),T=roadY(),s=U/cell;
+  const x0=r.left+r.width/2,y0=r.top+r.height/2,ex=x0-cell*1.1,back=[];
+  for(let k=0;k<=10;k++){const t=k/10;back.push({x:(1-t)**2*x0+2*(1-t)*t*x0+t*t*ex,y:(1-t)**2*y0+2*(1-t)*t*T+t*t*T})}
+  const pts=headings([{pts:back,back:true},{pts:[{x:ex,y:T},{x:x0+cell,y:T},{x:window.innerWidth+cell*3,y:T,s:1}]}]);
+  pts.forEach((p,i)=>{if(i<=11)p.s=s});
+  setTimeout(()=>{
+    cur.remove();const f=makeFly(b,cell);sfx('depart');if(b.color===VIPC&&$('esczone').children.length)escortsLeave();
+    animatePath(f,pts,420).onfinish=()=>f.remove();
+    setTimeout(()=>puffs(x0,T,90,4),600);
+  },250);
+}
+function bumpFx(b,res,el){
+  const [dx,dy]=DIRS[b.dir],d=Math.max(5,res.gap*cell+2),dur=300+res.gap*55;
+  el.animate([{transform:'translate(0,0)'},{transform:`translate(${dx*d}px,${dy*d}px)`,offset:.45},{transform:`translate(${dx*(d-4)}px,${dy*(d-4)}px)`,offset:.55},{transform:'translate(0,0)'}],{duration:dur,easing:'ease-in-out'});
+  const hx=M+cell+(b.fx+.5+dx*(.5+res.gap))*cell,hy=cell+(b.fy+.5+dy*(.5+res.gap))*cell;
+  setTimeout(()=>{
+    const s=div('burst',{left:hx+'px',top:hy+'px'});
+    s.innerHTML=`<svg viewBox="-13 -13 26 26" width="26" height="26"><path d="M0-12 3-4 11-6 5 0 11 6 3 4 0 12-3 4-11 6-5 0-11-6-3-4Z" fill="#fde047" stroke="#f97316" stroke-width="1.5"/></svg>`;
+    $('world').appendChild(s);s.animate([{transform:'scale(.3)',opacity:1},{transform:'scale(1.2)',opacity:1,offset:.5},{transform:'scale(1)',opacity:0}],{duration:420}).onfinish=()=>s.remove();
+    const o=$('world').querySelector(`.bus[data-id="${res.by}"]`);
+    if(o)o.animate([{transform:'translate(0,0)'},{transform:`translate(${dx*3}px,${dy*3}px)`},{transform:'translate(0,0)'}],{duration:160});
+  },dur*.42);
+}
+function onTap(id,el){
+  if(game.status!=='play')return;
+  if(game.buses[id])game.buses[id].touch=performance.now();
+  if(stormCovers(id)){sfx('locked');toast('🌪️ Audra – palauk','');return}
+  const res=game.tap(id,performance.now());if(res.ignored)return;if(res.cleared&&res.cleared.length)setTimeout(()=>updObs(res.cleared),300);else if(game.robs.some(o=>o.kind==='truck'))updObs();
+  if(!startT)startT=performance.now();
+  const b=game.buses[id];
+  if(res.locked){if(res.esc)toast('🚓 Pirma išleisk palydą','');if(res.heat)toast('🔥 Variklis perkaitęs','Dar '+res.heat+' ėj.');sfx('locked');el.classList.remove('nope');void el.offsetWidth;el.classList.add('nope');return}
+  if(res.crane){sfx('unlock');craneLift(b,res,el);updChal();setTimeout(revealAll,200);renderStats();return}
+  if(res.mud){sfx('mud');el.animate([{transform:'translate(0,0)'},{transform:'translate(-2px,1px)'},{transform:'translate(2px,-1px)'},{transform:'translate(-2px,0)'},{transform:'translate(0,0)'}],{duration:400});
+    const r=el.getBoundingClientRect();puffs(r.left+r.width/2,r.top+r.height/2,0,4);if(!store.get('busjam.mudTip',0)){store.set('busjam.mudTip',1);toast('🟫 Užstrigo purve','Spausk dar kartą')}renderStats();updChal();return}
+  if(res.slid){const [dx,dy]=DIRS[b.dir],d=res.gap*cell,ox=M+cell;sfx('slide');el.animate([{transform:'translate(0,0)'},{transform:`translate(${dx*d}px,${dy*d}px) rotate(${(Math.random()*6-3).toFixed(1)}deg)`,offset:.85},{transform:`translate(${dx*d}px,${dy*d}px)`}],{duration:500+res.gap*80,easing:'ease-out'}).onfinish=()=>{
+      const xs=b.cells.map(c=>c[0]),ys=b.cells.map(c=>c[1]);el.style.left=ox+Math.min(...xs)*cell+'px';el.style.top=cell+Math.min(...ys)*cell+'px'};setTimeout(()=>sfx('bump'),450+res.gap*70);setTimeout(revealAll,700)}
+  else if(res.blocked){bumpFx(b,res,el);setTimeout(()=>sfx('bump'),(300+res.gap*55)*.42)}
+  else if(res.noslot){sfx('noslot');const s=$('bays');s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake')}
+  else{sfx('start');if(res.esc)flyAway(b,res,el);else flyToBay(b,res,el);updChal();
+    res.unlocks.forEach(o=>{const e=$('world').querySelector(`.bus[data-id="${o}"] .lk`),q=game.buses[o];if(!e)return;
+      const v=q.lock>0?q.lock:(q.esc||0);if(v>0)e.querySelector('span').textContent=e.querySelector('span').textContent.split(' ')[0]+' '+v;else{e.classList.add('gone');setTimeout(()=>e.remove(),500);sfx('unlock')}});
+    setTimeout(revealAll,200)}
+  if(game.mech.heat||game.mech.freeze)setTimeout(refreshLocks,res.blocked?400:50);
+  renderStats();
+}
+let stormOn=false;
+function stormCovers(id){if(!stormOn||!game.storm)return false;const b=game.buses[id];return b.cells.some(([x])=>x<=Math.floor(game.W/2))}
+setInterval(()=>{if(!game||!game.storm||game.status!=='play'){stormOn=false;const e=$('storm');if(e)e.classList.remove('on','warn');return}
+  const t=(performance.now()%30000),e=$('storm');if(!e)return;const was=stormOn;stormOn=t>20000&&t<27000;
+  e.classList.toggle('warn',t>17000&&t<=20000);e.classList.toggle('on',stormOn);if(stormOn&&!was)sfx('storm');if(t>17000&&t<17300&&!e._w){e._w=1;toast('🌪️ Artėja smėlio audra','Kairė aikštelės pusė bus uždengta')}if(t<17000)e._w=0},250);
+function updMovers(){if(!game||!game.movers)return;const now=performance.now(),C=cell;
+  $('world').querySelectorAll('.mov').forEach(e=>{const cs=game.moverAt(+e.dataset.m,now),c=cs[+e.dataset.k];if(!c){e.style.display='none';return}e.style.display='flex';e.style.left=(wx(c[0])-C*.45)+'px';e.style.top=(wy(c[1])-C*.45)+'px'});
+  $('world').querySelectorAll('.ow').forEach(e=>{const i=+e.dataset.w,w=game.oneway[i],d=game.owDir(i,now),ang=w.vert?(d>0?90:-90):(d>0?0:180);e.querySelector('b').style.transform=`rotate(${ang}deg)`;
+    const left=Math.ceil((w.period-((now+w.off)%w.period))/1000);e.querySelector('span').textContent='⇄ '+left})}
+setInterval(updMovers,100);
+function updLights(){if(!game)return;const now=performance.now();$('world').querySelectorAll('.ani').forEach(e=>{const r=game.red(+e.dataset.a,now,game.animals);if(r&&!e.classList.contains('on'))sfx('deer');e.classList.toggle('on',r)});if(!game.lights.length)return;$('world').querySelectorAll('.lgt').forEach(e=>{const r=game.red(+e.dataset.l,now);e.classList.toggle('red',r)})}
+setInterval(updLights,150);
+function updObs(cl){if(!game.robs.length)return;$('world').querySelectorAll('.obs').forEach(e=>{const o=game.robs[+e.dataset.o];
+  if(!o.on){if(!e.classList.contains('gone')){e.classList.add('gone');setTimeout(()=>e.remove(),600);if(o.kind==='truck')sfx('horn')}}else e.querySelector('.cnt').textContent=obsLabel(o)});
+  if(cl&&cl.length)sfx('unlock')}
+function refreshLocks(){game.inLot.forEach(id=>{const b=game.buses[id],e=$('world').querySelector(`.bus[data-id="${id}"]`);if(!e)return;const old=e.querySelector('.lk'),h=lockHTML(b);
+  if(!h){if(old&&!old.classList.contains('gone')){old.classList.add('gone');setTimeout(()=>old.remove(),500)}return}if(old)old.remove();e.insertAdjacentHTML('beforeend',h)})}
+function revealAll(){const ids=game.reveal();ids.forEach(o=>{const e=$('world').querySelector(`.bus[data-id="${o}"]`);if(!e)return;
+  const lk=e.querySelector('.lk');e.innerHTML=lotBusSVG(game.buses[o])+(lk?lk.outerHTML:'');e.classList.add('reveal')});if(ids.length)sfx('reveal')}
+/* --- laikina vieta: autobusas stovi ribotą laiką, paskui grįžta į aikštelę --- */
+setInterval(()=>{if(!game||game.status!=='play')return;const now=performance.now();
+  game.stype.forEach((t,i)=>{if(!t||t.type!=='temp')return;const s=game.slots[i],bay=$('bays').children[i],bx=bay&&bay.querySelector('.bbus:not(.leaving)');let tg=bay&&bay.querySelector('.tmc');
+    if(!s||!s.ready||!bx){if(tg)tg.remove();return}
+    const t0=game.readyAt[s.busId],rem=Math.ceil((t.sec*1000-(now-t0))/1000);if(!tg){tg=document.createElement('div');tg.className='tmc';bay.appendChild(tg)}tg.textContent='⏱ '+Math.max(0,rem);tg.classList.toggle('warn',rem<=4);
+    if(rem<=0&&+bx.dataset.vis===s.filled&&game.returnBus(i)){tg.remove();sendBack(bx,game.buses[s.busId])}})},250);
+function sendBack(cur,b){cur.remove();sfx('depart');const r=cur.getBoundingClientRect(),T=roadY(),f=makeFly(b,cell),s=U/cell,x0=r.left+r.width/2,y0=r.top+r.height/2;
+  const pts=headings([{pts:[{x:x0,y:y0,s},{x:x0,y:T,s}],back:true},{pts:[{x:x0,y:T,s},{x:-cell*3,y:T,s:1}]}]);
+  animatePath(f,pts,420).onfinish=()=>{f.remove();const e=$('world').querySelector(`.bus[data-id="${b.id}"]`);if(e)return;
+    const xs=b.cells.map(c=>c[0]),ys=b.cells.map(c=>c[1]),mx=Math.min(...xs),my=Math.min(...ys);
+    const el=div('bus',{left:(M+cell+mx*cell)+'px',top:(cell+my*cell)+'px',width:(Math.max(...xs)-mx+1)*cell+'px',height:(Math.max(...ys)-my+1)*cell+'px'});
+    el.dataset.id=b.id;el.innerHTML=lotBusSVG(b)+(b.carry?`<div class="lk chain"><span>👥 ${b.carry}</span></div>`:'');el.classList.add('reveal');$('world').appendChild(el);toast('⏱ Autobusas grįžo į aikštelę','')}}
+/* --- sniego valytuvas ir užšalimas laukiant --- */
+let plowT=0;
+function addObsEl(i){const o=game.robs[i],C=cell,xs=o.cells.map(c=>wx(c[0])),ys=o.cells.map(c=>wy(c[1])),x0=Math.min(...xs)-C/2,y0=Math.min(...ys)-C/2,x1=Math.max(...xs)+C/2,y1=Math.max(...ys)+C/2,mc=o.cells[Math.floor(o.cells.length/2)];
+  const e=div('obs',{left:x0+'px',top:y0+'px',width:(x1-x0)+'px',height:(y1-y0)+'px'});e.dataset.o=i;const cx=wx(mc[0])-x0,cy=wy(mc[1])-y0;
+  e.innerHTML=`<div class="tape ${o.vert?'v':'h'}"></div><svg width="${x1-x0}" height="${y1-y0}" overflow="visible" style="position:absolute;left:0;top:0">${obstSVG(curWorld.name,cx,cy,C,true,o.vert)}</svg><span class="cnt" style="left:${cx}px;top:${cy-C*.62}px">${obsLabel(o)}</span>`;
+  $('world').appendChild(e);e.animate([{transform:'scale(.2)',opacity:0},{transform:'scale(1)',opacity:1}],{duration:400})}
+setInterval(()=>{if(!game||game.status!=='play'||!startT)return;const now=performance.now();
+  if(game.mech.plow){if(!plowT)plowT=now+20000;
+    game.robs.forEach((o,i)=>{if(o.on&&o.kind==='plow'&&now>o.dl){o.on=false;updObs([i])}});
+    if(now>plowT){plowT=now+35000;const busy=new Set(game.robs.filter(o=>o.on).map(o=>o.cells[0].join())),cand=game.segList.filter(sg=>!busy.has(sg.cells[0].join()));
+      if(cand.length){const sg=cand[Math.floor(Math.random()*cand.length)],mc=sg.cells[Math.floor(sg.cells.length/2)],p=toScreen(wx(mc[0]),wy(mc[1])),g0=gen;
+        const f=document.createElement('div');f.className='plow';f.textContent='🚜';$('fx').appendChild(f);sfx('depart');
+        f.animate([{transform:`translate(-60px,${p.y-20}px)`},{transform:`translate(${p.x-20}px,${p.y-20}px)`}],{duration:1400,easing:'ease-out'}).onfinish=()=>{f.remove();if(gen===g0&&game.status==='play'){const i=game.addPlow(sg,performance.now());addObsEl(i);sfx('storm');toast('🚜 Valytuvas supylė pusnį','Dings po 5 keleivių')}}}}}
+  if(game.mech.freeze){let n=0;game.inLot.forEach(id=>{const b=game.buses[id];if(b.lock>0||b.heat>0||b.kind==='esc'||game.ray(b).blocked)return;if(now-(b.touch||startT)>40000){b.lock=2;n++}});
+    if(n){refreshLocks();sfx('locked');if(!store.get('busjam.frzTip',0)){store.set('busjam.frzTip',1);toast('🥶 Autobusas užšalo laukdamas','Nepalik laisvų autobusų per ilgai')}}}},1000);
+/* --- VIP laukimas (bosų lygiai) --- */
+const VIP={paxT:0,busDl:0,last:-1,tick:0};
+function vipTick(){
+  const bd=$('vipb');if(!game||game.status!=='play'||game.vipId<0){bd.style.display='none';return}
+  const now=performance.now(),mode=game.mech.vip;let show=null;
+  if(mode==='pax'||mode==='all'||mode==='esc'){
+    const vf=game.fronts().find(i=>game.queue[i]===VIPC),front=vf!=null,has=game.slots.some(s=>s&&s.ready&&s.color===VIPC&&s.filled<s.cap);
+    if(front&&!has){if(!VIP.paxT)VIP.paxT=now;const rem=10000-(now-VIP.paxT),el=qEls.get(vf);
+      if(el){const r=el.getBoundingClientRect();show={x:r.left+9,y:r.top-2,rem,t:'👑 laukia'}}if(rem<=0)return vipFail('pax')}else VIP.paxT=0;
+  }
+  if(mode==='bus'||mode==='all'){
+    const si=game.slots.findIndex(s=>s&&s.color===VIPC&&s.ready);
+    if(si>=0){const s=game.slots[si];if(!VIP.busDl||VIP.last!==s.filled){VIP.last=s.filled;const f0=game.fronts()[0]||0,j=game.queue.indexOf(VIPC,f0);VIP.busDl=now+12000+(j<0?0:j-f0)*300}
+      const rem=VIP.busDl-now,r=$('bays').children[si].getBoundingClientRect();if(!show||rem<show.rem)show={x:r.left+r.width/2,y:r.top+14,rem,t:'👑 VIP'};if(rem<=0)return vipFail('bus')}
+    else{VIP.busDl=0;VIP.last=-1}
+  }
+  if(!show){bd.style.display='none';return}
+  const sec=Math.ceil(show.rem/1000);bd.style.display='block';bd.style.left=Math.min(innerWidth-75,Math.max(75,show.x))+'px';bd.style.top=show.y+'px';bd.textContent=show.t+' ⏳ '+sec;
+  bd.classList.toggle('warn',sec<=5);if(sec<=5&&sec!==VIP.tick){VIP.tick=sec;sfx('tick')}
+}
+function vipFail(reason){game.fail('vip-'+reason);$('vipb').style.display='none';endT=performance.now();renderStats();loseCard(gen)}
+setInterval(vipTick,200);
+function loseCard(g){whenQuiet(g,()=>{sfx('lose');const msg={slots:'Stotelė pilna, o pirmam keleiviui nėra jo spalvos autobuso.','vip-pax':'VIP keleivis nesulaukė savo autobuso ir išėjo.','vip-bus':'VIP autobusas per ilgai laukė keleivių ir išvažiavo.'}[game.reason]||'';
+  showCard(`<h2>${game.reason&&game.reason.startsWith('vip')?'👑 VIP supyko':'Nebėra vietos 😬'}</h2><p>${msg}</p><button class="primary" id="nx">Bandyti dar kartą</button><button id="mn">Lygių meniu</button>`);$('nx').onclick=()=>newGame(level);$('mn').onclick=()=>openMenu()})}
+function renderSlots(){
+  const bays=$('bays').children;
+  game.slots.forEach((s,i)=>{
+    let cur=bays[i].querySelector('.bbus:not(.leaving)');
+    if(!s||!s.ready){if(cur&&s&&+cur.dataset.bid!==s.busId)cur.remove();return}
+    if(!cur||+cur.dataset.bid!==s.busId){if(cur)cur.remove();const b=game.buses[s.busId];
+      cur=document.createElement('div');cur.className='bbus';cur.dataset.bid=s.busId;cur.dataset.vis=s.filled;cur.style.width=U+'px';cur.style.height=U*b.len+'px';cur.style.top=bayTop(i)+'px';
+      cur.innerHTML=busSVG(b.color,b.len,false,b.kind)+`<div class="seats">${'<i></i>'.repeat(s.cap)}</div>`;bays[i].appendChild(cur);
+      cur.querySelectorAll('.seats i').forEach((x,k)=>x.classList.toggle('on',k<s.filled));setTimeout(()=>cur.classList.add('open'),200)}
+  });
+}
+function renderQueue(){
+  const two=game.mod==='twoq',q=$('queue'),SP=19,per=Math.max(1,Math.floor(q.clientWidth/SP));
+  const vis=new Map();if(two){[0,1].forEach(r=>{let n=0;for(let i=game.hd[r];i<game.queue.length&&n<per;i+=2)if(!game.done[i])vis.set(i,n++)})}
+  else{for(let i=game.qi;i<Math.min(game.queue.length,game.qi+per);i++)vis.set(i,i-game.qi)}
+  for(const [i,el] of qEls)if(!vis.has(i)){el.remove();qEls.delete(i)}
+  for(const [i,n] of [...vis].sort((a,b)=>a[0]-b[0])){
+    let el=qEls.get(i);const x=n*SP+(hr(i*7+level)*4-2),y=two?(i%2?17:-9):hr(i*11+level)*3-1;
+    if(!el){el=makeStick(game.queue[i],i*101+level,i===game.senior?true:game.wt[i]===2?'pram':false);if(game.groups[i]||game.groups[i-1]&&game.groups[i-1]>1||game.groups[i-2]>2)el.classList.add('grp');el.style.setProperty('--f',-1);el.style.transition='none';el.style.transform=`translate(${x+SP*2}px,${y}px)`;q.appendChild(el);qEls.set(i,el);el.getBoundingClientRect();el.style.transition=''}
+    if(el._x!==x){el._x=x;el.style.transform=`translate(${x}px,${y}px)`;el.classList.add('walk');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('walk'),300)}
+  }
+  $('more').textContent=game.queue.length-game.qi;
+}
+function walkToBay(idx,si,busId,depart,w=1){
+  const bay=$('bays').children[si],bus=bay.querySelector(`.bbus[data-bid="${busId}"]`);
+  if(depart&&bus)bus.classList.add('leaving');
+  const el=qEls.get(idx);qEls.delete(idx);
+  const done=()=>{if(!bus)return;const v=+bus.dataset.vis+w;bus.dataset.vis=v;sfx('board');
+    bus.querySelectorAll('.seats i').forEach((x,k)=>x.classList.toggle('on',k<v));
+    bus.animate([{transform:'translateX(-50%) scale(1)'},{transform:'translateX(-50%) scale(1.035,.985)'},{transform:'translateX(-50%) scale(1)'}],{duration:180});
+    if(v>=game.buses[busId].cap){sfx('full');departBay(bus)}};
+  if(!el||!bus){done();return}
+  const r=el.getBoundingClientRect(),c=makeStick(+el.dataset.c,+el.dataset.s,el.dataset.old?true:el.dataset.pram?'pram':false);el.remove();const slow=!!el.dataset.old;
+  const br=bus.getBoundingClientRect(),dX=br.right-2,dY=br.top+br.height*(41/(100*game.buses[busId].len)),py=$('platform').getBoundingClientRect().bottom;
+  c.style.setProperty('--f',dX>r.left?1:-1);c.classList.add('walk');c.style.transition='none';$('fx').appendChild(c);
+  const p0=[r.left,r.top],p1=[dX-7,r.top],p2=[dX-6,py-30],p3=[dX-4,dY-29];
+  const d1=Math.abs(p1[0]-p0[0]),d2=Math.hypot(p3[0]-p1[0],p3[1]-p1[1]),tot=d1+d2+14;
+  c.animate([{transform:`translate(${p0[0]}px,${p0[1]}px)`},{transform:`translate(${p1[0]}px,${p1[1]}px)`,offset:d1/tot},{transform:`translate(${p2[0]}px,${p2[1]}px)`,offset:(d1+d2*.4)/tot},{transform:`translate(${p3[0]}px,${p3[1]}px)`,opacity:1,offset:(d1+d2)/tot},{transform:`translate(${p3[0]-7}px,${p3[1]}px) scale(.55)`,opacity:0}],
+    {duration:Math.max(300,tot/(slow?70:240)*1000),fill:'forwards'}).onfinish=()=>{c.remove();done()};
+}
+/* ===================== GARSAS (Web Audio – viskas sintezuojama, failų nereikia) ===================== */
+const AU={c:null,on:{s:store.get('busjam.sfx',1),m:store.get('busjam.mus',1)},song:null,next:0,step:0,timer:null};
+function auInit(){
+  if(AU.c){if(AU.c.state==='suspended')AU.c.resume();return}
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  const c=AU.c=new AC();
+  AU.out=c.createDynamicsCompressor();AU.out.connect(c.destination);
+  AU.sfx=c.createGain();AU.sfx.connect(AU.out);AU.mus=c.createGain();AU.mus.connect(AU.out);
+  const len=c.sampleRate*2.2,ir=c.createBuffer(2,len,c.sampleRate);
+  for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3)}
+  AU.rev=c.createConvolver();AU.rev.buffer=ir;const rg=c.createGain();rg.gain.value=.3;AU.rev.connect(rg);rg.connect(AU.out);
+  const nb=c.createBuffer(1,c.sampleRate,c.sampleRate),nd=nb.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;AU.noise=nb;
+  auApply();if(curWorld)musicFor(curWorld);
+}
+function auApply(){if(!AU.c)return;const t=AU.c.currentTime;AU.sfx.gain.setTargetAtTime(AU.on.s?1.4:0,t,.05);AU.mus.gain.setTargetAtTime(AU.on.m?1:0,t,.2);
+  store.set('busjam.sfx',AU.on.s);store.set('busjam.mus',AU.on.m);const b=$('snd');if(b)b.textContent=AU.on.s||AU.on.m?'🔊':'🔇'}
+document.addEventListener('pointerdown',auInit,true);
+document.addEventListener('visibilitychange',()=>{if(AU.c)document.hidden?AU.c.suspend():AU.c.resume()});
+function tone(o){
+  const c=AU.c,t=o.t??c.currentTime,os=c.createOscillator(),g=c.createGain(),a=o.a??.005,v=o.v??.3;
+  os.type=o.type||'sine';os.frequency.setValueAtTime(o.f,t);if(o.f2)os.frequency.exponentialRampToValueAtTime(o.f2,t+o.d);if(o.det)os.detune.value=o.det;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+a);g.gain.exponentialRampToValueAtTime(.0001,t+o.d);
+  let n=os;if(o.lp){const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=o.lp;f.Q.value=o.q||.7;os.connect(f);n=f}
+  n.connect(g);g.connect(o.dest||AU.sfx);if(o.rev){const s=c.createGain();s.gain.value=o.rev;g.connect(s);s.connect(AU.rev)}
+  if(o.vib){const l=c.createOscillator(),lg=c.createGain();l.frequency.value=5.2;lg.gain.value=o.vib;l.connect(lg);lg.connect(os.frequency);l.start(t);l.stop(t+o.d+.05)}
+  os.start(t);os.stop(t+o.d+.05);
+}
+function noise(o){
+  const c=AU.c,t=o.t??c.currentTime,s=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain(),v=o.v??.2;
+  s.buffer=AU.noise;s.loop=true;f.type=o.type||'bandpass';f.frequency.setValueAtTime(o.f||1000,t);if(o.f2)f.frequency.exponentialRampToValueAtTime(o.f2,t+o.d);f.Q.value=o.q||1;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+(o.a||.005));g.gain.exponentialRampToValueAtTime(.0001,t+o.d);
+  s.connect(f);f.connect(g);g.connect(o.dest||AU.sfx);if(o.rev){const r=c.createGain();r.gain.value=o.rev;g.connect(r);r.connect(AU.rev)}
+  s.start(t,Math.random()*.5);s.stop(t+o.d+.05);
+}
+const SFX={
+  start(){const t=AU.c.currentTime;for(let i=0;i<3;i++)noise({t:t+i*.06,d:.05,v:.16,f:170,q:3});tone({t:t+.16,f:42,f2:85,d:.5,type:'sawtooth',v:.16,lp:360})},
+  drive(){tone({f:65,f2:125,d:1,type:'sawtooth',v:.1,lp:420,a:.06});noise({d:.9,v:.03,type:'lowpass',f:300,a:.1})},
+  bump(){tone({f:150,f2:42,d:.2,v:.5});noise({d:.14,v:.22,type:'lowpass',f:1000});if(Math.random()<.6)SFX.horn(.1)},
+  horn(v=.13){const t=AU.c.currentTime+.06;tone({t,f:392,d:.18,type:'square',v,lp:1500});tone({t,f:494,d:.18,type:'square',v:v*.8,lp:1500})},
+  noslot(){const t=AU.c.currentTime;tone({t,f:110,d:.2,type:'square',v:.12,lp:700});tone({t:t+.14,f:98,d:.26,type:'square',v:.12,lp:700})},
+  arrive(){noise({d:.4,v:.09,type:'highpass',f:2600,a:.02});tone({f:880,d:.08,v:.04,type:'triangle'})},
+  board(){tone({f:500+Math.random()*160,f2:800,d:.07,v:.08,type:'triangle'});noise({d:.04,v:.03,type:'bandpass',f:900})},
+  full(){const t=AU.c.currentTime;tone({t,f:1046,d:.3,type:'triangle',v:.18,rev:.4});tone({t:t+.15,f:1318,d:.4,type:'triangle',v:.18,rev:.4})},
+  depart(){const t=AU.c.currentTime;noise({t,d:.35,v:.09,type:'highpass',f:3000});tone({t:t+.2,f:55,f2:140,d:1.3,type:'sawtooth',v:.11,lp:520,a:.1})},
+  win(){const t=AU.c.currentTime;[523,659,784,1046].forEach((f,i)=>tone({t:t+i*.11,f,d:.45,type:'triangle',v:.2,rev:.5}));tone({t:t+.48,f:1568,d:.9,v:.1,rev:.6})},
+  star(i){tone({f:880*Math.pow(1.26,i),d:.6,v:.18,rev:.6});tone({f:880*Math.pow(1.26,i)*2.76,d:.25,v:.03})},
+  lose(){const t=AU.c.currentTime;[392,330,262].forEach((f,i)=>tone({t:t+i*.2,f,d:.4,type:'triangle',v:.18}));tone({t:t+.6,f:196,f2:140,d:.8,type:'sawtooth',v:.07,lp:600})},
+  locked(){tone({f:300,f2:200,d:.12,type:'square',v:.08,lp:1200});noise({d:.06,v:.08,f:4000,q:2})},
+  unlock(){const t=AU.c.currentTime;[784,1046,1318].forEach((f,i)=>tone({t:t+i*.05,f,d:.25,type:'triangle',v:.1,rev:.4}));noise({t,d:.25,v:.06,type:'highpass',f:5000})},
+  reveal(){tone({f:600,f2:1200,d:.2,type:'sine',v:.1,rev:.4})},
+  slide(){noise({d:.5,v:.08,type:'highpass',f:3500,a:.05});tone({f:300,f2:180,d:.4,type:'sine',v:.05})},
+  storm(){noise({d:2.5,v:.12,type:'bandpass',f:600,f2:1400,q:.6,a:.6})},
+  mud(){noise({d:.45,v:.12,type:'lowpass',f:500,a:.02});tone({f:90,f2:60,d:.4,type:'sawtooth',v:.06,lp:300})},
+  deer(){noise({d:.3,v:.05,type:'bandpass',f:2000})},
+  tick(){tone({f:1500,d:.05,type:'square',v:.06,lp:3000})},
+  click(){tone({f:1300,d:.03,v:.05,type:'square',lp:3000})},
+  boss(){const t=AU.c.currentTime;[0,.16,.32].forEach((d,i)=>tone({t:t+d,f:[196,196,262][i],d:i<2?.12:.5,type:'sawtooth',v:.1,lp:1200,rev:.3}))},
+};
+function sfx(n,...a){if(AU.c&&AU.on.s)try{SFX[n](...a)}catch(e){}}
+/* --- foninė muzika: kiekvienam pasauliui savas stilius, melodija generuojama --- */
+const NOTE=n=>440*Math.pow(2,(n-69)/12);
+const SONGS={
+  'Miestas':{bpm:100,root:60,scale:[0,2,4,5,7,9,11],chords:[[0,4,7,11],[-3,0,4,7],[-7,-3,0,4],[-5,-1,2,5]],lead:'square',drums:'pop'},
+  'Miškas':{bpm:78,root:62,scale:[0,2,4,7,9],chords:[[0,4,7],[-3,0,4],[-7,-3,0],[-5,-1,2]],lead:'flute',drums:'shaker'},
+  'Dykuma':{bpm:92,root:64,scale:[0,1,4,5,7,8,10],chords:[[0,4,7],[1,5,8],[0,4,7],[-2,1,5]],lead:'pluck',drums:'darbuka'},
+  'Žiema':{bpm:70,root:57,scale:[0,2,3,5,7,8,10],chords:[[0,3,7],[-4,0,3],[3,7,10],[-2,2,5]],lead:'bell',drums:'sleigh'},
+};
+function sDeg(S,d){const L=S.scale.length,o=Math.floor(d/L);return S.root+12+o*12+S.scale[((d%L)+L)%L]}
+function sSnap(S,n){const rel=n-S.root-12,o=Math.floor(rel/12),pc=rel-o*12;let i=0;S.scale.forEach((s,k)=>{if(s<=pc)i=k});return o*S.scale.length+i}
+function mkPhrase(S,r){const out=[];let last=S.root+12+S.chords[0][1];
+  for(let bar=0;bar<4;bar++){const ch=S.chords[bar];for(let k=0;k<8;k++){
+    if(r()<(k%2?.5:.22)){out.push(null);continue}
+    let n=r()<.5?S.root+12+ch[Math.floor(r()*ch.length)]:sDeg(S,sSnap(S,last)+(r()<.5?1:-1)*(1+Math.floor(r()*2)));
+    while(n<S.root+5)n+=12;while(n>S.root+26)n-=12;out.push(n);last=n}}
+  return out}
+function musicFor(w){
+  if(!AU.c)return;const S=SONGS[w.name];if(AU.song===S)return;
+  const c=AU.c,old=AU.mbus;if(old){old.gain.setTargetAtTime(.0001,c.currentTime,.5);setTimeout(()=>old.disconnect(),3000)}
+  const g=c.createGain();g.gain.value=.0001;g.gain.setTargetAtTime(1,c.currentTime+.3,.8);g.connect(AU.mus);AU.mbus=g;
+  AU.song=S;AU.step=0;AU.next=c.currentTime+.15;const r=rng(S.bpm*131+7);AU.phr=[mkPhrase(S,r),mkPhrase(S,r)];
+  if(!AU.timer)AU.timer=setInterval(sched,30);
+}
+function lead(S,t,f,dt,dest){
+  if(S.lead==='square')tone({t,f,d:dt*.9,type:'square',v:.045,lp:1700,dest,rev:.25});
+  else if(S.lead==='flute')tone({t,f,d:dt*1.7,type:'sine',v:.09,a:.04,vib:4,dest,rev:.5});
+  else if(S.lead==='pluck'){tone({t,f,d:dt*.9,type:'triangle',v:.09,dest,rev:.3});tone({t,f:f*2,d:dt*.4,type:'sine',v:.03,dest})}
+  else{tone({t,f,d:1.3,type:'sine',v:.07,dest,rev:.6});tone({t,f:f*2.76,d:.35,type:'sine',v:.02,dest})}
+}
+function drum(S,t,k,st,dest){
+  if(S.drums==='pop'){if(k===0||k===4)tone({t,f:120,f2:42,d:.22,v:.28,dest});if(k===2||k===6)noise({t,d:.12,v:.06,f:1800,dest});if(k%2)noise({t,d:.04,v:.025,type:'highpass',f:7000,dest})}
+  else if(S.drums==='shaker'){if(k%2)noise({t,d:.07,v:.018,type:'highpass',f:5000,dest});if(st%16===11&&Math.random()<.6)[0,.09].forEach(d=>tone({t:t+d,f:2500+Math.random()*600,f2:3600,d:.07,v:.025,dest,rev:.5}))}
+  else if(S.drums==='darbuka'){if(k===0)tone({t,f:95,f2:58,d:.28,v:.22,dest});if(k===3||k===5||k===6)noise({t,d:.06,v:.05,f:3000,q:3,dest});if(k===4)tone({t,f:180,f2:120,d:.12,v:.1,dest})}
+  else{noise({t,d:.05,v:k%2?.012:.02,type:'highpass',f:8000,dest})}
+}
+function sched(){
+  const c=AU.c;if(!c||!AU.song||c.state!=='running')return;const S=AU.song,dt=60/S.bpm/2,dest=AU.mbus;
+  if(AU.next<c.currentTime-1)AU.next=c.currentTime+.05;
+  while(AU.next<c.currentTime+.25){
+    const t=AU.next,st=AU.step,bar=Math.floor(st/8)%4,k=st%8,ch=S.chords[bar];
+    if(k===0)ch.forEach(n=>tone({t,f:NOTE(S.root+n),d:dt*8.3,type:'sawtooth',v:.028,lp:850,a:.5,dest,rev:.4,det:Math.random()*12-6}));
+    if(k===0||k===4||(k===7&&S.drums==='pop'))tone({t,f:NOTE(S.root-12+ch[0]),d:dt*1.8,type:'triangle',v:.15,lp:450,dest});
+    const n=AU.phr[[0,0,1,0][Math.floor(st/32)%4]][st%32];if(n)lead(S,t,NOTE(n),dt,dest);
+    drum(S,t,k,st,dest);AU.next+=dt;AU.step++;
+  }
+}
+function fmt(ms){const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function renderStats(){$('moves').textContent=game.moves;$('time').textContent=fmt(startT?(endT||performance.now())-startT:0)}
+function showCard(html){$('card').innerHTML=html;$('overlay').classList.add('show')}
+function whenQuiet(g,fn){const t=()=>{if(g!==gen)return;if($('fx').children.length)return setTimeout(t,200);fn()};setTimeout(t,300)}
+
+setInterval(()=>{
+  if(!game||game.status!=='play')return;
+  if(performance.now()<holdUntil)return;
+  const ev=game.step(performance.now());if(!ev)return;
+  if(ev.board!=null&&ev.idx===game.senior)holdUntil=performance.now()+2600;
+  if(ev.board!=null){walkToBay(ev.idx,ev.board,ev.busId,ev.depart,ev.w||1);renderQueue();updObs(ev.cleared);if(ev.rep&&ev.rep.length)setTimeout(renderSpecial,1200)}
+  if(ev.win||ev.lose){
+    endT=performance.now();renderStats();const g=gen;
+    if(ev.win){
+      unlocked=Math.max(unlocked,level+1);store.set('busjam.unlocked',unlocked);
+      const el=endT-startT,st=game.stars(el),cOk=game.chalOk(el);best[level]=Math.max(best[level]||0,st);store.set('busjam.stars',best);
+      whenQuiet(g,()=>{sfx('win');for(let i=0;i<st;i++)setTimeout(()=>sfx('star',i),450+i*220);showCard(`<h2>Lygis įveiktas!</h2><div class="stars">${'★'.repeat(st)}<span>${'★'.repeat(4-st)}</span></div><div class="sbrk"><span class="on">★ Lygis įveiktas</span><span class="${el<=game.parTime*1000?'on':''}">★ Laikas ${fmt(el)} (≤ ${fmt(game.parTime*1000)})</span><span class="${game.moves<=game.parMoves?'on':''}">★ Ėjimai ${game.moves} (≤ ${game.parMoves})${game.bumps?' · atsitrenkimai '+game.bumps:''}</span><span class="${cOk?'on':''}">★ ${game.chal?chalText(game.chal):'Užduotis (šiame lygyje nėra)'}</span></div>${lLoc(level)===100?'<p>🎉 Atrakintas naujas pasaulis!</p>':''}<button class="primary" id="nx">${playable(level+1)?'Kitas lygis':'Į meniu'}</button><button id="rp">↻ Žaisti šį lygį iš naujo</button><button id="mn">Lygių meniu</button>`);$('nx').onclick=()=>playable(level+1)?newGame(level+1):openMenu();$('rp').onclick=()=>newGame(level);$('mn').onclick=()=>openMenu()});
+    }else loseCard(g);
+  }
+},170);
+setInterval(()=>{if(game&&startT&&!endT)renderStats()},250);
+$('restart').onclick=()=>newGame(level);
+$('hint').onclick=()=>showHints();
+$('boost').onclick=()=>showBoost();
+$('prev').onclick=()=>newGame(level-1);
+$('next').onclick=()=>newGame(level+1);
+$('lvlBtn').onclick=()=>openMenu();
+/* ===================== LYGIŲ MENIU, ŽVAIGŽDUTĖS, ATRAKINIMAS ===================== */
+let testMode=store.get('busjam.test',1),menuW=0;
+function worldStars(L){const w0=wIdx(L)*100+1;let s=0;for(let i=w0;i<L;i++)s+=best[i]||0;return s}
+function needStars(L){const l=lLoc(L);return l%25===0?Math.ceil(2/3*4*(l-1)):0}
+function playable(L){if(L<1)return false;if(testMode)return true;return L<=unlocked&&worldStars(L)>=needStars(L)}
+function openMenu(wi=wIdx(level)){menuW=wi;renderMenu();$('menu').classList.add('show');$('overlay').classList.remove('show');
+  const c=$('menu').querySelector('.lv.cur');if(c)c.scrollIntoView({block:'center'})}
+function renderMenu(){
+  const maxW=Math.max(3,wIdx(unlocked),wIdx(level));let tabs='';
+  for(let k=0;k<=maxW;k++){const w=WORLDS[k%WORLDS.length],lock=!testMode&&k>wIdx(unlocked);
+    tabs+=`<button class="tab${k===menuW?' on':''}" data-w="${k}" ${lock?'disabled':''}>${lock?'🔒':w.emoji} ${w.name}${k>=WORLDS.length?' '+(Math.floor(k/WORLDS.length)+1):''}</button>`}
+  const w0=menuW*100;let body='',tot=0;
+  for(let ch=0;ch<4;ch++){let cells='',cs=0;
+    for(let l=ch*25+1;l<=ch*25+25;l++){const L=w0+l,st=best[L]||0,pl=playable(L),kd=kindOf(L),need=needStars(L);cs+=st;
+      const sub=pl?(st?'★'.repeat(st)+'<span>'+'★'.repeat(4-st)+'</span>':KICON[kd]||'·'):(L<=unlocked&&need?`🔒${need}★`:'🔒');
+      cells+=`<button class="lv k-${kd}${pl?'':' lock'}${L===level?' cur':''}" data-l="${L}"><b>${l}</b><i>${sub}</i></button>`}
+    tot+=cs;body+=`<div class="chap"><span>${ch+1} skyrius</span><span>★ ${cs}/100</span></div><div class="grid">${cells}</div>`}
+  const w=WORLDS[menuW%WORLDS.length];
+  $('menu').innerHTML=`<div class="mtop"><b>${w.emoji} ${w.name}</b><span>★ ${tot}/400</span><button id="mx">✕</button></div><div class="mhead">${tabs}</div><div class="mbody">${body}</div>
+   <div class="mfoot"><button id="tm">🎵 ${AU.on.m?'Muzika įj.':'Muzika išj.'}</button><button id="ts">🔔 ${AU.on.s?'Garsai įj.':'Garsai išj.'}</button><button id="tt">🧪 Testas: ${testMode?'įj.':'išj.'}</button><button id="rs" class="danger">🗑️ Anuliuoti progresą</button><button id="cu">🔄 Tikrinti atnaujinimus</button></div><div class="ver">Versija ${VERSION}${UPD.latest&&UPD.latest!==VERSION?' · yra nauja: '+UPD.latest:''}</div>`;
+  $('cu').onclick=()=>checkUpdate(true);
+  $('mx').onclick=()=>$('menu').classList.remove('show');
+  $('menu').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{menuW=+b.dataset.w;renderMenu()});
+  $('menu').querySelectorAll('.lv').forEach(b=>b.onclick=()=>{const L=+b.dataset.l;if(playable(L)){sfx('click');
+      if(game&&game.status==='play'){showCard(L===level?`<h2>Pradėti iš naujo?</h2><p>Ar tikrai norite nutraukti žaidimą ir pradėti ${lLoc(L)} lygį iš naujo?</p><button class="primary" id="cy">Taip, pradėti iš naujo</button><button id="cn">Ne, tęsti</button>`:`<h2>Pakeisti lygį?</h2><p>Ar tikrai norite nutraukti dabartinį ${lLoc(level)} lygį ir žaisti ${lLoc(L)} lygį? Dabartinio lygio progresas bus prarastas.</p><button class="primary" id="cy">Taip, žaisti ${lLoc(L)} lygį</button><button id="cn">Ne, tęsti</button>`);
+        $('cy').onclick=()=>newGame(L);$('cn').onclick=()=>$('overlay').classList.remove('show')}else newGame(L)}else{b.classList.remove('nope');void b.offsetWidth;b.classList.add('nope')}});
+  $('tm').onclick=()=>{AU.on.m=AU.on.m?0:1;auApply();renderMenu()};
+  $('ts').onclick=()=>{AU.on.s=AU.on.s?0:1;auApply();sfx('click');renderMenu()};
+  $('rs').onclick=()=>{showCard(`<h2>🗑️ Anuliuoti progresą?</h2><p>Bus ištrinta viskas: atrakinti lygiai, visos žvaigždutės, išleistos pagalbos, matytos užuominos ir nustatymai. Šio veiksmo atšaukti negalima.</p><button class="primary danger" id="ry">Taip, ištrinti viską</button><button id="rn">Ne, palikti</button>`);
+    $('rn').onclick=()=>$('overlay').classList.remove('show');
+    $('ry').onclick=()=>{try{Object.keys(localStorage).filter(k=>k.startsWith('busjam.')).forEach(k=>localStorage.removeItem(k))}catch(e){}
+      unlocked=1;level=1;best={};testMode=1;AU.on.s=1;AU.on.m=1;auApply();curWorld=null;newGame(1,true);toast('🗑️ Progresas ištrintas','Pradedame nuo 1 lygio')}};
+  $('tt').onclick=()=>{testMode=testMode?0:1;store.set('busjam.test',testMode);renderMenu();$('next').disabled=!playable(level+1)};
+}
+let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{if(game){layout();buildWorld();defaultView()}},150)});
+$('snd').textContent=AU.on.s||AU.on.m?'🔊':'🔇';
+newGame(level,true);
+/* ===================== VERSIJA IR ATNAUJINIMAI =====================
+   VERSION – žaidimo versija. Ta pati turi būti version.json faile šalia.
+   Dviejų žaidėjų režime telefonai susijungę pirmiausia apsikeis versijomis. */
+var UPD={latest:null,reg:null};
+const verCmp=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d}return 0};
+const hosted=()=>/^https?:$/.test(location.protocol)&&!/claudeusercontent|claude\.ai/.test(location.hostname);
+async function checkUpdate(manual){
+  if(!hosted()){if(manual)toast('🔄 Atnaujinimai','Šioje peržiūroje netikrinama – tik įdiegtoje versijoje');return}
+  if(!navigator.onLine){if(manual)toast('📴 Nėra interneto','Atnaujinimą patikrinsiu, kai prisijungsi');return}
+  try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});const j=await r.json();UPD.latest=j.version;
+    if(verCmp(j.version,VERSION)>0){$('updt').textContent='Yra nauja versija '+j.version+(j.notes?' – '+j.notes:'');$('upd').classList.add('show')}
+    else if(manual)toast('✅ Naujausia versija',VERSION);
+  }catch(e){if(manual)toast('⚠️ Nepavyko patikrinti','Bandyk vėliau')}}
+async function applyUpdate(){
+  $('updb').textContent='Atnaujinama…';
+  try{if(UPD.reg){await UPD.reg.update()}const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
+  location.reload()}
+$('updb').onclick=applyUpdate;$('updx').onclick=()=>$('upd').classList.remove('show');
+if(hosted()&&'serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(r=>{UPD.reg=r}).catch(()=>{})}
+setTimeout(()=>checkUpdate(false),1500);addEventListener('online',()=>checkUpdate(false));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate(false)});
+</script>
+</body>
+</html>
