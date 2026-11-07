@@ -259,7 +259,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.6.4';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.6.5';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -640,11 +640,15 @@ function lotBusSVG(b){
   const tr=['',`translate(${L},0) rotate(90)`,`translate(100,${L}) rotate(180)`,`translate(0,100) rotate(-90)`][b.dir];
   // našumas: kiekvienas aikštelės autobusas – vienas <img> (SVG paveikslėlis talpinamas pagal spalvą/ilgį/kryptį),
   // o ne šimtai SVG elementų puslapyje – didelėse aikštelėse telefonas nebe„stringa“
-  const ci=b.hidden||b.leafy?HIDC:b.color,arw=!b.leafy,key=[ci,b.len,b.dir,b.kind,arw,curWorld?curWorld.name:''].join('|');let u=BIMG.get(key);
-  if(!u){const vw=h?L:100,vh=h?100:L;u='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}"><g transform="${tr}">${busInner(ci,b.len,arw,b.kind)}</g></svg>`);BIMG.set(key,u)}
+  const msk=b.hidden||b.leafy,ci=msk?HIDC:b.color,arw=!msk,kd=msk?(b.len===1?'car':'n'):b.kind,key=[ci,b.len,b.dir,kd,arw,curWorld?curWorld.name:''].join('|');let u=BIMG.get(key);
+  if(!u){const vw=h?L:100,vh=h?100:L;u='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}"><g transform="${tr}">${msk?maskInner(b.len):busInner(ci,b.len,arw,kd)}</g></svg>`);BIMG.set(key,u)}
   return `<img class="bimg" src="${u}" draggable="false" alt="">`;
 }
 const BIMG=new Map();
+// paslėptas autobusas: simetriškas apdangalas – nesimato nei spalvos, nei krypties (priekio/galo)
+function maskInner(len){const H=100*len,wn=curWorld?curWorld.name:'',c=wn==='Dykuma'?'#c9a46a':wn==='Žiema'?'#dfe7ee':'#8b939c',dk=shade(c,-.35);let st='';for(let y=30;y<H-20;y+=46)st+=`<path d="M8 ${y} L92 ${y+18}" stroke="${dk}" stroke-width="3" opacity=".55"/>`;
+  return `<rect x="5" y="4" width="90" height="${H-8}" rx="16" fill="rgba(0,0,0,.25)" transform="translate(2,3)"/><rect x="5" y="4" width="90" height="${H-8}" rx="16" fill="${c}" stroke="${dk}" stroke-width="3"/>${st}
+    <path d="M20 10 Q50 ${H*.08} 80 10 M20 ${H-10} Q50 ${H-H*.08} 80 ${H-10}" stroke="${dk}" stroke-width="2" fill="none" opacity=".5"/><text x="50" y="${H/2+15}" text-anchor="middle" font-size="42" font-weight="900" fill="#fff" opacity=".9" font-family="system-ui">?</text>`}
 const SK=['#f3d2b1','#e0b48c','#c68c5e','#8d5a3b'],PA=['#2d3748','#1e3a5f','#4a3b2a','#3f3f46','#52525b'],HA=['#2b1d14','#5a3a1e','#d9b26a','#1a1a1a','#8b3a1a'];
 function hr(n){n=Math.imul(n^0x9e3779b9,0x85ebca6b);n^=n>>>13;n=Math.imul(n,0xc2b2ae35);n^=n>>>16;return (n>>>0)/4294967296}
 function makeStick(ci,seed,old){
@@ -723,7 +727,7 @@ function hintItems(){const g=game,wn=curWorld.name,o=[],on=new Set(g.mech.on);
   if(g.robs.length)o.push(['obst_'+wn,{Miestas:'🚧',Miškas:'🌲',Dykuma:'🪨',Žiema:'☃️'}[wn]||'🚧',mechName(on.has('roadblk')?'roadblk':'obst',wn).replace(/^\S+ /,''),'Uždaro visą kvartalo išvažiavimą. Ten stovintys autobusai atsitrenks. Kliūtis dings, kai įlips nurodytas keleivių skaičius 👥.']);
   if(g.lights.length)o.push(['lights','🚦','Šviesoforai','Kai dega raudona, autobusas iš tos atkarpos neišvažiuos ir atsitrenks. Lauk žalios.']);
   if(g.buses.some(b=>b.lock>0))o.push(['locked_'+wn,{Miestas:'🔧',Žiema:'❄️'}[wn]||'🔒',mechName('locked',wn).replace(/^\S+ /,''),'Skaičius rodo, kiek kitų autobusų turi išvažiuoti, kol šis galės judėti.']);
-  if(g.buses.some(b=>b.hidden))o.push(['hidden','❓',mechName('hidden',wn).replace(/^\S+ /,''),'Pilko autobuso spalva paaiškėja tik tada, kai jo kelias tampa laisvas.']);
+  if(g.buses.some(b=>b.hidden))o.push(['hidden','❓',mechName('hidden',wn).replace(/^\S+ /,''),'Pilko autobuso spalva ir kryptis paaiškėja tik tada, kai jo kelias tampa laisvas.']);
   const vm=g.vipId>=0&&g.mech.vip;
   if(vm==='pax'||vm==='all'||vm==='esc')o.push(['vip_pax','🎩','VIP keleiviai','Keleivis su cilindru eilės priekyje laukia tik 10 s. Iki tol jo juodas VIP autobusas turi stovėti stotelėje.']);
   if(vm==='bus'||vm==='all')o.push(['vip_bus','👑','Nekantrus VIP autobusas','Atvykęs į stotelę VIP autobusas laukia ribotą laiką; laikmatis atsinaujina, kai įlipa VIP keleivis. Neatvežk jo per anksti.']);
