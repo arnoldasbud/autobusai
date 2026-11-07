@@ -83,7 +83,7 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
 .obs{position:absolute;pointer-events:none;z-index:1}
 .obs .tape{position:absolute;inset:6px;border-radius:6px;opacity:.55}.obs .tape.v{background:repeating-linear-gradient(0deg,#ef4444 0 10px,#fff 10px 20px);left:42%;right:42%}.obs .tape.h{background:repeating-linear-gradient(90deg,#ef4444 0 10px,#fff 10px 20px);top:42%;bottom:42%}
 .plow{position:absolute;left:0;top:0;font-size:34px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.4))}
-.storm{position:absolute;pointer-events:none;z-index:2;border-radius:10px;opacity:0;transition:opacity .8s;background:repeating-linear-gradient(115deg,rgba(214,180,120,.9) 0 18px,rgba(194,160,100,.95) 18px 40px);background-size:200% 100%;animation:sand 2s linear infinite}
+.storm{position:absolute;pointer-events:none;z-index:2;border-radius:10px;opacity:0;transition:opacity .8s;overflow:hidden}.storm::before{content:'';position:absolute;top:0;bottom:0;left:0;right:-60px;background:repeating-linear-gradient(115deg,rgba(214,180,120,.9) 0 18px,rgba(194,160,100,.95) 18px 40px);will-change:transform;animation:sandT .9s linear infinite paused}.storm.warn::before,.storm.on::before{animation-play-state:running}@keyframes sandT{to{transform:translateX(-44.14px)}}
 .storm.warn{opacity:.25}.storm.on{opacity:.93}@keyframes sand{to{background-position:-200% 0}}
 .lgt{position:absolute;pointer-events:none;border-radius:6px;transition:background .2s}.lgt.red{background:rgba(239,68,68,.22);box-shadow:inset 0 0 0 2px rgba(239,68,68,.6)}
 .lamp{position:absolute;transform:translate(-50%,-50%);background:#111;border-radius:6px;padding:3px;display:flex;flex-direction:column;gap:2px;box-shadow:0 2px 3px rgba(0,0,0,.4)}.lamp i{width:9px;height:9px;border-radius:50%;background:#14532d}.lamp i:first-child{background:#450a0a}.lgt:not(.red) .lamp i:last-child{background:#22c55e;box-shadow:0 0 6px #22c55e}.lgt.red .lamp i:first-child{background:#ef4444;box-shadow:0 0 6px #ef4444}
@@ -117,12 +117,12 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
 .st .l1,.st .l2{transform-box:view-box;transform-origin:9px 21px}
 .st .a1,.st .a2{transform-box:view-box;transform-origin:9px 13px}
 .st .hd{transform-box:view-box;transform-origin:9px 9px}
-.st.i1 .fig{animation:bob 1.9s ease-in-out infinite var(--d)}
-.st.i2 .hd{animation:look 3.4s ease-in-out infinite var(--d)}
-.st.i3 .a2{animation:wave 5s ease-in-out infinite var(--d)}
-.st.i4 .fig{animation:turn 6s steps(1) infinite var(--d)}
-.st.i5 .l2{animation:tap 1.3s ease-in-out infinite var(--d)}
-.st.i6 .hd{animation:look 2.6s ease-in-out infinite var(--d)}.st.i6 .fig{animation:bob 2.3s ease-in-out infinite var(--d)}
+.st.idle.i1 .fig{animation:bob 1.9s ease-in-out infinite var(--d)}
+.st.idle.i2 .hd{animation:look 3.4s ease-in-out infinite var(--d)}
+.st.idle.i3 .a2{animation:wave 5s ease-in-out infinite var(--d)}
+.st.idle.i4 .fig{animation:turn 6s steps(1) infinite var(--d)}
+.st.idle.i5 .l2{animation:tap 1.3s ease-in-out infinite var(--d)}
+.st.idle.i6 .hd{animation:look 2.6s ease-in-out infinite var(--d)}.st.idle.i6 .fig{animation:bob 2.3s ease-in-out infinite var(--d)}
 @keyframes bob{0%,100%{transform:scaleX(var(--f,1))}50%{transform:scaleX(var(--f,1)) translateY(-1.3px)}}
 @keyframes look{0%,35%,100%{transform:rotate(0)}45%,70%{transform:rotate(16deg)}80%,90%{transform:rotate(-12deg)}}
 @keyframes wave{0%,76%,100%{transform:rotate(0)}81%,95%{transform:rotate(-155deg)}86%{transform:rotate(-120deg)}91%{transform:rotate(-160deg)}}
@@ -259,7 +259,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.6.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.6.3';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -827,7 +827,7 @@ function buildWorld(){
   game.movers.forEach((m,i)=>{if(m.kind==='tram'){const rl=document.createElementNS('http://www.w3.org/2000/svg','svg');rl.setAttribute('class','ground');rl.setAttribute('width',WW);rl.setAttribute('height',WH);
       const a=m.cells[0],z=m.cells[m.cells.length-1],v=a[0]===z[0];let d='';for(const o of [-.18,.18]){d+=v?`M${wx(a[0])+o*C} ${wy(a[1])-C/2}V${wy(z[1])+C/2}`:`M${wx(a[0])-C/2} ${wy(a[1])+o*C}H${wx(z[0])+C/2}`}
       rl.innerHTML=`<path d="${d}" stroke="#9ca3af" stroke-width="3"/><path d="${d}" stroke="#e5e7eb" stroke-width="1"/>`;wd.insertBefore(rl,wd.children[2]||null)}
-    for(let k=0;k<m.len;k++){const e=div('mov '+m.kind,{width:px(C*.9),height:px(C*.9),display:'none'});e.dataset.m=i;e.dataset.k=k;e.innerHTML=m.kind==='tram'?'<i></i>':'🐪';wd.appendChild(e)}});
+    for(let k=0;k<m.len;k++){const e=div('mov '+m.kind,{width:px(C*.9),height:px(C*.9)});e.dataset.m=i;e.dataset.k=k;e.innerHTML=m.kind==='tram'?'<i></i>':'🐪';wd.appendChild(e);moverAnim(e,i,k)}});
   game.oneway.forEach((o,i)=>{const bx=segBox(o),e=div('ow',{left:px(bx.x0),top:px(bx.y0),width:px(bx.x1-bx.x0),height:px(bx.y1-bx.y0)});e.dataset.w=i;e.innerHTML='<b>➜</b><span>⇄</span>';wd.appendChild(e)});
   game.animals.forEach((l,i)=>{const bx=segBox(l),e=div('ani',{left:px(bx.x0),top:px(bx.y0),width:px(bx.x1-bx.x0),height:px(bx.y1-bx.y0)});e.dataset.a=i;e.classList.add(l.vert?'v':'h');
     e.innerHTML=`<div class="sign">🦌</div><div class="deer">🦌</div>`;wd.appendChild(e)});
@@ -1068,9 +1068,15 @@ function stormCovers(id){if(!stormOn||!game.storm)return false;const b=game.buse
 setInterval(()=>{if(!game||!game.storm||game.status!=='play'){stormOn=false;const e=$('storm');if(e)e.classList.remove('on','warn');return}
   const t=(performance.now()%30000),e=$('storm');if(!e)return;const was=stormOn;stormOn=t>20000&&t<27000;
   e.classList.toggle('warn',t>17000&&t<=20000);e.classList.toggle('on',stormOn);if(stormOn&&!was)sfx('storm');if(t>17000&&t<17300&&!e._w){e._w=1;toast('🌪️ Artėja smėlio audra','Kairė aikštelės pusė bus uždengta')}if(t<17000)e._w=0},250);
+// našumas: tramvajus ir karavanas juda viena iš anksto apskaičiuota animacija visam ciklui (vaizdo plokštė ją groja pati, be JS kas 100 ms)
+function moverAnim(e,i,k){const m=game.movers[i],N=m.cells.length,S=Math.max(120,(N+m.len*2)*3),C=cell,kf=[];
+  for(let j=0;j<=S;j++){const t=j/S*m.period-m.off,c=game.moverAt(i,t)[k]||null;
+    kf.push({offset:j/S,opacity:c?1:0,transform:c?`translate3d(${Math.round(wx(c[0])-C*.45)}px,${Math.round(wy(c[1])-C*.45)}px,0)`:(kf.length?kf[kf.length-1].transform:'translate3d(-999px,-999px,0)')})}
+  for(let j=kf.length-1;j>=0;j--)if(kf[j].transform==='translate3d(-999px,-999px,0)'){const n=kf.slice(j+1).find(x=>x.opacity);if(n)kf[j].transform=n.transform}
+  e.style.transition='none';const a=e.animate(kf,{duration:m.period,iterations:Infinity,easing:'linear'});a.currentTime=((performance.now()+m.off)%m.period+m.period)%m.period}
 // našumas: keičiam tik tai, kas pasikeitė, ir tik per transform (be layout perskaičiavimo)
 function updMovers(){if(!game||PZ.on||((!game.movers||!game.movers.length)&&(!game.oneway||!game.oneway.length)))return;const now=performance.now(),C=cell;
-  if(game.movers.length)$('world').querySelectorAll('.mov').forEach(e=>{const cs=game.moverAt(+e.dataset.m,now),c=cs[+e.dataset.k];const vis=!!c;if(e._v!==vis){e._v=vis;e.style.display=vis?'flex':'none'}if(!c)return;
+  if(false)$('world').querySelectorAll('.mov').forEach(e=>{const cs=game.moverAt(+e.dataset.m,now),c=cs[+e.dataset.k];const vis=!!c;if(e._v!==vis){e._v=vis;e.style.display=vis?'flex':'none'}if(!c)return;
     const t=`translate3d(${Math.round(wx(c[0])-C*.45)}px,${Math.round(wy(c[1])-C*.45)}px,0)`;if(e._t!==t){e._t=t;e.style.transform=t}});
   if(game.oneway.length)$('world').querySelectorAll('.ow').forEach(e=>{const i=+e.dataset.w,w=game.oneway[i],d=game.owDir(i,now),ang=w.vert?(d>0?90:-90):(d>0?0:180);if(e._a!==ang){e._a=ang;e.querySelector('b').style.transform=`rotate(${ang}deg)`}
     const left='⇄ '+Math.ceil((w.period-((now+w.off)%w.period))/1000);if(e._l!==left){e._l=left;e.querySelector('span').textContent=left}})}
@@ -1158,6 +1164,7 @@ function renderQueue(){
     let el=qEls.get(i);const x=n*SP+(hr(i*7+level)*4-2),y=two?(i%2?17:-9):hr(i*11+level)*3-1;
     if(!el){el=makeStick(game.queue[i],i*101+level,i===game.senior?true:game.wt[i]===2?'pram':false);if(game.groups[i]||game.groups[i-1]&&game.groups[i-1]>1||game.groups[i-2]>2)el.classList.add('grp');el.style.setProperty('--f',-1);el.style.transition='none';el.style.transform=`translate(${x+SP*2}px,${y}px)`;q.appendChild(el);qEls.set(i,el);el.getBoundingClientRect();el.style.transition=''}
     if(el._x!==x){el._x=x;el.style.transform=`translate(${x}px,${y}px)`;el.classList.add('walk');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('walk'),300)}
+    el.classList.toggle('idle',n<4);
   }
   $('more').textContent=game.queue.length-game.qi;
 }
@@ -1729,7 +1736,7 @@ function cRenderQueue(st){game.use(st);const d=SD(st),q=d.queue,SP=19,per=Math.m
   for(const [i,el] of d.q)if(!vis.has(i)){el.remove();d.q.delete(i)}
   for(const [i,n] of vis){let el=d.q.get(i);const x=n*SP+(hr(i*7+level+st*3)*4-2),y=hr(i*11+level)*3-1;
     if(!el){el=makeStick(game.queue[i],i*101+level+st*7,game.wt[i]===2?'pram':false);el.style.setProperty('--f',-1);el.style.transition='none';el.style.transform=`translate(${x+SP*2}px,${y}px)`;q.appendChild(el);d.q.set(i,el);el.getBoundingClientRect();el.style.transition=''}
-    if(el._x!==x){el._x=x;el.style.transform=`translate(${x}px,${y}px)`;el.classList.add('walk');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('walk'),300)}}
+    if(el._x!==x){el._x=x;el.style.transform=`translate(${x}px,${y}px)`;el.classList.add('walk');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('walk'),300)}el.classList.toggle('idle',n<4)}
   d.more.textContent=game.queue.length-game.qi;renderOpp()}
 function cWalkToBay(st,idx,si,busId,depart,w=1){const d=SD(st),bay=d.bays.children[si],bus=bay.querySelector(`.bbus[data-bid="${busId}"]`);
   if(depart&&bus)bus.classList.add('leaving');const el=d.q.get(idx);d.q.delete(idx);
