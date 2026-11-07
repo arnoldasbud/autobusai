@@ -9,7 +9,7 @@
 <link rel="icon" href="icon.svg">
 <style>
 body.paused .st,body.paused .st *{animation-play-state:paused!important}.pm{display:flex;flex-direction:column;gap:8px}.pm2{display:flex;gap:8px}.pm2 button{flex:1}
-#opp{display:none;align-items:center;gap:8px;padding:5px 10px;background:#2a1d10;color:#fed7aa;font:700 12px system-ui;border-bottom:1px solid #7c2d12;position:relative;z-index:5}#opp.on{display:flex}#opp .obar{flex:1;height:8px;background:rgba(255,255,255,.15);border-radius:5px;overflow:hidden}#opp .obar i{display:block;height:100%;background:#fb923c;transition:width .4s}#opp .ost{font-size:11px;border-radius:6px;padding:1px 5px}#opp .ost.bad{background:#7f1d1d;color:#fecaca}#opp .ost.warn{background:#713f12;color:#fde68a}#opp .osc{background:#7c2d12;border-radius:6px;padding:1px 6px}
+#opp{display:none;align-items:center;gap:8px;padding:5px 10px;background:#2a1d10;color:#fed7aa;font:700 12px system-ui;border-bottom:1px solid #7c2d12;position:relative;z-index:5}#opp.on{display:flex}#opp .obar{flex:1;height:8px;background:rgba(255,255,255,.15);border-radius:5px;overflow:hidden}#opp .obar i{display:block;height:100%;background:#fb923c;transition:width .4s}#card .wst{font-size:14px;color:#fde68a}#card button.wait{background:#713f12;color:#fde68a}#opp .ost{font-size:11px;border-radius:6px;padding:1px 5px}#opp .ost.bad{background:#7f1d1d;color:#fecaca}#opp .ost.warn{background:#713f12;color:#fde68a}#opp .osc{background:#7c2d12;border-radius:6px;padding:1px 6px}
 #pause{position:relative;font-size:22px;width:46px;height:42px;padding:0}#zoomCtl #hint.new::after{right:-2px;top:-2px}#mpdot{display:none;position:absolute;right:4px;top:4px;width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px #0e131a}
 .card.wide{width:min(380px,94vw);max-height:92vh;overflow:auto}.mpc{display:flex;flex-direction:column;gap:10px}.qrb{display:flex;justify-content:center;background:#fff;border-radius:12px;padding:6px}
 .mpx{text-align:left;color:#a9b6c3;font-size:13px}.mpx textarea{width:100%;margin:6px 0;border-radius:8px;border:0;padding:8px;font:12px monospace}.mpx button{width:100%}
@@ -249,7 +249,7 @@ function params(L){
     veh:ll>6?Math.min(.25,.06+D*.25):0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
   return {ll,W,H,rc,rb,n,colors,win,slots:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.3.3';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.3.4';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -1601,7 +1601,7 @@ function mpOnMsg(m){
   if(m.t==='up')return gotUpdate(m);
   vsMsg(m)}
 /* ===================== DVIESE: VERSUS ===================== */
-var VS={cfg:{mode:'vs',v:'race',bo3:false,atk:true,L:1},on:false,playing:false,lock:false,round:1,score:[0,0],me:null,opp:null,prev:null,combo:0,last:0};
+var VS={want:{me:null,op:null},cfg:{mode:'vs',v:'race',bo3:false,atk:true,L:1},on:false,playing:false,lock:false,round:1,score:[0,0],me:null,opp:null,prev:null,combo:0,last:0};
 const meName='🔵 Tu',opName='🟠 Draugas';
 function lvName(L){const w=worldOf(L);return `${w.emoji} ${w.name} · ${lLoc(L)} lygis${KICON[kindOf(L)]||''}`}
 function openLobby(){$('card').classList.add('wide');const c=VS.cfg,host=MP.role==='host';
@@ -1634,9 +1634,10 @@ function vsMsg(m,local){
     return vsCheck()}
   if(m.t==='atk')return vsAttacked(m);
   if(m.t==='quit')return vsAbort('Draugas išėjo iš varžybų');
-  if(m.t==='pick'){VS.cfg.L=m.L;return renderResult()}
+  if(m.t==='pick'){VS.cfg.L=m.L;VS.want={me:null,op:null};return renderResult()}
+  if(m.t==='want'){VS.want.op=m.w;vsWantCheck();if(VS.res!=null&&!VS.playing)renderResult();else if(m.w)toast('🟠 Draugas pasiruošęs',ACTN[m.w.act]);return}
   if(window.coopMsg)coopMsg(m)}
-function vsGo(L){if(!VS.on)VS.prev=level;VS.on=true;VS.playing=true;VS.me=null;VS.opp={q:0,n:1,m:0,e:0,end:null};VS.combo=0;VS.lastL=L;VS.surv=VS.cfg.v==='surv';VS.survQ=0;VS.t0=0;
+function vsGo(L){VS.want={me:null,op:null};if(!VS.on)VS.prev=level;VS.on=true;VS.playing=true;VS.me=null;VS.opp={q:0,n:1,m:0,e:0,end:null};VS.combo=0;VS.lastL=L;VS.surv=VS.cfg.v==='surv';VS.survQ=0;VS.t0=0;
   $('card').classList.remove('wide');newGame(L,false,true);VS.lock=true;$('opp').classList.add('on');$('boost').style.visibility='hidden';layout();defaultView();renderOpp();
   let n=3;const tick=()=>{if(!VS.playing)return;if(n>0){showCard(`<div class="cd">${n}</div><p>${VS.cfg.bo3?`Raundas ${VS.round} · ${VS.score[0]}:${VS.score[1]}`:lvName(L)}</p>`);sfx('click');n--;setTimeout(tick,800)}
     else{$('overlay').classList.remove('show');VS.lock=false;startT=performance.now();VS.t0=startT;sfx('depart');toast('🚦 Važiuojam!','')}};tick()}
@@ -1659,21 +1660,28 @@ function vsCheck(){if(!VS.me||!VS.opp||!VS.opp.end)return;const a=VS.me,b=VS.opp
   else{if(a.win&&b.win)r=Math.sign(b.ms-a.ms);else r=a.win?1:b.win?-1:0}
   VS.res=r;if(r>0)VS.score[0]++;else if(r<0)VS.score[1]++;sfx(r>0?'win':r<0?'lose':'click');renderResult()}
 function matchOver(){return !VS.cfg.bo3||VS.score[0]>=2||VS.score[1]>=2||VS.round>=3}
-function renderResult(){if(VS.res==null||VS.playing)return;const a=VS.me,b=VS.opp.end,r=VS.res,over=matchOver(),fin=VS.cfg.bo3&&over;
+// kitas raundas / revanšas prasideda tik tada, kai abu patvirtina tą patį pasirinkimą
+const ACTN={rematch:'↻ Revanšas',next:'Kitas lygis →',round:'▶ Kitas raundas'};
+function vsWant(act){const L=act==='rematch'?VS.lastL:act==='next'?VS.lastL+1:VS.cfg.L;VS.want.me=act?{act,L}:null;mpSend({t:'want',w:VS.want.me});sfx('click');vsWantCheck();renderResult()}
+function vsWantCheck(){const a=VS.want.me,b=VS.want.op;if(!a||!b||a.act!==b.act||a.L!==b.L||MP.role!=='host')return;
+  if(a.act==='round'){VS.round++;vsStart('go',a.L)}else{VS.round=1;if(VS.cfg.bo3)VS.score=[0,0];if(a.act==='next')VS.cfg.L=a.L;vsStart('go',a.L)}}
+function renderResult(){if(VS.res==null||VS.playing)return;const a=VS.me,b=VS.opp.end,r=VS.res,over=matchOver(),fin=VS.cfg.bo3&&over,W=VS.want;
   const big=fin?(VS.score[0]>VS.score[1]?'🏆 Laimėjai partiją!':VS.score[0]<VS.score[1]?'🟠 Draugas laimėjo partiją':'🤝 Partija lygiosios'):(r>0?'🏆 Laimėjai!':r<0?'🟠 Draugas laimėjo':'🤝 Lygiosios');
   const row=(t,x,y)=>`<tr><td>${t}</td><td>${x}</td><td>${y}</td></tr>`,res=o=>o.win?'✅':(o.forced?'🏳️':'❌');
-  const nextPicker=(VS.round+1)%2===1?'host':'guest',iPick=nextPicker===MP.role;
+  const nextPicker=(VS.round+1)%2===1?'host':'guest',iPick=nextPicker===MP.role,bo=VS.cfg.bo3&&!over;
+  const btn=(act,label,prim)=>{const mine=W.me&&W.me.act===act,his=W.op&&W.op.act===act&&(act!=='round'||W.op.L===VS.cfg.L);
+    return `<button class="${prim||his?'primary':''}${mine?' wait':''}" data-a="${act}">${mine?'⏳ Laukiama draugo… (atšaukti)':label+(his?' · 🟠 draugas pasiruošęs':'')}</button>`};
+  const status=W.me&&W.op&&W.me.act!==W.op.act?`<p class="wst">🟠 Draugas pasirinko: <b>${ACTN[W.op.act]}</b></p>`:W.me?'<p class="wst">⏳ Pradėsim, kai draugas patvirtins</p>':W.op?`<p class="wst">🟠 Draugas pasiruošęs: <b>${ACTN[W.op.act]}</b> – patvirtink</p>`:'<p class="wst">Pasirinkite, ką toliau – žaidimas prasidės, kai abu patvirtinsite</p>';
   showCard(`<div class="mpc"><h2>${big}</h2>${VS.cfg.bo3?`<div class="score">${VS.score[0]} : ${VS.score[1]}</div>`:''}
     <table class="vst"><tr><th></th><th>${meName}</th><th>${opName}</th></tr>${row('Rezultatas',res(a),res(b))}${VS.surv?row('Keleivių',a.q,b.q):row('Laikas',fmt(a.ms),fmt(b.ms))+row('Ėjimai',a.m,b.m)+row('★',a.st,b.st)}</table>
-    ${VS.cfg.bo3&&!over?(iPick?`<p>Tavo eilė rinktis ${VS.round+1} raundo lygį</p><div class="lvp"><button id="lm">−</button><div><b>${lvName(VS.cfg.L)}</b><small>Lygis ${VS.cfg.L}</small></div><button id="lp">+</button><button id="lr">🎲</button></div><button class="primary" id="nr">▶ ${VS.round+1} raundas</button>`:`<p>⏳ Draugas renkasi ${VS.round+1} raundo lygį: ${lvName(VS.cfg.L)}</p>`)
-    :`<button class="primary" id="rm">↻ Revanšas</button>${VS.surv?'':'<button id="nl">Kitas lygis →</button>'}<button id="lb">⚙️ Keisti nustatymus</button>`}
+    ${status}
+    ${bo?(iPick?`<p>Tavo eilė rinktis ${VS.round+1} raundo lygį</p><div class="lvp"><button id="lm">−</button><div><b>${lvName(VS.cfg.L)}</b><small>Lygis ${VS.cfg.L}</small></div><button id="lp">+</button><button id="lr">🎲</button></div>`:`<p>${VS.round+1} raundo lygį renkasi draugas: <b>${lvName(VS.cfg.L)}</b></p>`)+btn('round',`✅ Pasiruošęs ${VS.round+1} raundui`,true)
+    :btn('rematch','↻ Revanšas',true)+(VS.surv?'':btn('next','Kitas lygis →'))+'<button id="lb">⚙️ Keisti nustatymus</button>'}
     <button id="qt">Baigti varžybas</button></div>`);$('card').classList.add('wide');
-  const pick=d=>{VS.cfg.L=Math.max(1,d);mpSend({t:'pick',L:VS.cfg.L});renderResult()};
+  const pick=d=>{VS.cfg.L=Math.max(1,d);VS.want={me:null,op:null};mpSend({t:'pick',L:VS.cfg.L});renderResult()};
   if($('lm')){$('lm').onclick=()=>pick(VS.cfg.L-1);$('lp').onclick=()=>pick(VS.cfg.L+1);$('lr').onclick=()=>pick(1+Math.floor(Math.random()*Math.max(30,unlocked+10)))}
-  if($('nr'))$('nr').onclick=()=>{VS.round++;vsStart('go',VS.cfg.L)};
-  if($('rm'))$('rm').onclick=()=>{VS.round=1;VS.score=VS.cfg.bo3?[0,0]:VS.score;vsStart('go',VS.lastL)};
-  if($('nl'))$('nl').onclick=()=>{VS.round=1;if(VS.cfg.bo3)VS.score=[0,0];VS.cfg.L=VS.lastL+1;vsStart('go',VS.cfg.L)};
-  if($('lb'))$('lb').onclick=()=>openLobby();
+  document.querySelectorAll('#card [data-a]').forEach(bt=>bt.onclick=()=>{const act=bt.dataset.a;vsWant(W.me&&W.me.act===act?null:act)});
+  if($('lb'))$('lb').onclick=()=>{mpSend({t:'want',w:null});VS.want.me=null;openLobby()};
   $('qt').onclick=()=>{mpSend({t:'quit'});vsAbort()}}
 function vsAbort(msg){if(!VS.on)return;VS.on=false;VS.playing=false;VS.lock=false;VS.res=null;$('opp').classList.remove('on');$('boost').style.visibility='';$('card').classList.remove('wide');
   if(msg)toast('👥 '+msg,'');const p=VS.prev||level;newGame(p)}
