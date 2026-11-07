@@ -254,7 +254,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.4.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.4.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -729,7 +729,7 @@ function hintItems(){const g=game,wn=curWorld.name,o=[],on=new Set(g.mech.on);
   if(g.animals.length)o.push(['animals','🦌','Gyvūnai ant kelio','Retkarčiais per kelią pereina elniai – tuo metu iš tos atkarpos autobusai neišvažiuoja (ženklas 🦌 rodo, kur).']);
   if(g.mud.length)o.push(['mud','🟫','Purvo balos','Autobusas, kurio kelyje ar po kuriuo yra bala, pirmą kartą užstringa – spausk antrą kartą.']);
   if(g.buses.some(b=>b.leafy))o.push(['leaves','🍂','Lapų krūvos','Lapai uždengia autobuso galą – matai tik priekį ir kryptį, bet ne ilgį. Atsidengia, kai kelias laisvas.']);
-  if(g.boss&&lLoc(level)>=10)o.push(['bosshard','🔥','Bosas: tik tinkama tvarka','Keleivių eilė sumaišyta taip, kad stotelėje reikia visų vietų. Klaidos beveik neatleidžiamos – suklydus gali padėti 🧰 pagalbos už ★.']);
+  if(g.boss&&lLoc(level)>=10)o.push(['bosshard','🔥','Bosas: tik tinkama tvarka','Keleivių eilė sumaišyta taip, kad stotelėje reikia visų vietų. Klaidos beveik neatleidžiamos – suklydus gali padėti 🧰 pagalbos už 🪙.']);
   if(g.robs.some(o=>o.kind==='truck'))o.push(['truck','🚚','Pristatymo sunkvežimis','Užstoja kvartalo išvažiavimą ir išvažiuos po nurodyto tavo ėjimų skaičiaus.']);
   if(g.storm)o.push(['storm','🌪️','Smėlio audra','Kas 30 s smėlio audra uždengia kairę aikštelės pusę – tada ten esančių autobusų paspausti negalima.']);
   if(g.ice.length)o.push(['ice','🧊','Slidus ledas','Autobusas, stovintis ant ledo, užuot atsitrenkęs nuslysta iki kliūties – taip pakeičia aikštelę.']);
