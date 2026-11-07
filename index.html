@@ -259,7 +259,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.6.0';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.6.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -1682,7 +1682,7 @@ function lanFail(){mpCard(`<h2>😕 Nepavyko susijungti</h2><p>Patikrink, ar abu
    Sinchronizacija: kūrėjas – vienintelis „teisėjas“. Visi variklio įvykiai (paspaudimas, atvažiavimas, įlipimas)
    vyksta pas kūrėją ir eilės tvarka (su numeriais) siunčiami svečiui, kuris juos atkartoja tame pačiame variklyje. */
 var GENCOOP=false;
-var COOP={on:false,host:false,seq:0,want:0,buf:new Map(),skew:0,flies:{},ended:false};
+var COOP={on:false,host:false,seq:0,want:0,buf:new Map(),skew:0,flies:{},ended:false,pre:{}};
 const CF=['queue','wt','slots','stype','qi','done','hd','groups','senior','grpSlot','grpLeft','maxSlots','nSlots','exitCols','firstColor','usedSpecial','cleanFail','mod'];
 class CoopGame extends Game{
   constructor(L){GENCOOP=true;try{super(L,true)}finally{GENCOOP=false}
@@ -1756,8 +1756,16 @@ function cFlyToBay(st,b,res,el){const si=res.slot,rr=el.getBoundingClientRect(),
 function coopEmit(ev){COOP.seq++;mpSend({t:'ce',n:COOP.seq,ev})}
 function coopLocalTap(id,el){if(game.status!=='play'||VS.lock)return;const me=COOP.host?0:1;
   if(COOP.host){if(stormCovers(id)){sfx('locked');toast('🌪️ Audra – palauk','');return}const now=performance.now();const res=game.ctap(id,0,now);if(res.ignored)return;coopEmit({e:'tap',id,st:0,now});coopTapFx(0,id,res)}
-  else{mpSend({t:'ct',id});el.animate([{transform:'scale(1)'},{transform:'scale(.94)'},{transform:'scale(1)'}],{duration:180})}}
-function coopTapFx(st,id,res){if(!startT)startT=performance.now();const b=game.buses[id],el=$('world').querySelector(`.bus[data-id="${id}"]`);if(!el)return;
+  else{const pr=coopPredict(id);mpSend({t:'ct',id});
+    if(pr){COOP.pre[id]=pr;if(!startT)startT=performance.now();sfx('start');cFlyToBay(1,game.buses[id],{slot:pr.slot,ex:pr.ex,ey:pr.ey},el)}
+    else el.animate([{transform:'scale(1)'},{transform:'scale(.94)'},{transform:'scale(1)'}],{duration:180})}}
+// svečio spėjimas: paprastais atvejais autobusas pajuda iškart, nelaukiant kūrėjo patvirtinimo (be vėlavimo)
+function coopPredict(id){const c0=game.cur,r=coopPredict0(id);game.use(c0);return r}
+function coopPredict0(id){const g=game,b=g.buses[id];if(!b||!g.inLot.has(id)||COOP.pre[id]||b.lock>0||b.heat>0||b.kind==='esc'||b.hidden)return null;
+  if((g.movers&&g.movers.length)||(g.oneway&&g.oneway.length)||(g.animals&&g.animals.length)||(g.mud&&g.mud.length)||(g.ice&&g.ice.length))return null;
+  g.use(1);const ry=g.ray(b);if(ry.blocked||g.inCells(g.robs,ry.x,ry.y)>=0)return null;const li=g.inCells(g.lights,ry.x,ry.y);if(li>=0&&g.red(li,performance.now()))return null;
+  const taken=new Set(Object.values(COOP.pre).map(p=>p.slot)),si=g.slots.findIndex((s,j)=>!s&&!taken.has(j)&&g.accepts(j,b));return si<0?null:{slot:si,ex:ry.x,ey:ry.y}}
+function coopTapFx(st,id,res,noFly){if(!startT)startT=performance.now();const b=game.buses[id],el=$('world').querySelector(`.bus[data-id="${id}"]`);if(!el&&!noFly)return;
   if(res.cleared&&res.cleared.length)setTimeout(()=>updObs(res.cleared),300);else if(game.robs.some(o=>o.kind==='truck'))updObs();
   const mine=st===(COOP.host?0:1);
   if(res.locked){if(mine){if(res.heat)toast('🔥 Variklis perkaitęs','Dar '+res.heat+' ėj.');sfx('locked')}el.classList.remove('nope');void el.offsetWidth;el.classList.add('nope');return}
@@ -1766,7 +1774,7 @@ function coopTapFx(st,id,res){if(!startT)startT=performance.now();const b=game.b
       const xs=b.cells.map(c=>c[0]),ys=b.cells.map(c=>c[1]);el.style.left=ox+Math.min(...xs)*cell+'px';el.style.top=cell+Math.min(...ys)*cell+'px'};setTimeout(revealAll,700)}
   else if(res.blocked){bumpFx(b,res,el);setTimeout(()=>sfx('bump'),(300+res.gap*55)*.42)}
   else if(res.noslot){if(mine){sfx('noslot');toast(st===(COOP.host?0:1)?'Tavo stotelė pilna':'','')}const s=SD(st).bays;s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake')}
-  else{sfx('start');cFlyToBay(st,b,res,el);
+  else{if(!noFly){sfx('start');cFlyToBay(st,b,res,el)}
     res.unlocks.forEach(o=>{const e=$('world').querySelector(`.bus[data-id="${o}"] .lk`),q=game.buses[o];if(!e)return;const v=q.lock>0?q.lock:(q.esc||0);if(v>0)e.querySelector('span').textContent=e.querySelector('span').textContent.split(' ')[0]+' '+v;else{e.classList.add('gone');setTimeout(()=>e.remove(),500);sfx('unlock')}});
     setTimeout(revealAll,200)}
   if(game.mech.heat)setTimeout(refreshLocks,res.blocked?400:50);renderStats()}
@@ -1779,12 +1787,16 @@ setInterval(()=>{if(!COOP.on||!COOP.host||!game||!game.S||game.status!=='play'||
 function coopIn(m){if(!COOP.on||COOP.host)return;COOP.buf.set(m.n,m.ev);while(COOP.buf.has(COOP.want+1)){COOP.want++;const ev=COOP.buf.get(COOP.want);COOP.buf.delete(COOP.want);coopApply(ev)}
   if(COOP.buf.size>40){toast('⚠️ Ryšys strigo','Pradėkite lygį iš naujo');COOP.buf.clear()}}
 function coopApply(ev){if(!game||!game.S)return;
-  if(ev.e==='tap'){const res=game.ctap(ev.id,ev.st,ev.now);if(!res.ignored)coopTapFx(ev.st,ev.id,res)}
+  if(ev.e==='tap'){const res=game.ctap(ev.id,ev.st,ev.now),pre=COOP.pre[ev.id];delete COOP.pre[ev.id];
+    if(pre){const ok=res.ok&&!res.blocked&&!res.noslot&&!res.locked&&!res.mud&&!res.slid&&res.slot===pre.slot;
+      if(ok){coopTapFx(ev.st,ev.id,res,true);return}
+      const f=COOP.flies[ev.id];if(f){f.remove();delete COOP.flies[ev.id]}buildWorld();if(res.ok&&res.slot>=0)return}
+    if(!res.ignored)coopTapFx(ev.st,ev.id,res)}
   else if(ev.e==='ready'){game.cready(ev.st,ev.si,ev.id,ev.now);const f=COOP.flies[ev.id];if(f){f.remove();delete COOP.flies[ev.id]}cRenderSlots(ev.st);sfx('arrive')}
   else if(ev.e==='step'){coopStepFx(ev.st,game.cstep(ev.st,ev.now))}}
 /* --- pradžia ir pabaiga --- */
 function coopGo(L,local,m){hideHome();VS.want={me:null,op:null};if(!VS.on)VS.prev=level;VS.on=true;VS.coop=true;VS.playing=true;VS.res=null;VS.me=null;VS.opp={q:0,n:1,m:0,e:0,end:null};VS.lastL=L;VS.gid=m&&m.gid;VS.gt=performance.now();
-  COOP.on=true;COOP.host=MP.role==='host';COOP.seq=0;COOP.want=0;COOP.buf=new Map();COOP.flies={};COOP.ended=false;
+  COOP.on=true;COOP.host=MP.role==='host';COOP.seq=0;COOP.want=0;COOP.buf=new Map();COOP.flies={};COOP.pre={};COOP.ended=false;
   if(!COOP.host&&m&&m.now)COOP.skew+=m.now-performance.now();
   $('card').classList.remove('wide');newGame(L,false,'coop');VS.lock=true;$('opp').classList.add('on');$('boost').style.visibility='hidden';layout();coopLayout();defaultView();renderOpp();
   const mine=Object.keys(game.own).filter(c=>game.own[c]===(COOP.host?0:1)).map(Number);
