@@ -1,7 +1,7 @@
 // Autobusų spūstis – offline talpykla.
 // Strategija: su internetu visada imam naujausią failą (ir atnaujinam talpyklą),
 // be interneto – žaidžiam iš talpyklos.
-const CACHE='busjam-v1';
+const CACHE='busjam-v2';
 const FILES=['./','./index.html','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim())});
