@@ -13,7 +13,7 @@ body.paused .st,body.paused .st *{animation-play-state:paused!important}.pm{disp
 #home{position:fixed;inset:0;z-index:29;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#2b3b52,#0e131a 75%)}#home.show{display:flex}.hm{width:min(320px,86vw);display:flex;flex-direction:column;gap:10px;text-align:center}.hm h1{margin:0;font:900 40px/1.05 system-ui;color:#fbbf24;text-shadow:0 3px 0 #7c2d12}.hlogo{width:54px;height:108px;margin:0 auto;transform:rotate(-12deg)}.hst{margin:0 0 6px;color:#a9b6c3;font-weight:700}.hm button{padding:14px;font-size:17px}.hm button.big{font-size:22px;padding:18px}
 .achb{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));z-index:80;display:flex;gap:10px;align-items:center;background:#1f2a36;border:2px solid #fbbf24;border-radius:14px;padding:8px 14px;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:260px}.achb b{font-size:30px}.achb small{display:block;color:#fbbf24;font-weight:800;font-size:11px}.achb strong{display:block;font-size:16px}.achb span{font-size:12px;color:#a9b6c3}
 .achl{display:flex;flex-direction:column;gap:6px;max-height:58vh;overflow:auto;text-align:left}.acha{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.05);border-radius:10px;padding:7px 9px;opacity:.75}.acha.got{opacity:1;background:rgba(251,191,36,.12)}.acha b{font-size:24px}.acha div{flex:1}.acha strong{display:block;font-size:14px}.acha span{font-size:12px;color:#a9b6c3}.acha i{display:block;height:5px;background:rgba(255,255,255,.12);border-radius:3px;margin-top:4px;overflow:hidden}.acha u{display:block;height:100%;background:#fbbf24}.acha small{font-size:10px;color:#a9b6c3}.acha em{font-style:normal;font-size:12px;font-weight:800;color:#fde68a}
-#opp{display:none;align-items:center;gap:8px;padding:5px 10px;background:#2a1d10;color:#fed7aa;font:700 12px system-ui;border-bottom:1px solid #7c2d12;position:relative;z-index:5}#opp.on{display:flex}#opp .obar{flex:1;height:8px;background:rgba(255,255,255,.15);border-radius:5px;overflow:hidden}#opp .obar i{display:block;height:100%;background:#fb923c;transition:width .4s}#card .coin{color:#fde68a;font-weight:800}#card .wst{font-size:14px;color:#fde68a}#card button.wait{background:#713f12;color:#fde68a}#opp .ost{font-size:11px;border-radius:6px;padding:1px 5px}#opp .ost.bad{background:#7f1d1d;color:#fecaca}#opp .ost.warn{background:#713f12;color:#fde68a}#opp .osc{background:#7c2d12;border-radius:6px;padding:1px 6px}
+#opp{display:none;align-items:center;gap:8px;padding:5px 10px;background:#2a1d10;color:#fed7aa;font:700 12px system-ui;border-bottom:1px solid #7c2d12;position:relative;z-index:5}#opp.on{display:flex}#opp .obar{flex:1;height:8px;background:rgba(255,255,255,.15);border-radius:5px;overflow:hidden}#opp .obar i{display:block;height:100%;background:#fb923c;transition:width .4s}#card button.cont{background:#16a34a}#card button.cont:disabled{opacity:.45}#card .coin{color:#fde68a;font-weight:800}#card .wst{font-size:14px;color:#fde68a}#card button.wait{background:#713f12;color:#fde68a}#opp .ost{font-size:11px;border-radius:6px;padding:1px 5px}#opp .ost.bad{background:#7f1d1d;color:#fecaca}#opp .ost.warn{background:#713f12;color:#fde68a}#opp .osc{background:#7c2d12;border-radius:6px;padding:1px 6px}
 #pause{position:relative;font-size:22px;width:46px;height:42px;padding:0}#zoomCtl #hint.new::after{right:-2px;top:-2px}#mpdot{display:none;position:absolute;right:4px;top:4px;width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px #0e131a}
 .card.wide{width:min(380px,94vw);max-height:92vh;overflow:auto}.mpc{display:flex;flex-direction:column;gap:10px}.qrb{display:flex;justify-content:center;background:#fff;border-radius:12px;padding:6px}
 .mpx{text-align:left;color:#a9b6c3;font-size:13px}.mpx textarea{width:100%;margin:6px 0;border-radius:8px;border:0;padding:8px;font:12px monospace}.mpx button{width:100%}
@@ -259,7 +259,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.6.6';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.6.7';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -1146,8 +1146,17 @@ function vipTick(){
 }
 function vipFail(reason){game.fail('vip-'+reason);$('vipb').style.display='none';endT=performance.now();renderStats();loseCard(gen)}
 setInterval(()=>{if(!PZ.on)vipTick()},200);
+function continueLevel(o){if(!testMode)addCoins(-o.c);achAdd('boost',1);const now=performance.now();
+  if(endT&&startT)startT+=now-endT;endT=0;game.status='play';game.reason=null;
+  if(o.id==='slot'){game.addSlot();buildBays();renderSlots();toast('➕ Atsirado papildoma vieta','Tęsk!')}
+  else{VIP.mult=2;VIP.paxT=VIP.paxT?now:0;VIP.busDl=0;VIP.last=-1;$('vipb').style.display='';toast('⏸ VIP kantrybė','VIP laukia dvigubai ilgiau')}
+  $('overlay').classList.remove('show');sfx('unlock');renderStats()}
 function loseCard(g){if(VS.playing){vsEnd(false);return}whenQuiet(g,()=>{sfx('lose');const msg={slots:'Stotelė pilna, o pirmam keleiviui nėra jo spalvos autobuso.','vip-pax':'VIP keleivis nesulaukė savo autobuso ir išėjo.','vip-bus':'VIP autobusas per ilgai laukė keleivių ir išvažiavo.'}[game.reason]||'';
-  showCard(`<h2>${game.reason&&game.reason.startsWith('vip')?'👑 VIP supyko':'Nebėra vietos 😬'}</h2><p>${msg}</p><button class="primary" id="nx">Bandyti dar kartą</button><button id="mn">Lygių meniu</button>`);$('nx').onclick=()=>DAILY.on?startDaily():newGame(level);$('mn').onclick=()=>{DAILY.on=false;openMenu()}})}
+  // galimybė tęsti už monetas
+  const vipR=game.reason&&game.reason.startsWith('vip'),opt=vipR?{id:'vip',ic:'⏸',t:'VIP kantrybė ir tęsti',c:15}:(game.reason==='slots'&&game.nSlots<7?{id:'slot',ic:'➕',t:'Nauja vieta ir tęsti',c:30}:null);
+  const can=opt&&(testMode||COINS>=opt.c);
+  showCard(`<h2>${vipR?'👑 VIP supyko':'Nebėra vietos 😬'}</h2><p>${msg}</p>${opt?`<button class="primary cont" id="cn"${can?'':' disabled'}>${opt.ic} ${opt.t} – ${testMode?'nemokamai':opt.c+' 🪙'}</button><p class="coin" style="margin:0">${can?'Turi 🪙 '+COINS:'Trūksta 🪙 '+(opt.c-COINS)+' (turi '+COINS+')'}</p>`:''}<button class="${opt?'':'primary'}" id="nx">Bandyti dar kartą</button><button id="mn">Lygių meniu</button>`);
+  if(opt&&can)$('cn').onclick=()=>continueLevel(opt);$('nx').onclick=()=>DAILY.on?startDaily():newGame(level);$('mn').onclick=()=>{DAILY.on=false;openMenu()}})}
 function renderSlots(){
   const bays=$('bays').children;
   game.slots.forEach((s,i)=>{
