@@ -89,6 +89,8 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
 .lamp{position:absolute;transform:translate(-50%,-50%);background:#111;border-radius:6px;padding:3px;display:flex;flex-direction:column;gap:2px;box-shadow:0 2px 3px rgba(0,0,0,.4)}.lamp i{width:9px;height:9px;border-radius:50%;background:#14532d}.lamp i:first-child{background:#450a0a}.lgt:not(.red) .lamp i:last-child{background:#22c55e;box-shadow:0 0 6px #22c55e}.lgt.red .lamp i:first-child{background:#ef4444;box-shadow:0 0 6px #ef4444}
 .obs .cnt{position:absolute;transform:translate(-50%,-50%);background:rgba(15,20,26,.88);color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:8px;white-space:nowrap}
 .obs.gone{animation:obgone .6s forwards}@keyframes obgone{30%{transform:scale(1.15)}to{transform:scale(.2);opacity:0}}
+.spn{position:absolute;left:-4px;top:-4px;width:18px;height:18px;border-radius:50%;background:#2563eb;font-size:11px;line-height:18px;text-align:center;box-shadow:0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.4);pointer-events:none;z-index:2}
+.spn.soon{animation:spnp .25s infinite alternate}@keyframes spnp{to{transform:scale(1.3);background:#f59e0b}}
 .lv-ov{position:absolute;left:0;right:0;top:0;bottom:0;border-radius:12px;pointer-events:none;background:radial-gradient(ellipse 9px 6px at 20% 30%,#c2662d 90%,transparent),radial-gradient(ellipse 8px 5px at 60% 20%,#d9a032 90%,transparent),radial-gradient(ellipse 9px 6px at 80% 60%,#a8452a 90%,transparent),radial-gradient(ellipse 8px 6px at 35% 70%,#7aa23c 90%,transparent),radial-gradient(ellipse 9px 5px at 55% 85%,#d9a032 90%,transparent),radial-gradient(ellipse 7px 5px at 15% 85%,#c2662d 90%,transparent),#8a5a2b;background-size:44px 44px;box-shadow:0 3px 5px rgba(0,0,0,.35)}
 .mov{position:absolute;left:0;top:0;z-index:3;pointer-events:none;transition:transform .1s linear;will-change:transform;display:flex;align-items:center;justify-content:center;font-size:24px}
 .mov.tram i{display:block;width:78%;height:92%;border-radius:8px;background:linear-gradient(90deg,#b91c1c 0 18%,#fef2f2 18% 82%,#b91c1c 82%);box-shadow:0 3px 4px rgba(0,0,0,.4);border:2px solid #7f1d1d}
@@ -208,6 +210,7 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
    kai kelias iki artimiausio kelio arba krašto laisvas. */
 const COLORS=['#ef4444','#3b82f6','#22c55e','#eab308','#a855f7','#f97316','#ec4899','#14b8a6','#23262e','#8f99a6','#1e293b','#fbbf24'];  // 8 – VIP, 9 – paslėpta spalva, 10 – palyda, 11 – mokyklinis (vaikai)
 const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
+const SPINP=5000;   // sukamasis diskas: kas 5 s autobusas apsisuka 180°
 function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function ranges(n,cuts){const o=[];let a=0;for(const c of [...cuts,n]){if(c>a)o.push([a,c-1]);a=c+1}return o}
@@ -245,21 +248,21 @@ function params(L){
   // bosai: eilė „langais“ po 3 autobusus – lieka laisvų vietų atsarga, idealios tvarkos nereikia
   const win=Math.min(GENCOOP?4:5,ll<=2?2:boss?Math.min(3,5-vipN):Math.min(5-vipN,4,2+Math.round(D*2.5)));
   // mechanikos: 1 skyrius – jokių, 2 – pirmoji pasaulio, 3 – antroji, 4 – visos; vėlesni pasaulių ratai – mišinys
-  const wi=Math.floor((L-1)/100),wk=wi%4,f=.5+cl/25*.5,CHM=[[['obst','oneway'],['lights','truck','tram'],['obst','lights','truck','locked','tram','oneway']],
+  const wi=Math.floor((L-1)/100),wk=wi%4,f=.5+cl/25*.5,CHM=[[['obst','spin'],['lights','truck','tram'],['obst','lights','truck','locked','tram','spin']],
        [['roadblk','leaves'],['hidden','animals','mud'],['roadblk','hidden','animals','mud','leaves']],
        [['obst','heat'],['hidden','caravan'],['obst','hidden','storm','heat','caravan']],
        [['locked','freeze'],['ice','plow'],['locked','ice','obst','freeze','plow']]][wk],on=new Set(ch>0?CHM[ch-1]:[]);
-  if(wi>=4&&ch>0)['obst','hidden','locked','lights','truck','storm','ice','animals','mud','leaves','tram','oneway','caravan','heat','plow','freeze'].forEach(m=>{if(pr()<.3)on.add(m)});
+  if(wi>=4&&ch>0)['obst','hidden','locked','lights','truck','storm','ice','animals','mud','leaves','tram','spin','caravan','heat','plow','freeze'].forEach(m=>{if(pr()<.3)on.add(m)});
   if(GENCOOP)['plow','freeze','storm'].forEach(m=>on.delete(m));
   const vip=GENCOOP?null:boss?(mega?'all':['pax','bus','esc'][Math.floor(ll/5)%3]):null;
   const specials=[];if(ll>6&&pr()<Math.min(.6,.2+D*.6)){const k=Math.min(2,5-win-vipN);for(let i=0;i<k;i++)if(pr()<.75)specials.push(['repair','color','short','temp'][Math.floor(pr()*4)])}
   const mech={on:[...on],obst:(on.has('obst')||on.has('roadblk'))?Math.round((1+P/60)*f)+1:0,lights:on.has('lights')?2+Math.round(f*2):0,
-    hidden:on.has('hidden')?.18+.2*f:0,locked:on.has('locked')?.08+.1*f:0,vip,vipN,first:cl===0&&ch>0,specials,truck:on.has('truck')?1+Math.round(f*1.5):0,storm:on.has('storm'),ice:on.has('ice')?.12+.12*f:0,stroller:ll>8&&pr()<.35?1+Math.round(D*2):0,animals:on.has('animals')?2+Math.round(f):0,tram:on.has('tram'),caravan:on.has('caravan'),oneway:on.has('oneway')?2:0,heat:on.has('heat'),plow:on.has('plow'),freeze:on.has('freeze'),mud:on.has('mud')?.06+.08*f:0,leaves:on.has('leaves')?.2+.2*f:0,
+    hidden:on.has('hidden')?.18+.2*f:0,locked:on.has('locked')?.08+.1*f:0,vip,vipN,first:cl===0&&ch>0,specials,truck:on.has('truck')?1+Math.round(f*1.5):0,storm:on.has('storm'),ice:on.has('ice')?.12+.12*f:0,stroller:ll>8&&pr()<.35?1+Math.round(D*2):0,animals:on.has('animals')?2+Math.round(f):0,tram:on.has('tram'),caravan:on.has('caravan'),oneway:0,spin:on.has('spin')&&!GENCOOP?.14+.12*f:0,heat:on.has('heat'),plow:on.has('plow'),freeze:on.has('freeze'),mud:on.has('mud')?.06+.08*f:0,leaves:on.has('leaves')?.2+.2*f:0,
     veh:ll>6?Math.min(.25,.06+D*.25):0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.7.0';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.8.0';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -306,9 +309,10 @@ function generate(L){
   order.forEach((id,i)=>buses[id].color=i<cols.length?cols[i]:cols[Math.floor(r()*cols.length)]);
   norm.forEach(b=>{if(b.len===3&&r()<M.veh){if(r()<.5){b.kind='dd';b.cap=8}else{b.kind='school';b.cap=9;b.color=KIDC}}else if(b.len===2&&r()<M.veh*.8){b.kind='car';b.cap=3;b.len=1;b.cells=b.cells.slice(0,1)}});   // lengvoji mašina: 1 langelis, 3 vietos
   const sol=buses.map(b=>b.id).reverse(),queue=[];   // eskortas ir VIP – pirmieji sprendime
-  sol.forEach((id,k)=>{const b=buses[id];if(b.kind==='esc'||vips.includes(id))return;
+  let nSpin=0;sol.forEach((id,k)=>{const b=buses[id];if(b.kind==='esc'||vips.includes(id))return;
     if(M.locked&&k>=2&&r()<M.locked)b.lock=Math.min(k,2+Math.floor(r()*4));
-    if(M.hidden&&r()<M.hidden)b.hidden=true;else if(M.leaves&&b.len>1&&r()<M.leaves)b.leafy=true});
+    if(M.hidden&&r()<M.hidden)b.hidden=true;else if(M.leaves&&b.len>1&&r()<M.leaves)b.leafy=true;
+    if(M.spin&&k>=1&&!b.lock&&!b.hidden&&!b.leafy&&nSpin<3+Math.round(M.spin*12)&&r()<M.spin){nSpin++;b.spin={d0:b.dir,off:Math.floor(r()*SPINP*2)}}});
   const ns=sol.filter(id=>!vips.includes(id)&&buses[id].kind!=='esc');
   for(let i=0;i<ns.length;i+=p.win){
     const chunk=[];ns.slice(i,i+p.win).forEach(id=>{for(let k=0;k<buses[id].cap;k++)chunk.push(buses[id].color)});
@@ -373,7 +377,7 @@ function generate(L){
     for(let i=0;i+2<queue.length;i++){if(queue[i]!==VIPC&&!wt[i]&&!wt[i+1]&&!wt[i+2]&&queue[i]===queue[i+1]&&queue[i]===queue[i+2]&&slotOf[i]===slotOf[i+1]&&slotOf[i]===slotOf[i+2]){
       const b=sl3[slotOf[i]],before=queue.slice(0,i).reduce((t,c,j)=>t+(slotOf[j]===slotOf[i]?(wt[j]||1):0),0);if(b.cap-before>=3){groups[i]=3;ok=true;if(Object.keys(groups).length>=2)break;i+=2}}}
     if(!ok)mod=null}
-  const parMoves=buses.length+mudBus+1+Math.floor(buses.length/15),parTime=Math.round(queue.length*.34+buses.length*1.6);
+  const parMoves=buses.length+mudBus+1+Math.floor(buses.length/15),parTime=Math.round(queue.length*.34+buses.length*1.6+buses.filter(b=>b.spin).length*SPINP/2000);
   return {parMoves,parTime,W,H,rc:p.rc,rb:p.rb,blk:[],obst:[],robs,lights,animals,mud,movers,oneway,segList,stype,chal,mod,senior,groups,wt,ice,sol,vips,storm:M.storm,buses,queue,nSlots:p.slots,boss:p.boss,easy:p.easy,big:p.big,mega:p.mega,mech:M,vipId:vip,esc};
 }
 class Game{
@@ -417,6 +421,8 @@ class Game{
   // ar galima nuvažiuoti iki stotelės, pirmą žingsnį žengus rodyklės kryptimi (kelias neužtvertas kliūtimis)
   owReach(fx,fy,sx,sy){const {W,H}=this,ok=(x,y)=>x>=-1&&x<=W&&y>=-1&&y<=H&&(x===-1||x===W||y===H||y===-1||this.road(x,y))&&!this.obsOn(x,y);if(!ok(fx,fy))return false;
     const seen=new Set([sy*1000+sx,fy*1000+fx]),q=[[fx,fy]];while(q.length){const [x,y]=q.shift();if(y===-1)return true;for(const [dx,dy] of DIRS){const nx=x+dx,ny=y+dy,kk=ny*1000+nx;if(seen.has(kk)||!ok(nx,ny))continue;seen.add(kk);q.push([nx,ny])}}return false}
+  // sukamieji diskai: autobuso kryptis kinta kas SPINP ms (pradinė ↔ priešinga)
+  spinAt(now){if(now==null)return [];const ch=[];for(const id of this.inLot){const b=this.buses[id];if(!b.spin)continue;const d=Math.floor((now+b.spin.off)/SPINP)%2?(b.spin.d0+2)%4:b.spin.d0;if(d!==b.dir){let far=b.cells[0],fd=-1;for(const c of b.cells){const q=Math.abs(c[0]-b.fx)+Math.abs(c[1]-b.fy);if(q>fd){fd=q;far=c}}b.fx=far[0];b.fy=far[1];b.dir=d;ch.push(id)}}return ch}
   owDir(i,now){const w=this.oneway[i];if(now==null)return 0;return Math.floor((now+w.off)/w.period)%2?-w.dir:w.dir}
   afterMove(id){this.buses.forEach(q=>{if(q.heat>0&&q.id!==id)q.heat--})}
   mudOn(b){if(b.mudDone)return false;const [dx,dy]=DIRS[b.dir];if(b.cells.some(([x,y])=>this.mudS.has(y*this.W+x)))return true;for(let x=b.fx+dx,y=b.fy+dy;x>=0&&y>=0&&x<this.W&&y<this.H&&!this.isRoad(x,y);x+=dx,y+=dy)if(this.mudS.has(y*this.W+x))return true;return false}
@@ -426,7 +432,7 @@ class Game{
   accepts(i,b){const t=this.stype[i];if(!t||t.type==='temp')return true;if(t.type==='repair')return t.n<=0;if(t.type==='color')return b.color===t.color;return b.len===2}
   tap(id,now){
     if(this.status!=='play'||!this.inLot.has(id))return {ignored:true};
-    const b=this.buses[id];if(this.crane&&b.kind!=='esc')return this.craneTap(id);if(b.heat>0){this.lockTaps++;return {locked:true,heat:b.heat}}if(b.lock>0){this.lockTaps++;return {locked:true,n:b.lock}}if(b.esc>0){this.lockTaps++;return {locked:true,esc:b.esc}}
+    this.spinAt(now);const b=this.buses[id];if(this.crane&&b.kind!=='esc')return this.craneTap(id);if(b.heat>0){this.lockTaps++;return {locked:true,heat:b.heat}}if(b.lock>0){this.lockTaps++;return {locked:true,n:b.lock}}if(b.esc>0){this.lockTaps++;return {locked:true,esc:b.esc}}
     const ry=this.ray(b);if(ry.blocked){this.moves++;this.bumps++;this.afterMove(id);if(this.mech.heat)b.heat=2;const cl=this.truckClear();
       if(ry.gap>0&&this.iceS.has(b.fy*this.W+b.fx)&&this.trySlide(b,ry.gap))return {...ry,slid:true,cleared:cl};return {...ry,cleared:cl}}
     const ob=this.inCells(this.robs,ry.x,ry.y);if(ob>=0){this.moves++;this.bumps++;this.afterMove(id);if(this.mech.heat)b.heat=2;return {blocked:true,gap:ry.gap,by:-4,ob,cleared:this.truckClear()}}
@@ -434,8 +440,6 @@ class Game{
     for(let i=0;i<this.movers.length;i++)if(this.moverAt(i,now).some(c=>c[0]===ry.x&&c[1]===ry.y))return bump({by:-7,mover:i});
     // vienos krypties gatvė: autobusas suka trumpiausiu keliu į stotelę; jei ta kryptis prieš rodyklę – atsitrenkia
     const ow=this.inCells(this.oneway,ry.x,ry.y);if(ow>=0&&now!=null){const w=this.oneway[ow],ad=this.owDir(ow,now),ax=w.vert?[0,ad]:[ad,0],nd=this.owNeed(ry.x,ry.y,w,b.dir);this.owLast=nd?[ry.x,ry.y,nd]:null;if(nd&&nd[0]*ax[0]+nd[1]*ax[1]<0)return bump({by:-8,ow})}else this.owLast=null
-    // kelias iki stotelės užtvertas kliūtimis kitur aikštelėje – atsitrenkia; jei stotelėje niekas nelaukia, kliūtis pašalinama (kad neužstrigtų)
-    {const rb=this.routeBlock(ry.x,ry.y);if(rb>=0){const r=bump({by:-4,ob:rb});const o=this.robs[rb];o.hits=(o.hits||0)+1;if(o.on&&(!this.slots.some(x=>x)||o.hits>=2)){o.on=false;r.cleared=[...(r.cleared||[]),rb]}return r}}
     const ai=this.inCells(this.animals,ry.x,ry.y);if(ai>=0&&this.red(ai,now,this.animals)){this.moves++;this.bumps++;return {blocked:true,gap:ry.gap,by:-6,animal:ai,cleared:this.truckClear()}}
     if(this.mudOn(b)){b.mudDone=true;this.moves++;return {mud:true,cleared:this.truckClear()}}
     const li=this.inCells(this.lights,ry.x,ry.y);if(li>=0&&this.red(li,now)){this.moves++;this.bumps++;return {blocked:true,gap:ry.gap,by:-5,light:li,cleared:this.truckClear()}}
@@ -734,8 +738,8 @@ function newGame(L,showWorld,vs){
   if(fresh.length&&!vs){const g0=gen;setTimeout(()=>{if(gen===g0&&game.moves===0&&!HOME.on)showHints()},900)}
 }
 function mechName(m,wn){return {obst:{Miestas:'🚧 Kelio darbai',Miškas:'🌲 Užvirtę medžiai',Dykuma:'🪨 Akmenys ant kelio',Žiema:'☃️ Pusnys ant kelio'}[wn],locked:{Miestas:'🔧 Sugedę autobusai',Žiema:'❄️ Užšalę autobusai'}[wn]||'🔒 Užrakinti autobusai',
-  lights:'🚦 Šviesoforai',animals:'🦌 Gyvūnai ant kelio',tram:'🚋 Tramvajus',oneway:'➜ Vienos krypties gatvės',caravan:'🐪 Karavanas',heat:'🔥 Perkaitę varikliai',plow:'🚜 Sniego valytuvas',freeze:'🥶 Užšąla laukdami',mud:'🟫 Purvo balos',leaves:'🍂 Lapų krūvos',truck:'🚚 Pristatymo sunkvežimiai',storm:'🌪️ Smėlio audra',ice:'🧊 Slidus ledas',hidden:{Miškas:'🌫️ Rūkas slepia spalvas',Dykuma:'🏜️ Smėlis slepia spalvas'}[wn]||'❓ Paslėptos spalvos',roadblk:{Miškas:'🌲 Užvirtę medžiai'}[wn]||'🚧 Uždaryti keliai'}[m]}
-const MECHSUB={tram:'Saugokis pravažiuojančio tramvajaus',oneway:'Važiuoti galima tik rodyklės kryptimi',caravan:'Lėtai juda išoriniu keliu',heat:'Atsitrenkęs autobusas 2 ėjimus stovi',plow:'Kartais užpila išvažiavimą',freeze:'Laisvi autobusai užšąla po 40 s',leaves:'Matai tik autobusų priekius',animals:'Kartais per kelią pereina elniai',mud:'Pirmas paspaudimas – užstringa',lights:'Degant raudonai autobusas neišvažiuos',obst:'Kliūtis dings, kai įlips nurodytas keleivių skaičius',roadblk:'Medį nupjaus, kai įlips nurodytas keleivių skaičius',locked:'Skaičius mažėja, kai išvažiuoja kiti autobusai',hidden:'Spalva paaiškėja, kai kelias laisvas'};
+  lights:'🚦 Šviesoforai',spin:'🔄 Sukamieji diskai',animals:'🦌 Gyvūnai ant kelio',tram:'🚋 Tramvajus',oneway:'➜ Vienos krypties gatvės',caravan:'🐪 Karavanas',heat:'🔥 Perkaitę varikliai',plow:'🚜 Sniego valytuvas',freeze:'🥶 Užšąla laukdami',mud:'🟫 Purvo balos',leaves:'🍂 Lapų krūvos',truck:'🚚 Pristatymo sunkvežimiai',storm:'🌪️ Smėlio audra',ice:'🧊 Slidus ledas',hidden:{Miškas:'🌫️ Rūkas slepia spalvas',Dykuma:'🏜️ Smėlis slepia spalvas'}[wn]||'❓ Paslėptos spalvos',roadblk:{Miškas:'🌲 Užvirtę medžiai'}[wn]||'🚧 Uždaryti keliai'}[m]}
+const MECHSUB={spin:'Autobusai su 🔄 kas 5 s apsisuka',tram:'Saugokis pravažiuojančio tramvajaus',oneway:'Važiuoti galima tik rodyklės kryptimi',caravan:'Lėtai juda išoriniu keliu',heat:'Atsitrenkęs autobusas 2 ėjimus stovi',plow:'Kartais užpila išvažiavimą',freeze:'Laisvi autobusai užšąla po 40 s',leaves:'Matai tik autobusų priekius',animals:'Kartais per kelią pereina elniai',mud:'Pirmas paspaudimas – užstringa',lights:'Degant raudonai autobusas neišvažiuos',obst:'Kliūtis dings, kai įlips nurodytas keleivių skaičius',roadblk:'Medį nupjaus, kai įlips nurodytas keleivių skaičius',locked:'Skaičius mažėja, kai išvažiuoja kiti autobusai',hidden:'Spalva paaiškėja, kai kelias laisvas'};
 function chalText(c){const cn=['raudoną','mėlyną','žalią','geltoną','violetinį','oranžinį','rožinį','žalsvą'];
   return {moves:`Įveik per ${c.n} ėjimų`,time:`Įveik per ${fmt((c.s||0)*1000)}`,slots:'Neužpildyk visų 5 vietų',first:`Pirmą išleisk ${cn[c.color]} autobusą`,
     combo:'Kombo: 3 tos pačios spalvos autobusai iš eilės',clean:'Nė vienas autobusas stotelėje ne ilgiau 20 s'+(game&&game.vips&&game.vips.length?' (VIP neskaičiuojamas)':''),frugal:'Nenaudok ypatingų vietų stotelėje',quiet:'Nespausk užrakintų autobusų'}[c.type]}
@@ -762,6 +766,7 @@ function hintItems(){const g=game,wn=curWorld.name,o=[],on=new Set(g.mech.on);
   if(st.includes('repair'))o.push(['sp_repair','🚧','Remontuojama vieta','Bus atidaryta, kai iš stotelės išvažiuos nurodytas skaičius autobusų 🔧.']);
   if(g.movers.some(m=>m.kind==='tram'))o.push(['tram','🚋','Tramvajus','Bėgiais retkarčiais pravažiuoja tramvajus. Autobusas, išvažiuojantis tuo metu į jo kelią, atsitrenkia.']);
   if(g.movers.some(m=>m.kind==='caravan'))o.push(['caravan','🐪','Kupranugarių karavanas','Lėtai eina išoriniu keliu pirmyn ir atgal. Kur jis yra, ten išvažiuoti negalima.']);
+  if(g.buses.some(b=>b.spin))o.push(['spin','🔄','Sukamieji diskai','Autobusas su mėlynu 🔄 ženklu stovi ant sukamojo disko ir kas 5 s apsisuka – priekis tampa galu. Ženklas sumirksi prieš apsisukant. Spausk, kai autobusas žiūri ten, kur kelias laisvas.']);
   if(g.oneway.length)o.push(['oneway','➜','Vienos krypties gatvės','Išvažiavęs į tokią gatvę autobusas suka ten, kur trumpiau iki stotelės (į kairę arba į dešinę gatve). Jei mėlyna rodyklė rodo priešingai – atsitrenks; palauk, kol kryptis pasikeis. Kryptis keičiasi kas 12 s (⇄ rodo, po kiek), tad kartais verta palaukti.']);
   if(g.mech.heat)o.push(['heat','🔥','Perkaitę varikliai','Atsitrenkęs autobusas perkaista ir 2 tavo ėjimus negali važiuoti.']);
   if(g.mech.plow)o.push(['plow','🚜','Sniego valytuvas','Kas ~35 s valytuvas supila pusnį ant kurio nors išvažiavimo. Ji dingsta įlipus 5 keleiviams arba po 25 s.']);
@@ -841,7 +846,7 @@ function buildWorld(){
   game.inLot.forEach(id=>{
     const b=game.buses[id],xs=b.cells.map(c=>c[0]),ys=b.cells.map(c=>c[1]),mx=Math.min(...xs),my=Math.min(...ys);
     const el=div('bus',{left:px(ox+mx*C),top:px(oy+my*C),width:px((Math.max(...xs)-mx+1)*C),height:px((Math.max(...ys)-my+1)*C)});
-    el.dataset.id=id;el.innerHTML=lotBusSVG(b)+lockHTML(b)+leafHTML(b);wd.appendChild(el);
+    el.dataset.id=id;el.dataset.dir=b.dir;el.innerHTML=lotBusSVG(b)+lockHTML(b)+leafHTML(b)+spinHTML(b);wd.appendChild(el);
   });
   const segBox=o=>{const xs=o.cells.map(c=>wx(c[0])),ys=o.cells.map(c=>wy(c[1]));return {x0:Math.min(...xs)-C/2,y0:Math.min(...ys)-C/2,x1:Math.max(...xs)+C/2,y1:Math.max(...ys)+C/2}};
   game.robs.forEach((o,i)=>{if(!o.on)return;const bx=segBox(o),mc=o.cells[Math.floor(o.cells.length/2)];
@@ -884,6 +889,7 @@ function obstSVG(wn,x,y,S,onRoad,vert){
   if(wn==='Žiema')return `<ellipse cx="${f(x+3)}" cy="${f(y+4)}" rx="${f(S*.44)}" ry="${f(S*.34)}" fill="rgba(80,110,140,.25)"/><circle cx="${f(x-S*.16)}" cy="${f(y+S*.05)}" r="${f(S*.28)}" fill="#f4f8fc"/><circle cx="${f(x+S*.15)}" cy="${f(y-S*.06)}" r="${f(S*.3)}" fill="#fbfdff"/><circle cx="${f(x+S*.05)}" cy="${f(y+S*.18)}" r="${f(S*.22)}" fill="#eef4fa"/>`;
   return `<circle cx="${f(x+3)}" cy="${f(y+3)}" r="${f(S*.32)}" fill="rgba(0,0,0,.25)"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.32)}" fill="#8a5a33"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.25)}" fill="#c89b62"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.15)}" fill="none" stroke="#a87c4a" stroke-width="1.5"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(S*.06)}" fill="#a87c4a"/>`;
 }
+function spinHTML(b){return b.spin?'<div class="spn">🔄</div>':''}
 function leafHTML(b){if(!b.leafy)return '';return `<div class="lv-ov" style="inset:0"></div>`}
 const LOCKSKIN={'Žiema':['ice','❄'],'Miestas':['tow','🔧']};
 function lockHTML(b){if(b.heat>0)return `<div class="lk heat"><span>🔥 ${b.heat}</span></div>`;if(b.esc>0)return `<div class="lk chain"><span>🚓 ${b.esc}</span></div>`;if(!(b.lock>0))return '';const [cls,ic]=LOCKSKIN[curWorld.name]||['chain','🔒'];return `<div class="lk ${cls}"><span>${ic} ${b.lock}</span></div>`}
@@ -951,7 +957,7 @@ function buildAmbient(w){
 
 /* --- maršrutas keliais (BFS) --- */
 function route(sx,sy,bayX,ty=-1){
-  const {W,H}=game,isR=(x,y)=>x>=-1&&x<=W&&y>=-1&&y<=H&&(x===-1||x===W||y===H||y===-1||game.isRoad(x,y))&&!game.obsOn(x,y);
+  const {W,H}=game,isR=(x,y)=>x>=-1&&x<=W&&y>=-1&&y<=H&&(x===-1||x===W||y===H||y===-1||game.isRoad(x,y))&&(route._no||!game.obsOn(x,y));
   const k=(x,y)=>(y+1)*(W+2)+x+1,dist=new Map([[k(sx,sy),0]]),prev=new Map();let q=[[sx,sy]];
   // vienos krypties gatvė: pirmas posūkis – rodyklės kryptimi
   const ow=game.inCells(game.oneway||[],sx,sy);const OL=game.owLast;if(ow>=0&&!route._nf&&ty===-1&&OL&&OL[0]===sx&&OL[1]===sy){const fs=OL[2];if(fs){const fx=sx+fs[0],fy=sy+fs[1];if(isR(fx,fy)){dist.set(k(fx,fy),1);prev.set(k(fx,fy),[sx,sy]);q=[[fx,fy]]}}}
@@ -960,6 +966,7 @@ function route(sx,sy,bayX,ty=-1){
   for(let x=-1;x<=W;x++){const d=dist.get(k(x,ty));if(d==null)continue;const c=d*cell*V.z+Math.abs(toScreen(wx(x),0).x-bayX);if(c<bestC){bestC=c;bt=[x,ty]}}
   const path=[];for(let cur=bt;cur;cur=prev.get(k(...cur)))path.unshift(cur);
   if(path.length<2&&ow>=0&&!route._nf){route._nf=1;try{return route(sx,sy,bayX,ty)}finally{route._nf=0}}  // rodyklės kryptimi kelio nėra – įprastas maršrutas
+  if(!path.length&&!route._no){route._no=1;try{return route(sx,sy,bayX,ty)}finally{route._no=0}}  // kelias užtvertas kliūtimis – pravažiuoja pro jas (kad neužstrigtų)
   return path;
 }
 function compress(p){return p.filter((q,i)=>{if(i===0||i===p.length-1)return true;const a=p[i-1],b=p[i+1];return !((a.x===q.x&&q.x===b.x)||(a.y===q.y&&q.y===b.y))})}
@@ -1112,6 +1119,12 @@ function updMovers(){if(!game||PZ.on||((!game.movers||!game.movers.length)&&(!ga
   if(game.oneway.length)$('world').querySelectorAll('.ow').forEach(e=>{const i=+e.dataset.w,w=game.oneway[i],d=game.owDir(i,now),ang=w.vert?(d>0?90:-90):(d>0?0:180);if(e._a!==ang){e._a=ang;e.querySelector('b').style.transform=`rotate(${ang}deg)`}
     const left='⇄ '+Math.ceil((w.period-((now+w.off)%w.period))/1000);if(e._l!==left){e._l=left;e.querySelector('span').textContent=left}})}
 setInterval(updMovers,100);
+// sukamieji diskai: apsisukimas ir perspėjimas prieš jį
+function spinTick(){if(!game||game.status!=='play'||PZ.on||!game.buses.some(b=>b.spin))return;const now=performance.now();game.spinAt(now);
+  for(const id of game.inLot){const b=game.buses[id];if(!b.spin)continue;const el=$('world').querySelector(`.bus[data-id="${id}"]`);if(!el)continue;
+    if(+el.dataset.dir!==b.dir){el.dataset.dir=b.dir;el.innerHTML=lotBusSVG(b)+lockHTML(b)+leafHTML(b)+spinHTML(b);const im=el.firstElementChild;if(im&&im.animate)im.animate([{transform:'rotate(-180deg)'},{transform:'rotate(0)'}],{duration:450,easing:'ease-out'})}
+    const left=SPINP-((now+b.spin.off)%SPINP),sp=el.querySelector('.spn');if(sp)sp.classList.toggle('soon',left<1000)}}
+setInterval(spinTick,100);
 function updLights(){if(!game||PZ.on||(!game.lights.length&&!game.animals.length))return;const now=performance.now();$('world').querySelectorAll('.ani').forEach(e=>{const r=game.red(+e.dataset.a,now,game.animals);if(r&&!e.classList.contains('on'))sfx('deer');e.classList.toggle('on',r)});if(!game.lights.length)return;$('world').querySelectorAll('.lgt').forEach(e=>{const r=game.red(+e.dataset.l,now);e.classList.toggle('red',r)})}
 setInterval(updLights,150);
 function updObs(cl){if(!game.robs.length)return;$('world').querySelectorAll('.obs').forEach(e=>{const o=game.robs[+e.dataset.o];
