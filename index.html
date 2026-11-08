@@ -65,6 +65,7 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
 .bbus svg{display:block}
 .door{opacity:0;transition:opacity .2s}.open .door{opacity:1}
 .seats{position:absolute;left:50%;top:55%;max-height:92%;transform:translate(-50%,-50%);display:grid;grid-template-columns:repeat(2,9px);gap:4px;padding:3px;border-radius:6px;background:rgba(0,0,0,.18)}
+.seats.many{grid-template-columns:repeat(3,8px);gap:3px}.seats.many i{width:8px;height:8px}
 .seats i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.25)}
 .seats i.on{background:#fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.3)}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
@@ -264,11 +265,11 @@ function params(L){
   const specials=[];if(ll>6&&pr()<Math.min(.6,.2+D*.6)){const k=Math.min(2,5-win-vipN);for(let i=0;i<k;i++)if(pr()<.75)specials.push(['repair','color','short','temp'][Math.floor(pr()*4)])}
   const mech={on:[...on],obst:(on.has('obst')||on.has('roadblk'))?Math.round((1+P/60)*f)+1:0,lights:on.has('lights')?2+Math.round(f*2):0,
     hidden:on.has('hidden')?.18+.2*f:0,locked:on.has('locked')?.08+.1*f:0,vip,vipN,first:cl===0&&ch>0,specials,truck:on.has('truck')?1+Math.round(f*1.5):0,storm:on.has('storm'),ice:on.has('ice')?.12+.12*f:0,stroller:ll>8&&pr()<.35?1+Math.round(D*2):0,animals:on.has('animals')?2+Math.round(f):0,tram:on.has('tram'),caravan:on.has('caravan'),oneway:0,spin:on.has('spin')&&!GENCOOP?.14+.12*f:0,heat:on.has('heat'),plow:on.has('plow'),freeze:on.has('freeze'),mud:on.has('mud')?.06+.08*f:0,leaves:on.has('leaves')?.2+.2*f:0,
-    veh:ll>6?Math.min(.25,.06+D*.25):0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
+    veh:ll>6?Math.min(.25,.06+D*.25):0,art:ll>25?.05+.04*f:0,coach:ll>50?.12+.08*f:0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.8.8';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.9.0';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -298,10 +299,10 @@ function generate(L){
         if(!ok)continue;
         if(strict&&p.ll>3&&pl<2&&r()<.7)continue;   // daugiau autobusų, kuriems reikia pravažiuoti pro kitus
         const id=buses.length;cells.forEach(([x,y])=>occ[y*W+x]=id);
-        buses.push({id,fx,fy,dir,len,cells,cap:len===3?6:4,color:0,lock:0,hidden:false,kind:'n'});return true}
+        buses.push({id,fx,fy,dir,len,cells,cap:len===4?14:len===3?8:6,color:0,lock:0,hidden:false,kind:'n'});return true}
       return false};
     const popLast=()=>{const q=buses.pop();if(q)q.cells.forEach(([x,y])=>occ[y*W+x]=-1);return q};
-    for(let tries=0;tries<14000&&buses.length<p.n;tries+=40){const tx=M.veh&&r()<M.veh*.35;if(place(tx?1:r()<p.long?3:2,40,true)&&tx){const t=buses[buses.length-1];t.kind='taxi';t.cap=2}}
+    for(let tries=0;tries<14000&&buses.length<p.n;tries+=40){const ar=M.art&&r()<M.art;if(place(ar?4:r()<p.long?3:2,40,true)&&ar){const t=buses[buses.length-1];t.kind='art';t.cap=14}}   // lankstinis autobusas: 4 langeliai, 14 vietų
     let vip=-1,esc=[];
     const vips=[];
     if(M.vip){if(M.vipN>1)for(let k=0;k<4;k++)popLast();const rs=new Set();const addRay=o=>{const [dx,dy]=DIRS[o.dir];for(let x=o.fx+dx,y=o.fy+dy;x>=0&&y>=0&&x<W&&y<H&&!road(x,y);x+=dx,y+=dy)rs.add(y*W+x)};buses.forEach(addRay);const onRay=q=>q.cells.some(c=>rs.has(c[1]*W+c[0]));
@@ -314,7 +315,7 @@ function generate(L){
   const {buses,r,vip,esc}=best,vips=best.vips||[],cols=shuffle([...Array(8).keys()],r).slice(0,p.colors);
   const norm=buses.filter(b=>b.kind==='n'&&!vips.includes(b.id)),order=shuffle(norm.map(b=>b.id),r);
   order.forEach((id,i)=>buses[id].color=i<cols.length?cols[i]:cols[Math.floor(r()*cols.length)]);
-  norm.forEach(b=>{if(b.len===3&&r()<M.veh){if(r()<.5){b.kind='dd';b.cap=8}else{b.kind='school';b.cap=9;b.color=KIDC}}else if(b.len===2&&r()<M.veh*.8){b.kind='car';b.cap=3;b.len=1;b.cells=b.cells.slice(0,1)}});   // lengvoji mašina: 1 langelis, 3 vietos
+  norm.forEach(b=>{if(b.kind==='art')return;if(b.len===3&&M.coach&&r()<M.coach){b.kind='coach';b.cap=16}else if(b.len===3&&r()<M.veh){if(r()<.5){b.kind='dd';b.cap=12}else{b.kind='school';b.cap=10;b.color=KIDC}}else if(b.len===2&&r()<M.veh*1.1){b.kind='car';b.cap=4;b.len=1;b.cells=b.cells.slice(0,1)}});   // lengvoji mašina: 1 langelis, 4 vietos; turistinis: 3 langeliai, 16 vietų
   const sol=buses.map(b=>b.id).reverse(),queue=[];   // eskortas ir VIP – pirmieji sprendime
   let nSpin=0;sol.forEach((id,k)=>{const b=buses[id];if(b.kind==='esc'||vips.includes(id))return;
     const kv=k-sol.slice(0,k).filter(x=>vips.includes(x)).length;   // VIP limuzinai sprendime perkeliami vėliau – jų neskaičiuojam
@@ -647,13 +648,15 @@ function busInner(ci,len,arrow,kind){
   if(kind==='esc'||ci===ESCC)return jeepInner(arrow);
   if(ci===VIPC)return limoInner(len,arrow);
   if(kind==='school')return schoolInner(ci,len,arrow);
-  if(kind==='taxi'||kind==='car'||len===1)return carInner(ci,arrow,kind==='taxi');
+  if(kind==='car'||len===1)return carInner(ci,arrow,false);
   const wn=curWorld?curWorld.name:'Miestas',vip=ci===VIPC,hid=ci===HIDC,esc=ci===ESCC;
   const c=COLORS[ci],H=100*len,dk=shade(c,-.42),md=shade(c,-.15),lt=shade(c,vip?.12:.3),g='bg'+ci;let win='';
   for(let y=30;y<H-32;y+=25)win+=`<rect x="9.5" y="${y}" width="6" height="20" rx="1.5"/><rect x="84.5" y="${y}" width="6" height="20" rx="1.5"/>`;
-  const mid=H/2,chev=`<path d="M34 ${mid+11} L50 ${mid-9} L66 ${mid+11}" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><path d="M34 ${mid+11} L50 ${mid-9} L66 ${mid+11}" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const mid=kind==='art'?H*.27:H/2,chev=`<path d="M34 ${mid+11} L50 ${mid-9} L66 ${mid+11}" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><path d="M34 ${mid+11} L50 ${mid-9} L66 ${mid+11}" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`;
   const deco=vip?`<path d="M16 32V${H-32}M84 32V${H-32}" stroke="#e7c35a" stroke-width="3"/><path d="M36 ${arrow?H-50:mid+8} l4 -16 l7 9 l3 -12 l3 12 l7 -9 l4 16 Z" fill="#f2c94c" stroke="#a87b16" stroke-width="1.5"/>`
     :esc?`<rect x="30" y="${arrow?36:mid-8}" width="40" height="14" rx="4" fill="#111"/><rect x="32" y="${arrow?38:mid-6}" width="17" height="10" rx="3" fill="#3b82f6"/><rect x="51" y="${arrow?38:mid-6}" width="17" height="10" rx="3" fill="#ef4444"/>`
+    :kind==='art'?`<rect x="5" y="${H/2-15}" width="90" height="30" fill="#23272e"/><path d="M5 ${H/2-10}H95M5 ${H/2-5}H95M5 ${H/2}H95M5 ${H/2+5}H95M5 ${H/2+10}H95" stroke="#4b5563" stroke-width="2.4"/><circle cx="50" cy="${H/2}" r="9" fill="#9ca3af" stroke="#111" stroke-width="2"/>`
+    :kind==='coach'?`<rect x="16" y="30" width="68" height="${H-58}" rx="8" fill="#1e293b" opacity=".82"/><rect x="24" y="${H*.42}" width="52" height="${H*.4}" rx="5" fill="#a16207" stroke="#422006" stroke-width="2.5"/><path d="M24 ${H*.55}H76M24 ${H*.7}H76" stroke="#422006" stroke-width="3"/><path d="M37 ${H*.42}V${H*.82}M63 ${H*.42}V${H*.82}" stroke="#facc15" stroke-width="3"/><rect x="22" y="${H*.2}" width="56" height="8" rx="3" fill="#facc15" opacity=".9"/>`
     :kind==='dd'?`<rect x="20" y="34" width="60" height="${H-68}" rx="6" fill="${dk}" opacity=".35"/><g fill="#d5ecff" opacity=".45">${Array.from({length:Math.floor((H-80)/26)},(_,i)=>`<rect x="25" y="${42+i*26}" width="50" height="14" rx="3"/>`).join('')}</g><text x="50" y="${H-48}" text-anchor="middle" font-size="22" font-weight="900" fill="#facc15" font-family="system-ui">2</text>`
     :kind==='school'?`<rect x="18" y="34" width="64" height="${H-68}" rx="6" fill="#facc15" opacity=".55"/><path d="M18 ${H*.4}H82M18 ${H*.6}H82" stroke="#111" stroke-width="5"/><polygon points="88,${H*.3} 95,${H*.3} 99,${H*.3+5} 99,${H*.3+12} 95,${H*.3+16} 88,${H*.3+16} 84,${H*.3+12} 84,${H*.3+5}" fill="#dc2626" stroke="#fff" stroke-width="1.5"/>`
     :kind==='mini'?`<rect x="26" y="40" width="48" height="${H-80}" rx="8" fill="#fff" opacity=".35"/><path d="M14 ${H-40}H86" stroke="#fff" stroke-width="5" opacity=".7"/>`
@@ -794,12 +797,13 @@ function hintItems(){const g=game,wn=curWorld.name,o=[],on=new Set(g.mech.on);
   if(g.storm)o.push(['storm','🌪️','Smėlio audra','Kas 30 s smėlio audra uždengia kairę aikštelės pusę – tada ten esančių autobusų paspausti negalima.']);
   if(g.ice.length)o.push(['ice','🧊','Slidus ledas','Autobusas, stovintis ant ledo, užuot atsitrenkęs nuslysta iki kliūties – taip pakeičia aikštelę.']);
   if(g.vips.length>1)o.push(['vip2','👑','Du VIP autobusai','Šiame lygyje du VIP autobusai ir 8 VIP keleiviai – abu užima vietą stotelėje.']);
-  if(g.buses.some(b=>b.kind==='taxi'))o.push(['taxi','🚕','Taksi','Užima vieną langelį, telpa tik 2 keleiviai.']);
-  if(g.buses.some(b=>b.kind==='school'))o.push(['school','🚸','Mokyklinis autobusas','Geltonas, ilgu priekiu ir su STOP ženklu. Veža tik vaikus (su geltonomis kepuraitėmis) – telpa 9. Vaikai į kitus autobusus nelipa.']);
+  if(g.buses.some(b=>b.kind==='art'))o.push(['veh_art','🚌','Lankstinis autobusas','Ilgiausias – užima 4 langelius, per vidurį guminė jungtis. Telpa 14 keleivių.']);
+  if(g.buses.some(b=>b.kind==='coach'))o.push(['veh_coach','🧳','Turistinis autobusas','Tamsūs langai ir lagaminai ant stogo. Užima 3 langelius, bet telpa net 16 keleivių – stotelėje stovi ilgai.']);
+  if(g.buses.some(b=>b.kind==='school'))o.push(['school','🚸','Mokyklinis autobusas','Geltonas, ilgu priekiu ir su STOP ženklu. Veža tik vaikus (su geltonomis kepuraitėmis) – telpa 10. Vaikai į kitus autobusus nelipa.']);
   if(g.wt.some(Boolean))o.push(['pram','👶','Keleivis su vežimėliu','Užima 2 vietas – autobuse turi būti bent 2 laisvos vietos.']);
   if(st.includes('temp'))o.push(['sp_temp','⏱','Laikina vieta','Autobusas gali stovėti tik 14 s. Jei nespėja prisipildyti – grįžta į aikštelę su jau įlipusiais keleiviais.']);
-  if(g.buses.some(b=>b.kind==='dd'))o.push(['veh_dd','🚌','Dviaukštis autobusas','Pažymėtas „2“ ant stogo – telpa 8 keleiviai.']);
-  if(g.buses.some(b=>b.kind==='car'))o.push(['veh_car','🚗','Lengvoji mašina','Užima vieną langelį, telpa 3 keleiviai (be taksi ženklo).']);
+  if(g.buses.some(b=>b.kind==='dd'))o.push(['veh_dd','🚌','Dviaukštis autobusas','Pažymėtas „2“ ant stogo – telpa 12 keleivių.']);
+  if(g.buses.some(b=>b.kind==='car'))o.push(['veh_car','🚗','Lengvoji mašina','Užima vieną langelį, telpa 4 keleiviai.']);
   if(g.mod==='twoq')o.push(['mod_twoq','👥','Dvi eilės','Keleiviai stovi dviem eilėmis. Lipti gali pirmas iš bet kurios eilės – nereikia laukti, kol atvažiuos autobusas kitam.']);
   if(g.mod==='senior')o.push(['mod_senior','🧓','Lėtas senjoras','Senjoras su lazdele eina lėtai – kol jis lipa, visa eilė laukia.']);
   if(g.mod==='friends')o.push(['mod_friends','🤝','Draugų grupė','Trys draugai (pažymėti 🤝) lipa tik į tą patį autobusą – jame turi būti bent 3 laisvos vietos.']);
@@ -816,7 +820,7 @@ function layout(){
   document.body.style.backgroundImage=css(w.out);document.body.style.backgroundSize=cell*4.2+'px';
   $('platform').style.background=css(w.plat);$('platform').style.backgroundSize=cell*2+'px';
   $('bays').style.backgroundImage=css(w.road);$('bays').style.backgroundSize=cell*4+'px';
-  $('bays').style.height=U*3+30+'px';
+  const mxL=Math.max(3,...game.buses.map(b=>b.len));$('bays').style.height=U*mxL+30+'px';
   const ez=$('esczone');ez.innerHTML='';ez.style.display=game.esc&&game.esc.length?'block':'none';ez.style.height=Math.round(U*1.25)+'px';ez.style.backgroundImage=css(w.road);ez.style.backgroundSize=cell*4+'px';
 }
 /* pasaulio koordinatės: viršuje pagrindinis kelias (y=-1), aikštelė y=0..H-1, apačioje žiedas (y=H);
@@ -1225,7 +1229,7 @@ function renderSlots(){
     if(!s||!s.ready){if(cur&&s&&+cur.dataset.bid!==s.busId)cur.remove();return}
     if(!cur||+cur.dataset.bid!==s.busId){if(cur)cur.remove();const b=game.buses[s.busId];
       cur=document.createElement('div');cur.className='bbus';cur.dataset.bid=s.busId;cur.dataset.vis=s.filled;cur.style.width=U+'px';cur.style.height=U*b.len+'px';cur.style.top=bayTop(i)+'px';
-      cur.innerHTML=busSVG(b.color,b.len,false,b.kind)+`<div class="seats">${'<i></i>'.repeat(s.cap)}</div>`;bays[i].appendChild(cur);
+      cur.innerHTML=busSVG(b.color,b.len,false,b.kind)+`<div class="seats${s.cap>10?' many':''}">${'<i></i>'.repeat(s.cap)}</div>`;bays[i].appendChild(cur);
       cur.querySelectorAll('.seats i').forEach((x,k)=>x.classList.toggle('on',k<s.filled));setTimeout(()=>cur.classList.add('open'),200)}
   });
 }
@@ -1796,7 +1800,7 @@ const _pnow=performance.now.bind(performance);performance.now=()=>_pnow()+COOP.s
 /* --- apatinė stotelė --- */
 function SD(st){return st?{bays:$('bays2'),queue:$('queue2'),platform:$('platform2'),more:$('more2'),q:COOP.q2||(COOP.q2=new Map())}:{bays:$('bays'),queue:$('queue'),platform:$('platform'),more:$('more'),q:qEls}}
 function coopLayout(){const on=!!(game&&game.S);$('station2').style.display=on?'block':'none';if(!on)return;const w=worldOf(level),b=$('bays2');
-  b.style.height=U*3+30+'px';b.style.backgroundImage=css(w.road);b.style.backgroundSize=cell*4+'px';$('platform2').style.background=css(w.plat);$('platform2').style.backgroundSize=cell*2+'px';
+  b.style.height=U*Math.max(3,...game.buses.map(q=>q.len))+30+'px';b.style.backgroundImage=css(w.road);b.style.backgroundSize=cell*4+'px';$('platform2').style.background=css(w.plat);$('platform2').style.backgroundSize=cell*2+'px';
   b.innerHTML='';b.style.gridTemplateColumns=`repeat(${game.nSlots},1fr)`;for(let i=0;i<game.nSlots;i++){const d=document.createElement('div');d.className='bay';d.innerHTML='<span class="bl">BUS</span>';b.appendChild(d)}
   $('queue2').innerHTML='';COOP.q2=new Map();cRenderQueue(1);cRenderQueue(0)}
 function cBayCenter(st,si,len){const r=SD(st).bays.children[si].getBoundingClientRect();return {x:r.left+r.width/2,y:st?r.bottom-5-U*len/2:r.top+5+U*len/2}}
@@ -1806,7 +1810,7 @@ function cRenderSlots(st){game.use(st);const bays=SD(st).bays.children;
     if(!s||!s.ready){if(cur&&s&&+cur.dataset.bid!==s.busId)cur.remove();return}
     if(!cur||+cur.dataset.bid!==s.busId){if(cur)cur.remove();const b=game.buses[s.busId];
       cur=document.createElement('div');cur.className='bbus';cur.dataset.bid=s.busId;cur.dataset.vis=s.filled;cur.style.width=U+'px';cur.style.height=U*b.len+'px';cur.style.top='5px';
-      cur.innerHTML=busSVG(b.color,b.len,false,b.kind)+`<div class="seats">${'<i></i>'.repeat(s.cap)}</div>`;bays[i].appendChild(cur);
+      cur.innerHTML=busSVG(b.color,b.len,false,b.kind)+`<div class="seats${s.cap>10?' many':''}">${'<i></i>'.repeat(s.cap)}</div>`;bays[i].appendChild(cur);
       cur.querySelectorAll('.seats i').forEach((x,k)=>x.classList.toggle('on',k<s.filled));setTimeout(()=>cur.classList.add('open'),200)}})}
 function cRenderQueue(st){game.use(st);const d=SD(st),q=d.queue,SP=19,per=Math.max(1,Math.floor(q.clientWidth/SP)),vis=new Map();
   for(let i=game.qi;i<Math.min(game.queue.length,game.qi+per);i++)vis.set(i,i-game.qi);
