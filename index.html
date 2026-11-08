@@ -262,7 +262,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.8.0';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.8.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -298,7 +298,8 @@ function generate(L){
     for(let tries=0;tries<14000&&buses.length<p.n;tries+=40){const tx=M.veh&&r()<M.veh*.35;if(place(tx?1:r()<p.long?3:2,40,true)&&tx){const t=buses[buses.length-1];t.kind='taxi';t.cap=2}}
     let vip=-1,esc=[];
     const vips=[];
-    if(M.vip){if(M.vipN>1)for(let k=0;k<4;k++)popLast();for(let v=0;v<M.vipN;v++){let got=-1;for(let k=0;k<15;k++){if(place(2,3000,false)){got=buses.length-1;break}if(v>0||!popLast())break}if(got>=0)vips.push(got)}if(!vips.length)continue;vip=vips[0];
+    if(M.vip){if(M.vipN>1)for(let k=0;k<4;k++)popLast();const rs=new Set();const addRay=o=>{const [dx,dy]=DIRS[o.dir];for(let x=o.fx+dx,y=o.fy+dy;x>=0&&y>=0&&x<W&&y<H&&!road(x,y);x+=dx,y+=dy)rs.add(y*W+x)};buses.forEach(addRay);const onRay=q=>q.cells.some(c=>rs.has(c[1]*W+c[0]));
+      for(let v=0;v<(M.vipN>1?4:3);v++){let got=-1;for(let k=0;k<53;k++){if(place(2,k<50?120:1000,false)){if(k<50&&onRay(buses[buses.length-1])){popLast();continue}addRay(buses[buses.length-1]);got=buses.length-1;break}if(k<50)continue;if(v>0||!popLast())break}if(got>=0)vips.push(got)}if(!vips.length)continue;vip=vips[0];
       if(M.vip==='esc'||M.vip==='all')for(let e=0;e<2;e++){if(!place(1,4000,false))break;const b=buses[buses.length-1];b.kind='esc';b.cap=0;b.color=ESCC;esc.push(b.id)}}
     const blocked=buses.filter(b=>rayBlk(b,occ)).length,sc=Math.min(buses.length,p.n+(M.vip?3:0))*10+blocked*4;
     if(!best||sc>best.sc)best={sc,buses,r,vip,esc,vips};
@@ -310,7 +311,8 @@ function generate(L){
   norm.forEach(b=>{if(b.len===3&&r()<M.veh){if(r()<.5){b.kind='dd';b.cap=8}else{b.kind='school';b.cap=9;b.color=KIDC}}else if(b.len===2&&r()<M.veh*.8){b.kind='car';b.cap=3;b.len=1;b.cells=b.cells.slice(0,1)}});   // lengvoji mašina: 1 langelis, 3 vietos
   const sol=buses.map(b=>b.id).reverse(),queue=[];   // eskortas ir VIP – pirmieji sprendime
   let nSpin=0;sol.forEach((id,k)=>{const b=buses[id];if(b.kind==='esc'||vips.includes(id))return;
-    if(M.locked&&k>=2&&r()<M.locked)b.lock=Math.min(k,2+Math.floor(r()*4));
+    const kv=k-sol.slice(0,k).filter(x=>vips.includes(x)).length;   // VIP limuzinai sprendime perkeliami vėliau – jų neskaičiuojam
+    if(M.locked&&kv>=2&&r()<M.locked)b.lock=Math.min(kv,2+Math.floor(r()*4));
     if(M.hidden&&r()<M.hidden)b.hidden=true;else if(M.leaves&&b.len>1&&r()<M.leaves)b.leafy=true;
     if(M.spin&&k>=1&&!b.lock&&!b.hidden&&!b.leafy&&nSpin<3+Math.round(M.spin*12)&&r()<M.spin){nSpin++;b.spin={d0:b.dir,off:Math.floor(r()*SPINP*2)}}});
   const ns=sol.filter(id=>!vips.includes(id)&&buses[id].kind!=='esc');
@@ -319,8 +321,15 @@ function generate(L){
     queue.push(...shuffle(chunk,r));
   }
   if(M.vip&&(M.vip==='esc')&&!esc.length)M.vip='pax';
-  vips.forEach(v=>{const b=buses[v];b.color=VIPC;b.cap=4;b.esc=esc.length});
-  if(vips.length){const Q=queue.length,fr=vips.length>1?[.06,.16,.28,.4,.52,.64,.78,.93]:[.1,.37,.64,.93];fr.map(f=>Math.round(Q*f)).reverse().forEach(pos=>queue.splice(pos,0,VIPC))}
+  vips.forEach(v=>{const b=buses[v];b.color=VIPC;b.cap=1;b.esc=esc.length});   // kiekvienas VIP – savo limuzinu
+  if(vips.length){const n=vips.length,Q=queue.length,cs=[];let c=0;for(let i=0;i<ns.length;i++){if(i%p.win===0)cs.push(c);c+=buses[ns[i]].cap}
+    // kiekvienas limuzinas išvažiuoja prieš grupę, kurioje lipa jo VIP; bet ne vėliau nei pirmas autobusas, kurio kelią jis užstoja
+    const vr=vips.slice().reverse(),blocks=(v,id)=>{const b=buses[id],[dx,dy]=DIRS[b.dir];for(let x=b.fx+dx,y=b.fy+dy;x>=0&&y>=0&&x<W&&y<H&&!road(x,y);x+=dx,y+=dy)if(buses[v].cells.some(q=>q[0]===x&&q[1]===y))return true;return false};
+    const ins=vr.map((v,j)=>{const want=Math.min(ns.length-1,Math.floor(ns.length*(.08+.85*(j+.5)/n)));let k=ns.findIndex(id=>blocks(v,id));if(k<0)k=ns.length;return Math.min(want,k)});
+    for(let j=n-2;j>=0;j--)ins[j]=Math.min(ins[j],ins[j+1]);
+    const cut=ins.map(k=>Math.floor(k/p.win)*p.win),pos=cut.map(k=>cs[k/p.win]);
+    pos.slice().reverse().forEach(q=>queue.splice(q,0,VIPC));
+    const nsol=sol.filter(id=>buses[id].kind==='esc');ns.forEach((id,i)=>{vr.forEach((v,j)=>{if(cut[j]===i)nsol.push(v)});nsol.push(id)});sol.length=0;sol.push(...nsol)}
   // vežimėliai: du iš eilės tos pačios spalvos keleiviai, kurie sprendime lipa į tą patį autobusą, tampa vienu (užima 2 vietas)
   const wt=[];const simSlots=()=>{const so=[],sl=[];let q=0;const dr=()=>{for(;q<queue.length;){const w=wt[q]||1,s3=sl.find(o=>o.c===queue[q]&&o.cap-o.f>=w);if(!s3)break;s3.f+=w;so[q]=sl.indexOf(s3);q++}};
     sol.forEach(id=>{dr();if(buses[id].cap)sl.push({c:buses[id].color,cap:buses[id].cap,f:0})});dr();return so};
@@ -757,9 +766,9 @@ function hintItems(){const g=game,wn=curWorld.name,o=[],on=new Set(g.mech.on);
   if(g.buses.some(b=>b.lock>0))o.push(['locked_'+wn,{Miestas:'🔧',Žiema:'❄️'}[wn]||'🔒',mechName('locked',wn).replace(/^\S+ /,''),'Skaičius rodo, kiek kitų autobusų turi išvažiuoti, kol šis galės judėti.']);
   if(g.buses.some(b=>b.hidden))o.push(['hidden','❓',mechName('hidden',wn).replace(/^\S+ /,''),'Pilko autobuso spalva ir kryptis paaiškėja tik tada, kai jo kelias tampa laisvas.']);
   const vm=g.vipId>=0&&g.mech.vip;
-  if(vm==='pax'||vm==='all'||vm==='esc')o.push(['vip_pax','🎩','VIP keleiviai','Keleivis su cilindru eilės priekyje laukia tik 10 s. Iki tol jo juodas VIP autobusas turi stovėti stotelėje.']);
-  if(vm==='bus'||vm==='all')o.push(['vip_bus','👑','Nekantrus VIP autobusas','Atvykęs į stotelę VIP autobusas laukia ribotą laiką; laikmatis atsinaujina, kai įlipa VIP keleivis. Neatvežk jo per anksti.']);
-  if(vm==='esc'||vm==='all')o.push(['vip_esc','🚓','VIP palyda','VIP autobusas neišvažiuos, kol neišvažiuos abu juodi palydos automobiliai. Jie lauks stotelėje ir išvažiuos kartu su VIP.']);
+  if(vm==='pax'||vm==='all'||vm==='esc')o.push(['vip_pax','🎩','VIP keleiviai','Kiekvienas keleivis su cilindru važiuoja savo juodu limuzinu. Atsidūręs eilės priekyje jis laukia ribotą laiką – iki tol limuzinas turi stovėti stotelėje.']);
+  if(vm==='bus'||vm==='all')o.push(['vip_bus','👑','Nekantrus VIP autobusas','Kiekvienam VIP keleiviui – atskiras limuzinas. Atvykęs į stotelę limuzinas laukia savo keleivio ribotą laiką (kol eilė juda – ilgiau). Neatvežk jo per anksti.']);
+  if(vm==='esc'||vm==='all')o.push(['vip_esc','🚓','VIP palyda','Limuzinai neišvažiuos, kol neišvažiuos abu palydos džipai. Džipai lauks stotelėje ir išvažiuos kartu su pirmu VIP.']);
   const st=g.stype.filter(Boolean).map(t=>t.type);
   if(st.includes('color'))o.push(['sp_color','🟧','Spalvota vieta','Paryškinta spalva vieta stotelėje tinka tik tos spalvos autobusui.']);
   if(st.includes('short'))o.push(['sp_short','🌳','Sutrumpinta vieta','Vieta su žaliąja salele tinka tik trumpiems (2 langelių) autobusams.']);
