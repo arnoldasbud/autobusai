@@ -210,7 +210,13 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
    kai kelias iki artimiausio kelio arba krašto laisvas. */
 const COLORS=['#ef4444','#3b82f6','#22c55e','#eab308','#a855f7','#f97316','#ec4899','#14b8a6','#23262e','#8f99a6','#1e293b','#fbbf24'];  // 8 – VIP, 9 – paslėpta spalva, 10 – palyda, 11 – mokyklinis (vaikai)
 const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
-const SPINP=5000;   // sukamasis diskas: kas 5 s autobusas apsisuka 180°
+const SPINP=5000;
+// ar visi keliai (be užtvertų langelių) pasiekiami iki stotelės – kliūtys neturi atkirsti kvartalo
+function roadConn(W,H,road,cellsList){const bl=new Set();cellsList.forEach(cs=>cs.forEach(c=>bl.add((c[1]+1)*(W+3)+c[0]+1)));const key=(x,y)=>(y+1)*(W+3)+x+1,
+  ok=(x,y)=>x>=-1&&x<=W&&y>=-1&&y<=H&&(x===-1||x===W||y===H||y===-1||road(x,y))&&!bl.has(key(x,y)),seen=new Set(),q=[];
+  for(let x=-1;x<=W;x++)if(ok(x,-1)){seen.add(key(x,-1));q.push([x,-1])}
+  for(let h=0;h<q.length;h++){const [x,y]=q[h];for(const [dx,dy] of DIRS){const nx=x+dx,ny=y+dy,k=key(nx,ny);if(!seen.has(k)&&ok(nx,ny)){seen.add(k);q.push([nx,ny])}}}
+  for(let y=-1;y<=H;y++)for(let x=-1;x<=W;x++)if(ok(x,y)&&!seen.has(key(x,y)))return false;return true}   // sukamasis diskas: kas 5 s autobusas apsisuka 180°
 function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function ranges(n,cuts){const o=[];let a=0;for(const c of [...cuts,n]){if(c>a)o.push([a,c-1]);a=c+1}return o}
@@ -262,7 +268,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.8.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.8.3';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -344,9 +350,9 @@ function generate(L){
   const robs=[],lights=[],usedL=new Set();
   if(M.obst){const cand=[...segs.values()].filter(e=>e.min>=4).sort((a,b)=>b.min*(1+b.n*.4)-a.min*(1+a.n*.4));
     for(const e of cand){if(robs.length>=M.obst)break;if(usedL.has(e.line)||r()<.2)continue;usedL.add(e.line);
-      robs.push({cells:e.cells,vert:e.vert,t:Math.max(3,Math.floor(e.min*(.55+.45*r()))),on:true})}}
+      robs.push({cells:e.cells,vert:e.vert,t:Math.max(3,Math.floor(e.min*(.55+.45*r()))),on:true});if(!roadConn(W,H,road,robs.map(o=>o.cells)))robs.pop()}}
   if(M.truck){const cand=shuffle([...segs.values()].filter(e=>!usedL.has(e.line)&&e.mk>=3),r);
-    for(const e of cand){if(robs.filter(o=>o.kind==='truck').length>=M.truck)break;usedL.add(e.line);robs.push({kind:'truck',cells:e.cells,vert:e.vert,t:Math.max(2,Math.floor(e.mk*(.5+.3*r()))),on:true})}}
+    for(const e of cand){if(robs.filter(o=>o.kind==='truck').length>=M.truck)break;usedL.add(e.line);robs.push({kind:'truck',cells:e.cells,vert:e.vert,t:Math.max(2,Math.floor(e.mk*(.5+.3*r()))),on:true});if(!roadConn(W,H,road,robs.map(o=>o.cells)))robs.pop()}}
   // judančios kliūtys: tramvajus (tiesia linija) ir kupranugarių karavanas (ratu)
   const movers=[];const lineCells=k=>{const o=[];if(k==='L')for(let y=0;y<H;y++)o.push([-1,y]);else if(k==='B')for(let x=-1;x<=W;x++)o.push([x,H]);else if(k==='R')for(let y=H-1;y>=0;y--)o.push([W,y]);else for(let y=0;y<H;y++)o.push([k,y]);return o};
   if(M.tram){const k=p.rc.length?p.rc[Math.floor(r()*p.rc.length)]:'B';movers.push({kind:'tram',cells:lineCells(k),len:3,period:9000+Math.floor(r()*3000),off:Math.floor(r()*9000),ping:false})}
@@ -1164,7 +1170,7 @@ function addObsEl(i){const o=game.robs[i],C=cell,xs=o.cells.map(c=>wx(c[0])),ys=
 setInterval(()=>{if(!game||game.status!=='play'||!startT||PZ.on)return;const now=performance.now();
   game.robs.forEach((o,i)=>{if(o.on&&o.dl&&now>o.dl){o.on=false;updObs([i])}});
   if(game.mech.plow){if(!plowT)plowT=now+20000;
-    if(now>plowT){plowT=now+35000;const busy=new Set(game.robs.filter(o=>o.on).map(o=>o.cells[0].join())),cand=game.segList.filter(sg=>!busy.has(sg.cells[0].join()));
+    if(now>plowT){plowT=now+35000;const busy=new Set(game.robs.filter(o=>o.on).map(o=>o.cells[0].join())),cand=game.segList.filter(sg=>!busy.has(sg.cells[0].join())&&roadConn(game.W,game.H,game.road,[...game.robs.filter(o=>o.on).map(o=>o.cells),sg.cells]));
       if(cand.length){const sg=cand[Math.floor(Math.random()*cand.length)],mc=sg.cells[Math.floor(sg.cells.length/2)],p=toScreen(wx(mc[0]),wy(mc[1])),g0=gen;
         const f=document.createElement('div');f.className='plow';f.textContent='🚜';$('fx').appendChild(f);sfx('depart');
         f.animate([{transform:`translate(-60px,${p.y-20}px)`},{transform:`translate(${p.x-20}px,${p.y-20}px)`}],{duration:1400,easing:'ease-out'}).onfinish=()=>{f.remove();if(gen===g0&&game.status==='play'){const i=game.addPlow(sg,performance.now());addObsEl(i);sfx('storm');toast('🚜 Valytuvas supylė pusnį','Dings po 5 keleivių')}}}}}
@@ -2012,7 +2018,7 @@ function comboCheck(){if(!game||VS.playing)return;const e=game.exitCols,k=e.leng
 function vsAfterTap(){if(!VS.playing||!VS.cfg.atk)return;const e=game.exitCols;if(e.length<3||e.length-VS.combo<3)return;const k=e.length;
   if(e[k-1]===e[k-2]&&e[k-2]===e[k-3]){VS.combo=k;mpSend({t:'atk'});sfx('star',3);toast('⚔️ Kombo! Draugui užtvertas kelias','')}}
 function vsAttacked(){if(!VS.playing||!game||game.status!=='play')return;const busy=new Set(game.robs.filter(o=>o.on).map(o=>o.cells[0].join()));
-  const cand=(game.segList||[]).filter(sg=>!busy.has(sg.cells[0].join()));if(!cand.length)return;const sg=cand[Math.floor(Math.random()*cand.length)];
+  const cand=(game.segList||[]).filter(sg=>!busy.has(sg.cells[0].join())&&roadConn(game.W,game.H,game.road,[...game.robs.filter(o=>o.on).map(o=>o.cells),sg.cells]));if(!cand.length)return;const sg=cand[Math.floor(Math.random()*cand.length)];
   game.robs.push({kind:'atk',cells:sg.cells,vert:sg.vert,t:game.qi+4,dl:performance.now()+20000,on:true});addObsEl(game.robs.length-1);sfx('storm');toast('⚔️ Draugas atakavo!','Kelias užtvertas 4 keleiviams ar 20 s')}
 
 </script>
