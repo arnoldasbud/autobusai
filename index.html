@@ -262,7 +262,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.8.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.8.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -1245,7 +1245,7 @@ function walkToBay(idx,si,busId,depart,w=1){
   const p0=[r.left,r.top],p1=[dX-7,r.top],p2=[dX-6,py-30],p3=[dX-4,dY-29];
   const d1=Math.abs(p1[0]-p0[0]),d2=Math.hypot(p3[0]-p1[0],p3[1]-p1[1]),tot=d1+d2+14;
   c.animate([{transform:`translate(${p0[0]}px,${p0[1]}px)`},{transform:`translate(${p1[0]}px,${p1[1]}px)`,offset:d1/tot},{transform:`translate(${p2[0]}px,${p2[1]}px)`,offset:(d1+d2*.4)/tot},{transform:`translate(${p3[0]}px,${p3[1]}px)`,opacity:1,offset:(d1+d2)/tot},{transform:`translate(${p3[0]-7}px,${p3[1]}px) scale(.55)`,opacity:0}],
-    {duration:slow?Math.max(4200,tot/40*1000):Math.max(300,tot/240*1000),fill:'forwards'}).onfinish=()=>{c.remove();done()};
+    {duration:(slow?(seniorWalk=Math.max(4000,tot/60*1000)):Math.max(300,tot/240*1000)),fill:'forwards'}).onfinish=()=>{c.remove();done()};
 }
 /* ===================== GARSAS (Web Audio – viskas sintezuojama, failų nereikia) ===================== */
 const AU={c:null,on:{s:store.get('busjam.sfx',1),m:store.get('busjam.mus',1)},song:null,next:0,step:0,timer:null};
@@ -1352,6 +1352,7 @@ function sched(){
     drum(S,t,k,st,dest);AU.next+=dt;AU.step++;
   }
 }
+var seniorWalk=0;   // senjoro ėjimo trukmė – kol jis eina, eilė stovi
 function fmt(ms){const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function renderStats(){$('moves').textContent=game.moves;$('time').textContent=fmt(startT?(endT||performance.now())-startT:0)}
 function showCard(html){$('card').innerHTML=html;$('overlay').classList.add('show')}
@@ -1361,8 +1362,7 @@ setInterval(()=>{
   if(!game||game.status!=='play'||PZ.on||COOP.on)return;
   if(performance.now()<holdUntil)return;
   const ev=game.step(performance.now());if(!ev)return;
-  if(ev.board!=null&&ev.idx===game.senior)holdUntil=performance.now()+4400;
-  if(ev.board!=null){walkToBay(ev.idx,ev.board,ev.busId,ev.depart,ev.w||1);renderQueue();updObs(ev.cleared);if(ev.rep&&ev.rep.length)setTimeout(renderSpecial,1200)}
+  if(ev.board!=null){seniorWalk=0;walkToBay(ev.idx,ev.board,ev.busId,ev.depart,ev.w||1);if(ev.idx===game.senior)holdUntil=performance.now()+Math.max(4000,seniorWalk)+300;renderQueue();updObs(ev.cleared);if(ev.rep&&ev.rep.length)setTimeout(renderSpecial,1200)}
   if(ev.win||ev.lose){
     endT=performance.now();renderStats();const g=gen;
     if(ev.win&&VS.playing){if(VS.surv)whenQuiet(g,survNext);else vsEnd(true);return}
