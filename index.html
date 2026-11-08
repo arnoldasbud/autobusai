@@ -259,7 +259,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.6.5';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.6.6';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -492,7 +492,7 @@ const WORLDS=[
   decor:[(x,y,R)=>tree(x,y,R,'#24502a','#2f6b34','#4d9246'),(x,y,R)=>tree(x,y,R*.85,'#2a5a2c','#3a7a3a','#5aa052'),(x,y,R)=>tree(x,y,R*.5,'#2f6b34','#4a8a40','#6fb15f')+`<circle cx='${x+R*.7}' cy='${y+R*.5}' r='${R*.13}' fill='#d94b4b'/><circle cx='${x+R*.66}' cy='${y+R*.46}' r='${R*.04}' fill='#fff'/>`],
   lot:tile('#86735a',22,r=>{let s=specks(r,520,['#6f5e47','#9a876a','#a99777','#5f503c','#b3a283'],.35,1.3);for(let i=0;i<6;i++){const x=r()*100,y=r()*100;s+=`<path d='M${f1(x)} ${f1(y)}l-2 -5M${f1(x)} ${f1(y)}l0 -6M${f1(x)} ${f1(y)}l2 -5' stroke='#55803f' stroke-width='1.2' stroke-linecap='round'/>`}return s}),
   road:tile('#5a4934',23,r=>specks(r,300,['#4d3e2c','#66543d','#705d45'],.3,1)),
-  plat:tile('#a3865e',24,r=>{let s='';for(let i=0;i<=100;i+=9)s+=`<path d='M${i} 0V100' stroke='#86694a' stroke-width='1.2'/>`;return s+specks(r,30,['#8f7350'],.3,.8)})},
+  plat:tile('#dcc9a3',24,r=>{let s='';for(let i=0;i<=100;i+=9)s+=`<path d='M${i} 0V100' stroke='#c2a978' stroke-width='1.2'/>`;return s+specks(r,30,['#cbb488'],.3,.8)})},
  {name:'Dykuma',emoji:'🏜️',curb:'#b9976a',amb:'clouds',
   out:tile('#e2c28c',31,r=>{let s=specks(r,120,['#d5b277','#ecd3a2'],.3,1);for(let i=0;i<5;i++){const y=10+i*20;s+=`<path d='M0 ${y} Q25 ${y-5} 50 ${y} T100 ${y}' stroke='#d3ae72' stroke-width='1.4' fill='none'/>`}
     return s}),
@@ -671,7 +671,7 @@ function makeStick(ci,seed,old){
   <line class="l2" x1="9" y1="21" x2="11" y2="30.5" stroke="${kid?shade(sk,-.12):shade(pa,-.25)}" stroke-width="${kid?2.8:3.2}" stroke-linecap="round"/>${kid?`<rect x="5.2" y="20" width="7.6" height="5.2" rx="1.6" fill="${pa}"/><circle cx="7" cy="30.6" r="1.7" fill="#fff"/><circle cx="11" cy="30.6" r="1.7" fill="#fff"/>`:''}
   <line class="a1" x1="9" y1="13" x2="7.5" y2="20.5" stroke="${shade(c,-.3)}" stroke-width="${puffy?3.4:2.7}" stroke-linecap="round"/>
   ${bag?`<rect x="${wn==='Miškas'?1.8:2.6}" y="11" width="${wn==='Miškas'?5.4:4.5}" height="${wn==='Miškas'?10:8}" rx="1.6" fill="${wn==='Miškas'?'#7a5a32':shade(pa,.25)}"/>`:''}
-  <rect x="${puffy?4.6:5.5}" y="10.5" width="${puffy?8.8:7}" height="12" rx="${puffy?4:3.2}" fill="${c}"/>${vip?`<path d="M9 10.5 V22" stroke="#f2c94c" stroke-width=".8"/>`:''}
+  <rect x="${puffy?4.6:5.5}" y="10.5" width="${puffy?8.8:7}" height="12" rx="${puffy?4:3.2}" fill="${c}" stroke="${shade(c,-.55)}" stroke-width=".9"/>${vip?`<path d="M9 10.5 V22" stroke="#f2c94c" stroke-width=".8"/>`:''}
   <line class="a2" x1="9" y1="13" x2="10.5" y2="20.5" stroke="${c}" stroke-width="${puffy?3.4:2.7}" stroke-linecap="round"/>
   <g class="hd"><circle cx="9" cy="6" r="4.4" fill="${sk}"/>${hair}<circle cx="11.7" cy="6.3" r=".65" fill="#3b2a20"/>${hat}</g>${neck}
   </g></g></svg>`;if(kid)e.classList.add('kid');
