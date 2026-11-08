@@ -65,7 +65,7 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
 .bbus svg{display:block}
 .door{opacity:0;transition:opacity .2s}.open .door{opacity:1}
 .seats{position:absolute;left:50%;top:55%;max-height:92%;transform:translate(-50%,-50%);display:grid;grid-template-columns:repeat(2,9px);gap:4px;padding:3px;border-radius:6px;background:rgba(0,0,0,.18)}
-.seats.many{grid-template-columns:repeat(3,8px);gap:3px}.seats.many i{width:8px;height:8px}
+.seats.many{grid-template-columns:repeat(2,8px);gap:2px 4px}.seats.many i{width:8px;height:8px}
 .seats i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.25)}
 .seats i.on{background:#fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.3)}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
@@ -269,7 +269,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.9.0';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.9.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -657,13 +657,13 @@ function busInner(ci,len,arrow,kind){
     :esc?`<rect x="30" y="${arrow?36:mid-8}" width="40" height="14" rx="4" fill="#111"/><rect x="32" y="${arrow?38:mid-6}" width="17" height="10" rx="3" fill="#3b82f6"/><rect x="51" y="${arrow?38:mid-6}" width="17" height="10" rx="3" fill="#ef4444"/>`
     :kind==='art'?`<rect x="5" y="${H/2-15}" width="90" height="30" fill="#23272e"/><path d="M5 ${H/2-10}H95M5 ${H/2-5}H95M5 ${H/2}H95M5 ${H/2+5}H95M5 ${H/2+10}H95" stroke="#4b5563" stroke-width="2.4"/><circle cx="50" cy="${H/2}" r="9" fill="#9ca3af" stroke="#111" stroke-width="2"/>`
     :kind==='coach'?`<rect x="16" y="30" width="68" height="${H-58}" rx="8" fill="#1e293b" opacity=".82"/><rect x="24" y="${H*.42}" width="52" height="${H*.4}" rx="5" fill="#a16207" stroke="#422006" stroke-width="2.5"/><path d="M24 ${H*.55}H76M24 ${H*.7}H76" stroke="#422006" stroke-width="3"/><path d="M37 ${H*.42}V${H*.82}M63 ${H*.42}V${H*.82}" stroke="#facc15" stroke-width="3"/><rect x="22" y="${H*.2}" width="56" height="8" rx="3" fill="#facc15" opacity=".9"/>`
-    :kind==='dd'?`<rect x="20" y="34" width="60" height="${H-68}" rx="6" fill="${dk}" opacity=".35"/><g fill="#d5ecff" opacity=".45">${Array.from({length:Math.floor((H-80)/26)},(_,i)=>`<rect x="25" y="${42+i*26}" width="50" height="14" rx="3"/>`).join('')}</g><text x="50" y="${H-48}" text-anchor="middle" font-size="22" font-weight="900" fill="#facc15" font-family="system-ui">2</text>`
+    :kind==='dd'?`<rect x="12" y="16" width="76" height="${H-30}" rx="11" fill="#3f3f46"/><rect x="47" y="20" width="6" height="${H-40}" fill="#52525b"/><g fill="${c}" stroke="${lt}" stroke-width="1.5">${Array.from({length:Math.floor((H-90)/22)},(_,i)=>`<rect x="17" y="${60+i*22}" width="28" height="13" rx="3"/><rect x="55" y="${60+i*22}" width="28" height="13" rx="3"/>`).join('')}</g><path d="M12 24 Q12 14 24 14 H76 Q88 14 88 24 V44 H12Z" fill="#94c4ea" opacity=".85"/><rect x="62" y="${H-46}" width="22" height="26" rx="3" fill="#71717a"/><path d="M64 ${H-42}h18M64 ${H-36}h18M64 ${H-30}h18M64 ${H-24}h18" stroke="#3f3f46" stroke-width="2"/>`
     :kind==='school'?`<rect x="18" y="34" width="64" height="${H-68}" rx="6" fill="#facc15" opacity=".55"/><path d="M18 ${H*.4}H82M18 ${H*.6}H82" stroke="#111" stroke-width="5"/><polygon points="88,${H*.3} 95,${H*.3} 99,${H*.3+5} 99,${H*.3+12} 95,${H*.3+16} 88,${H*.3+16} 84,${H*.3+12} 84,${H*.3+5}" fill="#dc2626" stroke="#fff" stroke-width="1.5"/>`
     :kind==='mini'?`<rect x="26" y="40" width="48" height="${H-80}" rx="8" fill="#fff" opacity=".35"/><path d="M14 ${H-40}H86" stroke="#fff" stroke-width="5" opacity=".7"/>`
     :hid?`<text x="50" y="${arrow?mid-14:mid+14}" text-anchor="middle" font-size="40" font-weight="900" fill="#fff" opacity=".9" font-family="system-ui">?</text>`:roofDeco(wn,H,len);
   return `<defs><linearGradient id="${g}" x1="0" x2="1"><stop offset="0" stop-color="${dk}"/><stop offset=".13" stop-color="${c}"/><stop offset=".5" stop-color="${lt}"/><stop offset=".87" stop-color="${c}"/><stop offset="1" stop-color="${dk}"/></linearGradient>
   <linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b94ba"/><stop offset="1" stop-color="#1b2f46"/></linearGradient></defs>
-  <rect x="2" y="-1" width="96" height="${H+5}" rx="19" fill="rgba(0,0,0,.28)"/>
+  ${kind==='dd'?`<rect x="9" y="7" width="96" height="${H+5}" rx="19" fill="rgba(0,0,0,.3)"/>`:''}<rect x="2" y="-1" width="96" height="${H+5}" rx="19" fill="rgba(0,0,0,.28)"/>
   <g fill="#111417"><rect x="3" y="${H*.11}" width="9" height="19" rx="3"/><rect x="88" y="${H*.11}" width="9" height="19" rx="3"/><rect x="3" y="${H*.79}" width="9" height="19" rx="3"/><rect x="88" y="${H*.79}" width="9" height="19" rx="3"/></g>
   <rect x="-1" y="15" width="10" height="6" rx="2.5" fill="${dk}"/><rect x="91" y="15" width="10" height="6" rx="2.5" fill="${dk}"/>
   <rect x="7" y="2" width="86" height="${H-4}" rx="15" fill="url(#${g})"/>
@@ -802,7 +802,7 @@ function hintItems(){const g=game,wn=curWorld.name,o=[],on=new Set(g.mech.on);
   if(g.buses.some(b=>b.kind==='school'))o.push(['school','🚸','Mokyklinis autobusas','Geltonas, ilgu priekiu ir su STOP ženklu. Veža tik vaikus (su geltonomis kepuraitėmis) – telpa 10. Vaikai į kitus autobusus nelipa.']);
   if(g.wt.some(Boolean))o.push(['pram','👶','Keleivis su vežimėliu','Užima 2 vietas – autobuse turi būti bent 2 laisvos vietos.']);
   if(st.includes('temp'))o.push(['sp_temp','⏱','Laikina vieta','Autobusas gali stovėti tik 14 s. Jei nespėja prisipildyti – grįžta į aikštelę su jau įlipusiais keleiviais.']);
-  if(g.buses.some(b=>b.kind==='dd'))o.push(['veh_dd','🚌','Dviaukštis autobusas','Pažymėtas „2“ ant stogo – telpa 12 keleivių.']);
+  if(g.buses.some(b=>b.kind==='dd'))o.push(['veh_dd','🚌','Dviaukštis autobusas','Atviras viršutinis aukštas su sėdynių eilėmis – telpa 12 keleivių.']);
   if(g.buses.some(b=>b.kind==='car'))o.push(['veh_car','🚗','Lengvoji mašina','Užima vieną langelį, telpa 4 keleiviai.']);
   if(g.mod==='twoq')o.push(['mod_twoq','👥','Dvi eilės','Keleiviai stovi dviem eilėmis. Lipti gali pirmas iš bet kurios eilės – nereikia laukti, kol atvažiuos autobusas kitam.']);
   if(g.mod==='senior')o.push(['mod_senior','🧓','Lėtas senjoras','Senjoras su lazdele eina lėtai – kol jis lipa, visa eilė laukia.']);
