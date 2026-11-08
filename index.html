@@ -268,7 +268,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.8.3';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.8.4';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -704,7 +704,7 @@ function makeStick(ci,seed,old){
   if(vip)hat=`<rect x="5.6" y="-2.6" width="6.8" height="6" rx="1" fill="#111827"/><rect x="5.6" y="1.6" width="6.8" height="1.4" fill="#f2c94c"/><rect x="3.4" y="3" width="11.2" height="1.6" rx=".8" fill="#111827"/>`,neck=`<path d="M8 11 L9 14 L10 11Z" fill="#f2c94c"/>`;
   else if(wn==='Miškas')hat=`<path d="M3 5.6 H15 L13.2 3.4 Q9 .4 4.8 3.4Z" fill="${['#6b7d3a','#8a6d3b','#5a6b4a'][Math.floor(h(8)*3)]}"/>`;
   else if(wn==='Dykuma')hat=`<ellipse cx="9" cy="4.4" rx="7.6" ry="1.6" fill="#d9b46a"/><path d="M5.6 4.4 Q6 .8 9 .8 Q12 .8 12.4 4.4Z" fill="#e3c27e"/><rect x="9.6" y="5.3" width="4" height="1.5" rx=".7" fill="#111"/>`;
-  else if(wn==='Žiema'){const bc=['#e5e7eb','#1f2937','#b91c1c','#1e40af'][Math.floor(h(8)*4)];hat=`<path d="M4.4 5.4 Q4.6 .6 9 .6 Q13.4 .6 13.6 5.4Z" fill="${bc}"/><rect x="4.2" y="4.4" width="9.6" height="1.8" rx=".9" fill="${shade(bc.length===7?bc:'#e5e7eb',-.2)}"/><circle cx="9" cy="0" r="1.8" fill="#fff"/>`;neck=`<rect x="5.2" y="9.4" width="7.6" height="2.6" rx="1.2" fill="${shade(c,-.35)}"/><rect x="10.4" y="10.6" width="2" height="4.6" rx="1" fill="${shade(c,-.35)}"/>`}
+  else if(wn==='Žiema'){const bc=['#16a34a','#1f2937','#b91c1c','#1e40af'][Math.floor(h(8)*4)];hat=`<path d="M4.4 5.4 Q4.6 .6 9 .6 Q13.4 .6 13.6 5.4Z" fill="${bc}"/><rect x="4.2" y="4.4" width="9.6" height="1.8" rx=".9" fill="${shade(bc.length===7?bc:'#e5e7eb',-.2)}"/><circle cx="9" cy="0" r="1.8" fill="#fff"/>`;neck=`<rect x="5.2" y="9.4" width="7.6" height="2.6" rx="1.2" fill="${shade(c,-.35)}"/><rect x="10.4" y="10.6" width="2" height="4.6" rx="1" fill="${shade(c,-.35)}"/>`}
   if(kid)hat=`<path d="M4.4 5.4 Q4.6 .8 9 .8 Q13.4 .8 13.6 5.4Z" fill="#fbbf24"/><rect x="9" y="4.4" width="6.2" height="1.6" rx=".8" fill="#f59e0b"/>`;
   if(old==='pram'){neck=`<g><rect x="12.5" y="18" width="8" height="6" rx="2.5" fill="#60a5fa"/><path d="M12.5 18 Q16 13 20.5 18" fill="#2563eb"/><circle cx="14" cy="26" r="1.6" fill="#111"/><circle cx="19.5" cy="26" r="1.6" fill="#111"/><path d="M10.5 16 L12.5 19" stroke="#111" stroke-width="1.2"/></g>`;e.dataset.pram=1}
   if(sr){hat=`<path d="M4.6 5.6 A4.4 4.4 0 0 1 13.4 5 Q12 2.6 9 2.4 Q5.6 2.6 4.6 5.6Z" fill="#e5e7eb"/>`;neck=`<path d="M12.5 15 L14.5 31" stroke="#7a5230" stroke-width="1.6" stroke-linecap="round"/>`;e.classList.add('old');e.dataset.old=1}
@@ -1048,7 +1048,7 @@ function showBoost(){const bank=starBank();showCard(`<h2>🧰 Pagalbos</h2><p>Tu
   $('bx').onclick=()=>$('overlay').classList.remove('show');
   document.querySelectorAll('.bb').forEach(bt=>bt.onclick=()=>{const B=BOOST.find(x=>x.id===bt.dataset.b);if(!testMode)addCoins(-B.cost);achAdd('boost',1);$('overlay').classList.remove('show');sfx('unlock');
     if(B.id==='crane'){game.crane=true;toast('🏗️ Paspausk autobusą','Kranas jį pakels į stotelę')}
-    else if(B.id==='vip'){VIP.mult=2;const n=performance.now();if(VIP.busDl)VIP.busDl+=Math.max(0,VIP.busDl-n);if(VIP.paxT)VIP.paxT-=Math.max(0,(VIP.easy?20000:15000)-(n-VIP.paxT));toast('⏸ VIP kantrybė','Laukia dvigubai ilgiau')}
+    else if(B.id==='vip'){VIP.mult=2;const n=performance.now();if(VIP.busDl)VIP.busDl+=Math.max(0,VIP.busDl-n);if(VIP.paxT)VIP.paxT-=Math.max(0,(VIP.easy?30000:24000)-(n-VIP.paxT));toast('⏸ VIP kantrybė','Laukia dvigubai ilgiau')}
     else if(B.id==='slot'){game.addSlot();buildBays();renderSlots();toast('➕ Atsirado 6-a vieta','')}
     else{const o=game.robs.find(o=>o.on);if(o){o.on=false;updObs([0])}}})}
 function makeFly(b,base){const f=document.createElement('div');f.className='fly';f.style.width=base+'px';f.style.height=base*b.len+'px';f.innerHTML=busSVG(b.color,b.len,false,b.kind);$('fx').appendChild(f);return f}
@@ -1180,12 +1180,16 @@ setInterval(()=>{if(!game||game.status!=='play'||!startT||PZ.on)return;const now
 const VIP={paxT:0,busDl:0,last:-1,tick:0};
 function vipTick(){
   const bd=$('vipb');if(!game||game.status!=='play'||game.vipId<0){bd.style.display='none';return}
+  if($('overlay').classList.contains('show')){if(VIP.paxT)VIP.paxT+=200;if(VIP.busDl)VIP.busDl+=200;return}   // kol rodoma kortelė – laikas nebėga
   const now=performance.now(),mode=game.mech.vip,ll=lLoc(level),easyB=ll<=25;let show=null;
   // laukimo laikas: 1 skyriuje ilgesnis; VIP autobusas nesupyksta, kol eilė juda (kiekvienas įlipęs keleivis prailgina laiką)
-  const m2=VIP.mult||1,PAX=(easyB?20000:15000)*m2,BUS=(easyB?18000:14000)*m2;VIP.easy=easyB;
+  const m2=VIP.mult||1,PAX=(easyB?30000:24000)*m2,BUS=(easyB?18000:14000)*m2;VIP.easy=easyB;
   if(mode==='pax'||mode==='all'||mode==='esc'){
-    const vf=game.fronts().find(i=>game.queue[i]===VIPC),front=vf!=null,has=game.slots.some(s=>s&&s.ready&&s.color===VIPC&&s.filled<s.cap);
-    if(front&&!has){if(!VIP.paxT)VIP.paxT=now;const rem=PAX-(now-VIP.paxT),el=qEls.get(vf);
+    // laikas pradedamas skaičiuoti, kai VIP keleivis pasirodo matomoje eilės dalyje; sustoja, kai jo limuzinas jau stotelėje
+    const f0=Math.min(...game.fronts()),vj=game.queue.indexOf(VIPC,f0),ve=vj>=0?qEls.get(vj):null,vr=ve?ve.getBoundingClientRect():null,
+      vis=!!vr&&vr.width>0&&vr.left<innerWidth-20,vf=vj,front=vis,has=game.slots.some(s=>s&&s.color===VIPC&&s.filled<s.cap);
+    if(VIP.paxJ!==vj){VIP.paxJ=vj;VIP.paxT=0}
+    if(front&&!has){if(!VIP.paxT)VIP.paxT=now;const rem=PAX-(now-VIP.paxT),el=ve;
       if(el){const r=el.getBoundingClientRect();show={x:r.left+9,y:r.top-2,rem,t:'👑 laukia'}}if(rem<=0)return vipFail('pax')}else VIP.paxT=0;
   }
   if(mode==='bus'||mode==='all'){
