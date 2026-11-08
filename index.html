@@ -268,7 +268,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.8.4';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.8.5';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -1840,7 +1840,9 @@ function cFlyToBay(st,b,res,el){const si=res.slot,rr=el.getBoundingClientRect(),
         cRenderSlots(st)};go()}},150)}
 /* --- įvykiai --- */
 function coopEmit(ev){COOP.seq++;mpSend({t:'ce',n:COOP.seq,ev})}
+function coopForeign(id,st){const b=game.buses[id];return !!b&&b.kind!=='esc'&&game.own&&game.own[b.color]!=null&&game.own[b.color]!==st}
 function coopLocalTap(id,el){if(game.status!=='play'||VS.lock)return;const me=COOP.host?0:1;
+  if(coopForeign(id,me)){sfx('locked');toast('🚫 Tai draugo autobusas','Spausk tik savo spalvų autobusus');el.classList.remove('nope');void el.offsetWidth;el.classList.add('nope');return}
   if(COOP.host){if(stormCovers(id)){sfx('locked');toast('🌪️ Audra – palauk','');return}const now=performance.now();const res=game.ctap(id,0,now);if(res.ignored)return;coopEmit({e:'tap',id,st:0,now});coopTapFx(0,id,res)}
   else{const pr=coopPredict(id);mpSend({t:'ct',id});
     if(pr){COOP.pre[id]=pr;if(!startT)startT=performance.now();sfx('start');cFlyToBay(1,game.buses[id],{slot:pr.slot,ex:pr.ex,ey:pr.ey},el)}
@@ -1899,7 +1901,7 @@ function renderCoopEnd(){const r=VS.cres;if(!r||VS.playing)return;const W=VS.wan
   document.querySelectorAll('#card [data-a]').forEach(bt=>bt.onclick=()=>{const act=bt.dataset.a;vsWant(W.me&&W.me.act===act?null:act)});
   $('lb').onclick=()=>{mpSend({t:'want',w:null});VS.want.me=null;openLobby()};$('qt').onclick=()=>{mpSend({t:'quit'});vsAbort()}}
 function coopOff(){if(!COOP||(!COOP.on&&!VS.coop))return;COOP.on=false;VS.coop=false;COOP.ended=false;for(const k in COOP.flies)COOP.flies[k].remove();COOP.flies={};$('station2').style.display='none';$('queue2').innerHTML='';$('bays2').innerHTML=''}
-function coopMsg(m){if(m.t==='ct'){if(!COOP.host||!COOP.on||!game||!game.S||game.status!=='play'||VS.lock)return;if(stormCovers(m.id))return;const now=performance.now(),res=game.ctap(m.id,1,now);if(res.ignored)return;coopEmit({e:'tap',id:m.id,st:1,now});coopTapFx(1,m.id,res);return}
+function coopMsg(m){if(m.t==='ct'){if(!COOP.host||!COOP.on||!game||!game.S||game.status!=='play'||VS.lock||coopForeign(m.id,1))return;if(stormCovers(m.id))return;const now=performance.now(),res=game.ctap(m.id,1,now);if(res.ignored)return;coopEmit({e:'tap',id:m.id,st:1,now});coopTapFx(1,m.id,res);return}
   if(m.t==='ce')return coopIn(m);
   if(m.t==='cquit'){if(COOP.on&&!COOP.ended){endT=performance.now();game.status='lose';coopEnd(false,COOP.host?1:0);toast('🏳️ Draugas pasidavė','')}}}
 /* --- versijų suderinimas ir atnaujinimas per ryšį --- */
