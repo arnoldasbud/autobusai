@@ -268,7 +268,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.8.6';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.8.7';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -444,7 +444,7 @@ class Game{
   ray(b){const [dx,dy]=DIRS[b.dir];let gap=0,x=b.fx+dx,y=b.fy+dy;
     for(;x>=0&&y>=0&&x<this.W&&y<this.H&&!this.isRoad(x,y);x+=dx,y+=dy,gap++)if(this.occ[y*this.W+x]!==-1)return {blocked:true,gap,by:this.occ[y*this.W+x]};
     return {x,y,gap}}
-  accepts(i,b){const t=this.stype[i];if(!t||t.type==='temp')return true;if(t.type==='repair')return t.n<=0;if(t.type==='color')return b.color===t.color;return b.len===2}
+  accepts(i,b){const t=this.stype[i];if(!t||t.type==='temp')return true;if(t.type==='repair')return t.n<=0;if(t.type==='color')return b.color===t.color;return b.len<=2}   // sutrumpinta vieta: tinka ir taksi / lengvosioms
   tap(id,now){
     if(this.status!=='play'||!this.inLot.has(id))return {ignored:true};
     this.spinAt(now);const b=this.buses[id];if(this.crane&&b.kind!=='esc')return this.craneTap(id);if(b.heat>0){this.lockTaps++;return {locked:true,heat:b.heat}}if(b.lock>0){this.lockTaps++;return {locked:true,n:b.lock}}if(b.esc>0){this.lockTaps++;return {locked:true,esc:b.esc}}
@@ -777,7 +777,7 @@ function hintItems(){const g=game,wn=curWorld.name,o=[],on=new Set(g.mech.on);
   if(vm==='esc'||vm==='all')o.push(['vip_esc','🚓','VIP palyda','Limuzinai neišvažiuos, kol neišvažiuos abu palydos džipai. Džipai lauks stotelėje ir išvažiuos kartu su pirmu VIP.']);
   const st=g.stype.filter(Boolean).map(t=>t.type);
   if(st.includes('color'))o.push(['sp_color','🟧','Spalvota vieta','Paryškinta spalva vieta stotelėje tinka tik tos spalvos autobusui.']);
-  if(st.includes('short'))o.push(['sp_short','🌳','Sutrumpinta vieta','Vieta su žaliąja salele tinka tik trumpiems (2 langelių) autobusams.']);
+  if(st.includes('short'))o.push(['sp_short','🌳','Sutrumpinta vieta','Vieta su žaliąja salele tinka tik trumpiems autobusams (2 langelių), taksi ir lengvosioms mašinoms.']);
   if(st.includes('repair'))o.push(['sp_repair','🚧','Remontuojama vieta','Bus atidaryta, kai iš stotelės išvažiuos nurodytas skaičius autobusų 🔧.']);
   if(g.movers.some(m=>m.kind==='tram'))o.push(['tram','🚋','Tramvajus','Bėgiais retkarčiais pravažiuoja tramvajus. Autobusas, išvažiuojantis tuo metu į jo kelią, atsitrenkia.']);
   if(g.movers.some(m=>m.kind==='caravan'))o.push(['caravan','🐪','Kupranugarių karavanas','Lėtai eina išoriniu keliu pirmyn ir atgal. Kur jis yra, ten išvažiuoti negalima.']);
@@ -914,7 +914,9 @@ function applyV(){const v=$('view'),vw=v.clientWidth,vh=v.clientHeight,sw=WW*V.z
   V.tx=sw<=vw?(vw-sw)/2:Math.min(0,Math.max(vw-sw,V.tx));V.ty=sh<=vh?0:Math.min(0,Math.max(vh-sh,V.ty));
   $('world').style.transform=`translate(${V.tx}px,${V.ty}px) scale(${V.z})`}
 function zoomAt(nz,px,py){nz=Math.max(zMin(),Math.min(1.8,nz));const ax=(px-V.tx)/V.z,ay=(py-V.ty)/V.z;V.z=nz;V.tx=px-ax*nz;V.ty=py-ay*nz;applyV()}
-function defaultView(){const v=$('view');V.z=Math.max(zMin(),Math.min(1,Math.max(.75,v.clientWidth/WW)));V.tx=(v.clientWidth-WW*V.z)/2;V.ty=0;applyV()}
+function defaultView(){const v=$('view');V.z=Math.max(zMin(),Math.min(1,Math.max(.75,v.clientWidth/WW)));V.tx=(v.clientWidth-WW*V.z)/2;V.ty=0;
+  if(typeof COOP!=='undefined'&&COOP&&COOP.on&&!COOP.host&&game&&game.S)V.ty=v.clientHeight-(game.H+2)*cell*V.z;   // coop svečias: matosi apatinis žiedo kelias prie jo stotelės
+  applyV()}
 (function(){
   const v=$('view'),P=new Map();let G=null;
   const rel=e=>{const r=v.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}};
@@ -1108,7 +1110,7 @@ function onTap(id,el){
   if(res.slid){const [dx,dy]=DIRS[b.dir],d=res.gap*cell,ox=M+cell;sfx('slide');el.animate([{transform:'translate(0,0)'},{transform:`translate(${dx*d}px,${dy*d}px) rotate(${(Math.random()*6-3).toFixed(1)}deg)`,offset:.85},{transform:`translate(${dx*d}px,${dy*d}px)`}],{duration:500+res.gap*80,easing:'ease-out'}).onfinish=()=>{
       const xs=b.cells.map(c=>c[0]),ys=b.cells.map(c=>c[1]);el.style.left=ox+Math.min(...xs)*cell+'px';el.style.top=cell+Math.min(...ys)*cell+'px'};setTimeout(()=>sfx('bump'),450+res.gap*70);setTimeout(revealAll,700)}
   else if(res.blocked){bumpFx(b,res,el);setTimeout(()=>sfx('bump'),(300+res.gap*55)*.42)}
-  else if(res.noslot){sfx('noslot');const s=$('bays');s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake')}
+  else if(res.noslot){sfx('noslot');if(game.slots.some(x=>!x))toast('🚫 Laisva vieta netinka šiam autobusui','Žiūrėk vietos ženklą');else toast('🚫 Stotelėje nėra vietos','');const s=$('bays');s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake')}
   else{sfx('start');if(res.esc)flyAway(b,res,el);else flyToBay(b,res,el);updChal();
     res.unlocks.forEach(o=>{const e=$('world').querySelector(`.bus[data-id="${o}"] .lk`),q=game.buses[o];if(!e)return;
       const v=q.lock>0?q.lock:(q.esc||0);if(v>0)e.querySelector('span').textContent=e.querySelector('span').textContent.split(' ')[0]+' '+v;else{e.classList.add('gone');setTimeout(()=>e.remove(),500);sfx('unlock')}});
