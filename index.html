@@ -85,7 +85,9 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
 .obs .tape{position:absolute;inset:6px;border-radius:6px;opacity:.55}.obs .tape.v{background:repeating-linear-gradient(0deg,#ef4444 0 10px,#fff 10px 20px);left:42%;right:42%}.obs .tape.h{background:repeating-linear-gradient(90deg,#ef4444 0 10px,#fff 10px 20px);top:42%;bottom:42%}
 .plow{position:absolute;left:0;top:0;font-size:34px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.4))}
 .storm{position:absolute;pointer-events:none;z-index:2;border-radius:10px;opacity:0;transition:opacity .8s;overflow:hidden}.storm::before{content:'';position:absolute;top:0;bottom:0;left:0;right:-60px;background:repeating-linear-gradient(115deg,rgba(214,180,120,.9) 0 18px,rgba(194,160,100,.95) 18px 40px);will-change:transform;animation:sandT .9s linear infinite paused}.storm.warn::before,.storm.on::before{animation-play-state:running}@keyframes sandT{to{transform:translateX(-44.14px)}}
-.storm.warn{opacity:.25}.storm.on{opacity:.93}@keyframes sand{to{background-position:-200% 0}}
+.storm.warn{opacity:.25}.storm.on{opacity:.93}
+.fogq{position:absolute;pointer-events:none;z-index:2;border-radius:18px;opacity:0;transition:opacity 1.4s;background:radial-gradient(ellipse at 40% 40%,#f1f5f9,#cbd5e1 70%,#94a3b8);box-shadow:0 0 22px 14px rgba(203,213,225,.85)}
+.fogq.on{opacity:1}@keyframes sand{to{background-position:-200% 0}}
 .lgt{position:absolute;pointer-events:none;border-radius:6px;transition:background .2s}.lgt.red{background:rgba(239,68,68,.22);box-shadow:inset 0 0 0 2px rgba(239,68,68,.6)}
 .lamp{position:absolute;transform:translate(-50%,-50%);background:#111;border-radius:6px;padding:3px;display:flex;flex-direction:column;gap:2px;box-shadow:0 2px 3px rgba(0,0,0,.4)}.lamp i{width:9px;height:9px;border-radius:50%;background:#14532d}.lamp i:first-child{background:#450a0a}.lgt:not(.red) .lamp i:last-child{background:#22c55e;box-shadow:0 0 6px #22c55e}.lgt.red .lamp i:first-child{background:#ef4444;box-shadow:0 0 6px #ef4444}
 .obs .cnt{position:absolute;transform:translate(-50%,-50%);background:rgba(15,20,26,.88);color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:8px;white-space:nowrap}
@@ -211,7 +213,7 @@ button.primary{background:#3b82f6;border-color:#3b82f6;font-weight:700;padding:1
    kai kelias iki artimiausio kelio arba krašto laisvas. */
 const COLORS=['#ef4444','#3b82f6','#22c55e','#eab308','#a855f7','#f97316','#ec4899','#14b8a6','#23262e','#8f99a6','#1e293b','#fbbf24'];  // 8 – VIP, 9 – paslėpta spalva, 10 – palyda, 11 – mokyklinis (vaikai)
 const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
-const SPINP=5000;
+const SPINP=5000,FOGP=12000;   // rūkas: kas 12 s nuslenka į kitą kvartalą
 // ar visi keliai (be užtvertų langelių) pasiekiami iki stotelės – kliūtys neturi atkirsti kvartalo
 function roadConn(W,H,road,cellsList){const bl=new Set();cellsList.forEach(cs=>cs.forEach(c=>bl.add((c[1]+1)*(W+3)+c[0]+1)));const key=(x,y)=>(y+1)*(W+3)+x+1,
   ok=(x,y)=>x>=-1&&x<=W&&y>=-1&&y<=H&&(x===-1||x===W||y===H||y===-1||road(x,y))&&!bl.has(key(x,y)),seen=new Set(),q=[];
@@ -261,15 +263,16 @@ function params(L){
        [['locked','freeze'],['ice','plow'],['locked','ice','obst','freeze','plow']]][wk],on=new Set(ch>0?CHM[ch-1]:[]);
   if(wi>=4&&ch>0)['obst','hidden','locked','lights','truck','storm','ice','animals','mud','leaves','tram','spin','caravan','heat','plow','freeze'].forEach(m=>{if(pr()<.3)on.add(m)});
   if(GENCOOP)['plow','freeze','storm'].forEach(m=>on.delete(m));
+  if(wk===1&&on.has('hidden')){on.delete('hidden');on.add('fog')}   // Miškas: rūkas dengia visą kvartalą ir slenka
   const vip=GENCOOP?null:boss?(mega?'all':['pax','bus','esc'][Math.floor(ll/5)%3]):null;
   const specials=[];if(ll>6&&pr()<Math.min(.6,.2+D*.6)){const k=Math.min(2,5-win-vipN);for(let i=0;i<k;i++)if(pr()<.75)specials.push(['repair','color','short','temp'][Math.floor(pr()*4)])}
   const mech={on:[...on],obst:(on.has('obst')||on.has('roadblk'))?Math.round((1+P/60)*f)+1:0,lights:on.has('lights')?2+Math.round(f*2):0,
-    hidden:on.has('hidden')?.18+.2*f:0,locked:on.has('locked')?.08+.1*f:0,vip,vipN,first:cl===0&&ch>0,specials,truck:on.has('truck')?1+Math.round(f*1.5):0,storm:on.has('storm'),ice:on.has('ice')?.12+.12*f:0,stroller:ll>8&&pr()<.35?1+Math.round(D*2):0,animals:on.has('animals')?2+Math.round(f):0,tram:on.has('tram'),caravan:on.has('caravan'),oneway:0,spin:on.has('spin')&&!GENCOOP?.14+.12*f:0,heat:on.has('heat'),plow:on.has('plow'),freeze:on.has('freeze'),mud:on.has('mud')?.06+.08*f:0,leaves:on.has('leaves')?.2+.2*f:0,
+    hidden:on.has('hidden')?.18+.2*f:0,locked:on.has('locked')?.08+.1*f:0,vip,vipN,first:cl===0&&ch>0,specials,truck:on.has('truck')?1+Math.round(f*1.5):0,storm:on.has('storm'),fog:on.has('fog'),ice:on.has('ice')?.12+.12*f:0,stroller:ll>8&&pr()<.35?1+Math.round(D*2):0,animals:on.has('animals')?2+Math.round(f):0,tram:on.has('tram'),caravan:on.has('caravan'),oneway:0,spin:on.has('spin')&&!GENCOOP?.14+.12*f:0,heat:on.has('heat'),plow:on.has('plow'),freeze:on.has('freeze'),mud:on.has('mud')?.04+.05*f:0,leaves:on.has('leaves')?.2+.2*f:0,
     veh:ll>6?Math.min(.25,.06+D*.25):0,art:ll>25?.05+.04*f:0,coach:ll>50?.12+.08*f:0,chal:ll>2,mod:ll>4&&pr()<.35?['twoq','senior','friends'][Math.floor(pr()*3)]:null};
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='1.9.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='1.9.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -366,7 +369,12 @@ function generate(L){
     for(const e of cand){if(lights.length>=M.lights)break;usedL.add(e.line);const g=5000+Math.floor(r()*3000),rd=3000+Math.floor(r()*1500);lights.push({cells:e.cells,vert:e.vert,g,rd,off:Math.floor(r()*(g+rd))})}}
   const mud=[];if(M.mud){for(let t=0;t<300&&mud.length<Math.round(W*H*M.mud);t++){const x=Math.floor(r()*W),y=Math.floor(r()*H);if(!road(x,y)&&!mud.includes(y*W+x))mud.push(y*W+x)}}
   const ice=[];if(M.ice){
-    for(let t=0;t<300&&ice.length<Math.round(W*H*M.ice);t++){let x=Math.floor(r()*W),y=Math.floor(r()*H);for(let k=0;k<4;k++){if(x>=0&&y>=0&&x<W&&y<H&&!road(x,y)&&!ice.includes(y*W+x))ice.push(y*W+x);x+=Math.floor(r()*3)-1;y+=Math.floor(r()*3)-1}}}
+    // pirmiausia – po autobusais, kurie užstoti, bet prieš kliūtį turi tarpą: ten slydimas tikrai pakeičia aikštelę
+    const oc=new Array(W*H).fill(-1);buses.forEach(b=>b.cells.forEach(([x,y])=>oc[y*W+x]=b.id));const want=Math.round(W*H*M.ice);
+    shuffle(buses.filter(b=>b.kind!=='esc'&&!vips.includes(b.id)),r).forEach(b=>{if(ice.length>=want*.6)return;const [dx,dy]=DIRS[b.dir],gap=[];let x=b.fx+dx,y=b.fy+dy;
+      while(x>=0&&y>=0&&x<W&&y<H&&!road(x,y)&&oc[y*W+x]===-1){gap.push(y*W+x);x+=dx;y+=dy}
+      if(gap.length&&x>=0&&y>=0&&x<W&&y<H&&!road(x,y)&&oc[y*W+x]!==-1)[b.fy*W+b.fx,...gap].forEach(k=>{if(!ice.includes(k))ice.push(k)})});
+    for(let t=0;t<300&&ice.length<want;t++){let x=Math.floor(r()*W),y=Math.floor(r()*H);for(let k=0;k<4;k++){if(x>=0&&y>=0&&x<W&&y<H&&!road(x,y)&&!ice.includes(y*W+x))ice.push(y*W+x);x+=Math.floor(r()*3)-1;y+=Math.floor(r()*3)-1}}}
   // ypatingos vietos stotelėje (dešinėje pusėje)
   const stype=Array(p.slots).fill(null);M.specials.forEach((t,i)=>{const si=p.slots-1-i;
     stype[si]=t==='repair'?{type:'repair',n:2+Math.floor(r()*3)}:t==='temp'?{type:'temp',sec:14}:t==='color'?{type:'color',color:cols[Math.floor(r()*cols.length)]}:{type:'short'}});
@@ -393,8 +401,10 @@ function generate(L){
     for(let i=0;i+2<queue.length;i++){if(queue[i]!==VIPC&&!wt[i]&&!wt[i+1]&&!wt[i+2]&&queue[i]===queue[i+1]&&queue[i]===queue[i+2]&&slotOf[i]===slotOf[i+1]&&slotOf[i]===slotOf[i+2]){
       const b=sl3[slotOf[i]],before=queue.slice(0,i).reduce((t,c,j)=>t+(slotOf[j]===slotOf[i]?(wt[j]||1):0),0);if(b.cap-before>=3){groups[i]=3;ok=true;if(Object.keys(groups).length>=2)break;i+=2}}}
     if(!ok)mod=null}
-  const parMoves=buses.length+mudBus+1+Math.floor(buses.length/15),parTime=Math.round(queue.length*.34+buses.length*1.6+buses.filter(b=>b.spin).length*SPINP/2000);
-  return {parMoves,parTime,W,H,rc:p.rc,rb:p.rb,blk:[],obst:[],robs,lights,animals,mud,movers,oneway,segList,stype,chal,mod,senior,groups,wt,ice,sol,vips,storm:M.storm,buses,queue,nSlots:p.slots,boss:p.boss,easy:p.easy,big:p.big,mega:p.mega,mech:M,vipId:vip,esc};
+  const parMoves=buses.length+mudBus*2+1+Math.floor(buses.length/15),parTime=Math.round(queue.length*.34+buses.length*1.6+buses.filter(b=>b.spin).length*SPINP/2000);
+  let fog=null;if(M.fog){const qs=[];ranges(W,p.rc).forEach(([a,b],i)=>ranges(H,p.rb[i]||[]).forEach(([c,d])=>{if(buses.some(q=>q.cells.some(([x,y])=>x>=a&&x<=b&&y>=c&&y<=d)))qs.push({x0:a,x1:b,y0:c,y1:d})}));
+    if(qs.length>=2)fog={q:qs,order:shuffle([...qs.keys()],r),n:qs.length>=6?2:1,off:Math.floor(r()*FOGP)}}
+  return {fog,parMoves,parTime,W,H,rc:p.rc,rb:p.rb,blk:[],obst:[],robs,lights,animals,mud,movers,oneway,segList,stype,chal,mod,senior,groups,wt,ice,sol,vips,storm:M.storm,buses,queue,nSlots:p.slots,boss:p.boss,easy:p.easy,big:p.big,mega:p.mega,mech:M,vipId:vip,esc};
 }
 class Game{
   constructor(L,noCheck){
@@ -407,7 +417,7 @@ class Game{
     if(this.mod==='twoq'&&!noCheck&&!Game.solves(L))this.mod=null;
   }
   static solves(L){const g=new Game(L,true);const drain=()=>{for(let k=0;k<5000;k++){const e=g.step();if(!e||e.win||e.lose)break}};
-    for(const id of g.buses.map(b=>b.id).reverse()){drain();if(g.status!=='play')break;let r=g.tap(id);if(r.mud)r=g.tap(id);if(!r.ok)return false;if(r.slot>=0)g.markReady(r.slot,id)}
+    for(const id of g.buses.map(b=>b.id).reverse()){drain();if(g.status!=='play')break;let r=g.tap(id);while(r.mud)r=g.tap(id);if(!r.ok)return false;if(r.slot>=0)g.markReady(r.slot,id)}
     drain();return g.status==='win'}
   isRoad(x,y){return this.road(x,y)}
   inCells(list,x,y){return list.findIndex(o=>(o.on!==false)&&o.cells.some(c=>c[0]===x&&c[1]===y))}
@@ -457,7 +467,7 @@ class Game{
     // vienos krypties gatvė: autobusas suka trumpiausiu keliu į stotelę; jei ta kryptis prieš rodyklę – atsitrenkia
     const ow=this.inCells(this.oneway,ry.x,ry.y);if(ow>=0&&now!=null){const w=this.oneway[ow],ad=this.owDir(ow,now),ax=w.vert?[0,ad]:[ad,0],nd=this.owNeed(ry.x,ry.y,w,b.dir);this.owLast=nd?[ry.x,ry.y,nd]:null;if(nd&&nd[0]*ax[0]+nd[1]*ax[1]<0)return bump({by:-8,ow})}else this.owLast=null
     const ai=this.inCells(this.animals,ry.x,ry.y);if(ai>=0&&this.red(ai,now,this.animals)){this.moves++;this.bumps++;return {blocked:true,gap:ry.gap,by:-6,animal:ai,cleared:this.truckClear()}}
-    if(this.mudOn(b)){b.mudDone=true;this.moves++;return {mud:true,cleared:this.truckClear()}}
+    if(this.mudOn(b)){b.mudN=(b.mudN||0)+1;if(b.mudN>=2)b.mudDone=true;this.moves++;return {mud:true,cleared:this.truckClear()}}   // purvas: 2 kartus užstringa, trečias paspaudimas išleidžia
     const li=this.inCells(this.lights,ry.x,ry.y);if(li>=0&&this.red(li,now)){this.moves++;this.bumps++;return {blocked:true,gap:ry.gap,by:-5,light:li,cleared:this.truckClear()}}
     let si=-1;if(b.kind!=='esc'){si=this.slots.findIndex((s,i)=>!s&&this.accepts(i,b));if(si<0)return {noslot:true}}
     this.moves++;this.afterMove(id);b.cells.forEach(([cx,cy])=>this.occ[cy*this.W+cx]=-1);this.inLot.delete(id);b.hidden=false;
@@ -756,11 +766,11 @@ function newGame(L,showWorld,vs){
   if(fresh.length&&!vs){const g0=gen;setTimeout(()=>{if(gen===g0&&game.moves===0&&!HOME.on)showHints()},900)}
 }
 function mechName(m,wn){return {obst:{Miestas:'🚧 Kelio darbai',Miškas:'🌲 Užvirtę medžiai',Dykuma:'🪨 Akmenys ant kelio',Žiema:'☃️ Pusnys ant kelio'}[wn],locked:{Miestas:'🔧 Sugedę autobusai',Žiema:'❄️ Užšalę autobusai'}[wn]||'🔒 Užrakinti autobusai',
-  lights:'🚦 Šviesoforai',spin:'🔄 Sukamieji diskai',animals:'🦌 Gyvūnai ant kelio',tram:'🚋 Tramvajus',oneway:'➜ Vienos krypties gatvės',caravan:'🐪 Karavanas',heat:'🔥 Perkaitę varikliai',plow:'🚜 Sniego valytuvas',freeze:'🥶 Užšąla laukdami',mud:'🟫 Purvo balos',leaves:'🍂 Lapų krūvos',truck:'🚚 Pristatymo sunkvežimiai',storm:'🌪️ Smėlio audra',ice:'🧊 Slidus ledas',hidden:{Miškas:'🌫️ Rūkas slepia spalvas',Dykuma:'🏜️ Smėlis slepia spalvas'}[wn]||'❓ Paslėptos spalvos',roadblk:{Miškas:'🌲 Užvirtę medžiai'}[wn]||'🚧 Uždaryti keliai'}[m]}
-const MECHSUB={spin:'Autobusai su 🔄 kas 5 s apsisuka',tram:'Saugokis pravažiuojančio tramvajaus',oneway:'Važiuoti galima tik rodyklės kryptimi',caravan:'Lėtai juda išoriniu keliu',heat:'Atsitrenkęs autobusas 2 ėjimus stovi',plow:'Kartais užpila išvažiavimą',freeze:'Laisvi autobusai užšąla po 40 s',leaves:'Matai tik autobusų priekius',animals:'Kartais per kelią pereina elniai',mud:'Pirmas paspaudimas – užstringa',lights:'Degant raudonai autobusas neišvažiuos',obst:'Kliūtis dings, kai įlips nurodytas keleivių skaičius',roadblk:'Medį nupjaus, kai įlips nurodytas keleivių skaičius',locked:'Skaičius mažėja, kai išvažiuoja kiti autobusai',hidden:'Spalva paaiškėja, kai kelias laisvas'};
+  lights:'🚦 Šviesoforai',fog:'🌫️ Slenkantis rūkas',spin:'🔄 Sukamieji diskai',animals:'🦌 Gyvūnai ant kelio',tram:'🚋 Tramvajus',oneway:'➜ Vienos krypties gatvės',caravan:'🐪 Karavanas',heat:'🔥 Perkaitę varikliai',plow:'🚜 Sniego valytuvas',freeze:'🥶 Užšąla laukdami',mud:'🟫 Purvo balos',leaves:'🍂 Lapų krūvos',truck:'🚚 Pristatymo sunkvežimiai',storm:'🌪️ Smėlio audra',ice:'🧊 Slidus ledas',hidden:{Miškas:'🌫️ Rūkas slepia spalvas',Dykuma:'🏜️ Smėlis slepia spalvas'}[wn]||'❓ Paslėptos spalvos',roadblk:{Miškas:'🌲 Užvirtę medžiai'}[wn]||'🚧 Uždaryti keliai'}[m]}
+const MECHSUB={fog:'Rūkas kas 12 s nuslenka į kitą kvartalą',spin:'Autobusai su 🔄 kas 5 s apsisuka',tram:'Saugokis pravažiuojančio tramvajaus',oneway:'Važiuoti galima tik rodyklės kryptimi',caravan:'Lėtai juda išoriniu keliu',heat:'Atsitrenkęs autobusas 2 ėjimus stovi',plow:'Kartais užpila išvažiavimą',freeze:'Laisvi autobusai užšąla po 40 s',leaves:'Matai tik autobusų priekius',animals:'Kartais per kelią pereina elniai',mud:'Pirmas paspaudimas – užstringa',lights:'Degant raudonai autobusas neišvažiuos',obst:'Kliūtis dings, kai įlips nurodytas keleivių skaičius',roadblk:'Medį nupjaus, kai įlips nurodytas keleivių skaičius',locked:'Skaičius mažėja, kai išvažiuoja kiti autobusai',hidden:'Spalva paaiškėja, kai kelias laisvas'};
 function chalText(c){const cn=['raudoną','mėlyną','žalią','geltoną','violetinį','oranžinį','rožinį','žalsvą'];
   return {moves:`Įveik per ${c.n} ėjimų`,time:`Įveik per ${fmt((c.s||0)*1000)}`,slots:'Neužpildyk visų 5 vietų',first:`Pirmą išleisk ${cn[c.color]} autobusą`,
-    combo:'Kombo: 3 tos pačios spalvos autobusai iš eilės',clean:'Nė vienas autobusas stotelėje ne ilgiau 20 s'+(game&&game.vips&&game.vips.length?' (VIP neskaičiuojamas)':''),frugal:'Nenaudok ypatingų vietų stotelėje',quiet:'Nespausk užrakintų autobusų'}[c.type]}
+    combo:'Kombo: 3 tos pačios spalvos autobusai iš eilės',clean:'Nė vienas autobusas stotelėje ne ilgiau 20 s'+(game&&game.vips&&game.vips.length?' (VIP neskaičiuojamas)':''),frugal:'Nenaudok ypatingų vietų stotelėje',quiet:game&&game.buses.some(b=>b.lock>0)?'Nespausk užrakintų autobusų':'Nespausk limuzino, kol neišvažiavo palyda'}[c.type]}
 function updChal(){const e=$('chal');e.style.display='block';if(!game.chal){const el=startT?(endT||performance.now())-startT:0;e.innerHTML=parLine(el);e.className='';return}
   const c=game.chal,el=startT?(endT||performance.now())-startT:0,ok=game.chalOk(el);
   const lost=!ok&&(c.type!=='time'||el>c.s*1000)&&(c.type!=='first'||game.firstColor!=null)&&c.type!=='combo';
@@ -790,10 +800,11 @@ function hintItems(){const g=game,wn=curWorld.name,o=[],on=new Set(g.mech.on);
   if(g.mech.plow)o.push(['plow','🚜','Sniego valytuvas','Kas ~35 s valytuvas supila pusnį ant kurio nors išvažiavimo. Ji dingsta įlipus 5 keleiviams arba po 25 s.']);
   if(g.mech.freeze)o.push(['freeze','🥶','Užšąla laukdami','Autobusas, kurio kelias laisvas, bet jo neliečiai ilgiau nei 40 s, užšąla – atšils išvažiavus 2 kitiems.']);
   if(g.animals.length)o.push(['animals','🦌','Gyvūnai ant kelio','Retkarčiais per kelią pereina elniai – tuo metu iš tos atkarpos autobusai neišvažiuoja (ženklas 🦌 rodo, kur).']);
-  if(g.mud.length)o.push(['mud','🟫','Purvo balos','Autobusas, kurio kelyje ar po kuriuo yra bala, pirmą kartą užstringa – spausk antrą kartą.']);
+  if(g.mud.length)o.push(['mud','🟫','Purvo balos','Autobusas, kurio kelyje ar po kuriuo yra bala, įklimpsta – jį reikia spausti tris kartus (kiekvienas bandymas – ėjimas).']);
   if(g.buses.some(b=>b.leafy))o.push(['leaves','🍂','Lapų krūvos','Lapai visiškai uždengia autobusą – nematai nei spalvos, nei krypties. Lapai nupučiami, kai to autobuso kelias tampa laisvas']);
   if(g.boss&&lLoc(level)>=10)o.push(['bosshard','🔥','Bosas: galvok į priekį','Keleivių eilė sumaišyta labiau nei įprastai. Stenkis stotelėje palikti bent vieną laisvą vietą. Suklydus gali padėti 🧰 pagalbos už 🪙.']);
   if(g.robs.some(o=>o.kind==='truck'))o.push(['truck','🚚','Pristatymo sunkvežimis','Užstoja kvartalo išvažiavimą ir išvažiuos po nurodyto tavo ėjimų skaičiaus.']);
+  if(g.fog)o.push(['fog','🌫️','Slenkantis rūkas','Rūkas uždengia visą kvartalą ir kas 12 s nuslenka į kitą. Įsimink, kas ten stovėjo: autobusus po rūku spausti galima, bet jų nematai.']);
   if(g.storm)o.push(['storm','🌪️','Smėlio audra','Kas 30 s smėlio audra uždengia kairę aikštelės pusę – tada ten esančių autobusų paspausti negalima.']);
   if(g.ice.length)o.push(['ice','🧊','Slidus ledas','Autobusas, stovintis ant ledo, užuot atsitrenkęs nuslysta iki kliūties – taip pakeičia aikštelę.']);
   if(g.vips.length>1)o.push(['vip2','👑','Du VIP autobusai','Šiame lygyje du VIP autobusai ir 8 VIP keleiviai – abu užima vietą stotelėje.']);
@@ -886,6 +897,7 @@ function buildWorld(){
   if(game.ice.length){const ic=document.createElementNS('http://www.w3.org/2000/svg','svg');ic.setAttribute('class','ground');ic.setAttribute('width',WW);ic.setAttribute('height',WH);
     ic.innerHTML=game.ice.map(k=>{const x=ox+(k%W)*C,y=oy+Math.floor(k/W)*C;return `<rect x="${x+2}" y="${y+2}" width="${C-4}" height="${C-4}" rx="${C*.3}" fill="rgba(190,230,255,.55)" stroke="rgba(255,255,255,.8)" stroke-width="1.5"/><path d="M${x+C*.25} ${y+C*.3}l${C*.18} ${C*.1}M${x+C*.55} ${y+C*.6}l${C*.2} -${C*.08}" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/>`}).join('');
     wd.insertBefore(ic,wd.children[1])}
+  if(game.fog)game.fog.q.forEach((q,i)=>{const e=div('fogq',{left:px(ox+q.x0*C-C*.15),top:px(oy+q.y0*C-C*.15),width:px((q.x1-q.x0+1.3)*C),height:px((q.y1-q.y0+1.3)*C)});e.dataset.q=i;wd.appendChild(e)});fogTick();
   if(game.storm){const st=div('storm',{left:px(ox),top:px(oy),width:px(W*C/2+C*.5),height:px(H*C)});st.id='storm';wd.appendChild(st)}
   game.lights.forEach((l,i)=>{const bx=segBox(l),e=div('lgt',{left:px(bx.x0),top:px(bx.y0),width:px(bx.x1-bx.x0),height:px(bx.y1-bx.y0)});e.dataset.l=i;
     e.innerHTML=`<div class="lamp" style="${l.vert?'left:50%;top:-14px':'left:-14px;top:50%'}"><i></i><i></i></div>`;wd.appendChild(e)});
@@ -1042,7 +1054,9 @@ function craneLift(b,res,el){const rr=el.getBoundingClientRect(),cx=rr.left+rr.w
 /* --- pagalbos už žvaigždutes --- */
 /* --- monetos 🪙: gaunamos už kiekvieną įveiktą lygį (pirmą kartą – daugiau, kartojant – mažiau), leidžiamos pagalboms --- */
 var COINS=store.get('busjam.coins',null);if(COINS==null){COINS=40+Math.max(0,store.get('busjam.unlocked',1)-1)*8;store.set('busjam.coins',COINS)}
-function addCoins(n){COINS=Math.max(0,COINS+n);store.set('busjam.coins',COINS);return n}
+// testo režime jokių apdovanojimų: nei monetų, nei žvaigždučių, nei pasiekimų
+function tmOn(){try{return !!testMode}catch(e){return false}}
+function addCoins(n){if(n>0&&tmOn())return 0;COINS=Math.max(0,COINS+n);store.set('busjam.coins',COINS);return n}
 // pirmas įveikimas: 10 + 3 už ★ (+ bosų priedai); kartojant: 2 + ★, o už naujai pagerintas ★ – po 5
 function levelReward(L,st,prev){const l=lLoc(L),bon=l===100?40:l%25===0?25:l%5===0?10:0;return prev>0?2+st+Math.max(0,st-prev)*5:10+st*3+bon}
 const BOOST=[{id:'crane',ic:'🏗️',name:'Kranas',cost:35,txt:'Pakelia bet kurį autobusą – net užstotą ar užrakintą – tiesiai į stotelę.'},
@@ -1058,11 +1072,16 @@ function showBoost(){const bank=starBank();showCard(`<h2>🧰 Pagalbos</h2><p>Tu
     else if(B.id==='slot'){game.addSlot();buildBays();renderSlots();toast('➕ Atsirado 6-a vieta','')}
     else{const o=game.robs.find(o=>o.on);if(o){o.on=false;updObs([0])}}})}
 function makeFly(b,base){const f=document.createElement('div');f.className='fly';f.style.width=base+'px';f.style.height=base*b.len+'px';f.innerHTML=busSVG(b.color,b.len,false,b.kind);$('fx').appendChild(f);return f}
+// tramvajus: jei autobuso kelias kerta bėgius tuo metu, kai ten važiuos tramvajus – autobusas palaukia vietoje, kol tramvajus pravažiuos
+function tramDelay(cells,dur){if(!game.movers||!game.movers.some(m=>m.kind==='tram'))return 0;const cs=new Set(cells.map(c=>c[0]+','+c[1])),t0=performance.now()+150,
+    hit=t=>game.movers.some((m,i)=>m.kind==='tram'&&game.moverAt(i,t).some(c=>cs.has(c[0]+','+c[1])));
+  for(let d=0;d<20000;d+=150){let ok=true;for(let t=0;t<=dur;t+=100)if(hit(t0+d+t)){ok=false;break}if(ok)return d}return 0}
 function flyToBay(b,res,el){
   const si=res.slot,rr=el.getBoundingClientRect(),cx=rr.left+rr.width/2,cy=rr.top+rr.height/2,a0=[0,90,180,-90][b.dir];
   el.animate([{transform:'translate(0,0)'},{transform:'translate(1px,-1px)'},{transform:'translate(-1px,1px)'},{transform:'translate(0,0)'}],{duration:150});
   const cy0=clampY(),bc=bayCenter(si,b.len),base=cell*V.z,wp=[{x:cx,y:cy}];
-  let rp=compress(route(res.ex,res.ey,bc.x).map(([x,y])=>toScreen(wx(x),wy(y))));if(!rp.length)rp=[toScreen(wx(res.ex),wy(res.ey))];
+  const rg=route(res.ex,res.ey,bc.x),tw=tramDelay(rg,Math.min(3200,rg.length*170+500));if(tw>0&&!store.get('busjam.tramTip',0)){store.set('busjam.tramTip',1);toast('🚋 Autobusas laukia','Pirma pravažiuos tramvajus')}
+  let rp=compress(rg.map(([x,y])=>toScreen(wx(x),wy(y))));if(!rp.length)rp=[toScreen(wx(res.ex),wy(res.ey))];
   rp.forEach(q=>{q.y=Math.max(q.y,cy0)});wp.push(...rp);const T=rp[rp.length-1].y;
   wp.push({x:bc.x,y:T},{x:bc.x,y:bc.y,s:U/base});
   const pts=headings([{pts:roundCorners(compress(wp),base*.75)}]);
@@ -1072,7 +1091,7 @@ function flyToBay(b,res,el){
     animatePath(f,pts,560).onfinish=()=>{
       const go=()=>{if(g!==gen){f.remove();return}
         if($('bays').children[si].querySelector('.bbus.leaving'))return setTimeout(go,120);
-        f.remove();game.markReady(si,b.id,performance.now());renderSlots();sfx('arrive')};go()}},150);
+        f.remove();game.markReady(si,b.id,performance.now());renderSlots();sfx('arrive')};go()}},150+tw);
 }
 function departBay(cur){
   cur.classList.remove('open');
@@ -1110,7 +1129,7 @@ function onTap(id,el){
   if(res.locked){if(res.esc)toast('🚓 Pirma išleisk palydą','');if(res.heat)toast('🔥 Variklis perkaitęs','Dar '+res.heat+' ėj.');sfx('locked');el.classList.remove('nope');void el.offsetWidth;el.classList.add('nope');return}
   if(res.crane){sfx('unlock');craneLift(b,res,el);updChal();setTimeout(revealAll,200);renderStats();return}
   if(res.mud){sfx('mud');el.animate([{transform:'translate(0,0)'},{transform:'translate(-2px,1px)'},{transform:'translate(2px,-1px)'},{transform:'translate(-2px,0)'},{transform:'translate(0,0)'}],{duration:400});
-    const r=el.getBoundingClientRect();puffs(r.left+r.width/2,r.top+r.height/2,0,4);if(!store.get('busjam.mudTip',0)){store.set('busjam.mudTip',1);toast('🟫 Užstrigo purve','Spausk dar kartą')}renderStats();updChal();return}
+    const r=el.getBoundingClientRect();puffs(r.left+r.width/2,r.top+r.height/2,0,4);if(!store.get('busjam.mudTip',0)){store.set('busjam.mudTip',1);toast('🟫 Įklimpo purve','Spausk dar – iš purvo išsikapanoja trečiu bandymu')}renderStats();updChal();return}
   if(res.slid){const [dx,dy]=DIRS[b.dir],d=res.gap*cell,ox=M+cell;sfx('slide');el.animate([{transform:'translate(0,0)'},{transform:`translate(${dx*d}px,${dy*d}px) rotate(${(Math.random()*6-3).toFixed(1)}deg)`,offset:.85},{transform:`translate(${dx*d}px,${dy*d}px)`}],{duration:500+res.gap*80,easing:'ease-out'}).onfinish=()=>{
       const xs=b.cells.map(c=>c[0]),ys=b.cells.map(c=>c[1]);el.style.left=ox+Math.min(...xs)*cell+'px';el.style.top=cell+Math.min(...ys)*cell+'px'};setTimeout(()=>sfx('bump'),450+res.gap*70);setTimeout(revealAll,700)}
   else if(res.blocked){bumpFx(b,res,el);setTimeout(()=>sfx('bump'),(300+res.gap*55)*.42)}
@@ -1124,6 +1143,10 @@ function onTap(id,el){
 }
 let stormOn=false;
 function stormCovers(id){if(!stormOn||!game.storm)return false;const b=game.buses[id];return b.cells.some(([x])=>x<=Math.floor(game.W/2))}
+// slenkantis rūkas: dengia 1–2 kvartalus, kas FOGP ms pereina į kitus
+function fogOn(t){const f=game.fog,k=Math.floor((t+f.off)/FOGP),s=new Set();for(let j=0;j<f.n;j++)s.add(f.order[(k*f.n+j)%f.order.length]);return s}
+function fogTick(){if(!game||!game.fog)return;const on=fogOn(performance.now());document.querySelectorAll('#world .fogq').forEach(e=>e.classList.toggle('on',on.has(+e.dataset.q)))}
+setInterval(fogTick,250);
 setInterval(()=>{if(!game||!game.storm||game.status!=='play'){stormOn=false;const e=$('storm');if(e)e.classList.remove('on','warn');return}
   const t=(performance.now()%30000),e=$('storm');if(!e)return;const was=stormOn;stormOn=t>20000&&t<27000;
   e.classList.toggle('warn',t>17000&&t<=20000);e.classList.toggle('on',stormOn);if(stormOn&&!was)sfx('storm');if(t>17000&&t<17300&&!e._w){e._w=1;toast('🌪️ Artėja smėlio audra','Kairė aikštelės pusė bus uždengta')}if(t<17000)e._w=0},250);
@@ -1384,9 +1407,9 @@ setInterval(()=>{
     if(ev.win&&VS.playing){if(VS.surv)whenQuiet(g,survNext);else vsEnd(true);return}
     if(ev.win&&DAILY.on){dailyWin(g);if(!game.bumps)achAdd('nobump',1);return}
     if(ev.win){
-      unlocked=Math.max(unlocked,level+1);store.set('busjam.unlocked',unlocked);
-      const el=endT-startT,st=game.stars(el),cOk=game.chalOk(el),prevSt=best[level]||0,coin=addCoins(levelReward(level,st,prevSt));best[level]=Math.max(prevSt,st);store.set('busjam.stars',best);if(!game.bumps)achAdd('nobump',1);if(el<=game.parTime*500)achSet('fast',1);achCheck();
-      whenQuiet(g,()=>{sfx('win');for(let i=0;i<st;i++)setTimeout(()=>sfx('star',i),450+i*220);showCard(`<h2>Lygis įveiktas!</h2><div class="stars">${'★'.repeat(st)}<span>${'★'.repeat(4-st)}</span></div><div class="sbrk"><span class="on">★ Lygis įveiktas</span><span class="${el<=game.parTime*1000?'on':''}">★ Laikas ${fmt(el)} (≤ ${fmt(game.parTime*1000)})</span><span class="${game.moves<=game.parMoves?'on':''}">★ Ėjimai ${game.moves} (≤ ${game.parMoves})${game.bumps?' · atsitrenkimai '+game.bumps:''}</span><span class="${cOk?'on':''}">★ ${game.chal?chalText(game.chal):'Užduotis (šiame lygyje nėra)'}</span></div>${lLoc(level)===100?'<p>🎉 Atrakintas naujas pasaulis!</p>':''}<p class="coin">🪙 +${coin}${prevSt?' (kartojant)':''} · iš viso ${COINS}</p><button class="primary" id="nx">${playable(level+1)?'Kitas lygis':'Į meniu'}</button><button id="rp">↻ Žaisti šį lygį iš naujo</button><button id="mn">Lygių meniu</button>`);$('nx').onclick=()=>playable(level+1)?newGame(level+1):openMenu();$('rp').onclick=()=>newGame(level);$('mn').onclick=()=>openMenu()});
+      const TM=tmOn();if(!TM){unlocked=Math.max(unlocked,level+1);store.set('busjam.unlocked',unlocked)}
+      const el=endT-startT,st=game.stars(el),cOk=game.chalOk(el),prevSt=best[level]||0,coin=addCoins(levelReward(level,st,prevSt));if(!TM){best[level]=Math.max(prevSt,st);store.set('busjam.stars',best)}if(!game.bumps)achAdd('nobump',1);if(el<=game.parTime*500)achSet('fast',1);achCheck();
+      whenQuiet(g,()=>{sfx('win');for(let i=0;i<st;i++)setTimeout(()=>sfx('star',i),450+i*220);showCard(`<h2>Lygis įveiktas!</h2><div class="stars">${'★'.repeat(st)}<span>${'★'.repeat(4-st)}</span></div><div class="sbrk"><span class="on">★ Lygis įveiktas</span><span class="${el<=game.parTime*1000?'on':''}">★ Laikas ${fmt(el)} (≤ ${fmt(game.parTime*1000)})</span><span class="${game.moves<=game.parMoves?'on':''}">★ Ėjimai ${game.moves} (≤ ${game.parMoves})${game.bumps?' · atsitrenkimai '+game.bumps:''}</span><span class="${cOk?'on':''}">★ ${game.chal?chalText(game.chal):'Užduotis (šiame lygyje nėra)'}</span></div>${lLoc(level)===100?'<p>🎉 Atrakintas naujas pasaulis!</p>':''}${TM?'<p class="coin">🧪 Testo režimas – žvaigždutės, 🪙 ir pasiekimai neįskaitomi</p>':`<p class="coin">🪙 +${coin}${prevSt?' (kartojant)':''} · iš viso ${COINS}</p>`}<button class="primary" id="nx">${playable(level+1)?'Kitas lygis':'Į meniu'}</button><button id="rp">↻ Žaisti šį lygį iš naujo</button><button id="mn">Lygių meniu</button>`);$('nx').onclick=()=>playable(level+1)?newGame(level+1):openMenu();$('rp').onclick=()=>newGame(level);$('mn').onclick=()=>openMenu()});
     }else loseCard(g);
   }
 },170);
@@ -1483,10 +1506,10 @@ function dailyState(){const s=store.get('busjam.daily',{});return s}
 function dailyDone(){return dailyState().d===dayNo()}
 function startDaily(){hideHome();DAILY.on=true;DAILY.L=dailyLevel();newGame(DAILY.L,false,'daily');toast('📅 Dienos iššūkis',dailyDone()?'Šiandien jau įveikta – žaidi dėl smagumo':'Įveik ir gauk 🪙')}
 function dailyWin(g){const el=endT-startT,st=game.stars(el),s=dailyState(),day=dayNo(),first=s.d!==day;let coin=0,streak=s.streak||0;
-  if(first){streak=s.d===day-1?streak+1:1;coin=addCoins(25+st*5+Math.min(50,(streak-1)*5));store.set('busjam.daily',{d:day,st,streak,best:Math.max(streak,s.best||0)});achAdd('daily',1);achSet('streak',streak)}
-  else if(st>(s.st||0)){s.st=st;store.set('busjam.daily',s)}
+  if(first&&tmOn()){}else if(first){streak=s.d===day-1?streak+1:1;coin=addCoins(25+st*5+Math.min(50,(streak-1)*5));store.set('busjam.daily',{d:day,st,streak,best:Math.max(streak,s.best||0)});achAdd('daily',1);achSet('streak',streak)}
+  else if(!tmOn()&&st>(s.st||0)){s.st=st;store.set('busjam.daily',s)}
   whenQuiet(g,()=>{sfx('win');showCard(`<h2>📅 Dienos iššūkis įveiktas!</h2><div class="stars">${'★'.repeat(st)}<span>${'★'.repeat(4-st)}</span></div>
-    <p>${fmt(el)} · ${game.moves} ėj.</p>${first?`<p class="coin">🪙 +${coin} · serija ${streak} d.${streak>1?' 🔥':''}</p>`:'<p>Šiandien apdovanojimas jau gautas</p>'}<p>Kitas iššūkis – rytoj</p>
+    <p>${fmt(el)} · ${game.moves} ėj.</p>${tmOn()?'<p class="coin">🧪 Testo režimas – apdovanojimų nėra</p>':first?`<p class="coin">🪙 +${coin} · serija ${streak} d.${streak>1?' 🔥':''}</p>`:'<p>Šiandien apdovanojimas jau gautas</p>'}<p>Kitas iššūkis – rytoj</p>
     <button class="primary" id="dh">🏠 Pagrindinis meniu</button><button id="dl">▶ Žaisti lygius</button>`);
     $('dh').onclick=()=>{DAILY.on=false;$('overlay').classList.remove('show');newGame(store.get('busjam.level',1));showHome()};$('dl').onclick=()=>{DAILY.on=false;newGame(store.get('busjam.level',1))}})}
 /* ===================== PASIEKIMAI ===================== */
@@ -1522,8 +1545,8 @@ function achVal(k,s){let v=0;
   if(k==='boss')return Object.keys(best).filter(l=>best[l]>0&&lLoc(+l)%5===0).length;
   if(k==='world')return Object.keys(best).filter(l=>best[l]>0&&lLoc(+l)===100).length;
   return s.c[k]||0}
-function achAdd(k,n){const s=achStats();s.c[k]=(s.c[k]||0)+n;store.set('busjam.ach',s);achCheck()}
-function achSet(k,v){const s=achStats();s.c[k]=Math.max(s.c[k]||0,v);store.set('busjam.ach',s);achCheck()}
+function achAdd(k,n){if(tmOn())return;const s=achStats();s.c[k]=(s.c[k]||0)+n;store.set('busjam.ach',s);achCheck()}
+function achSet(k,v){if(tmOn())return;const s=achStats();s.c[k]=Math.max(s.c[k]||0,v);store.set('busjam.ach',s);achCheck()}
 function achCheck(){const s=achStats(),fresh=[];ACH.forEach(a=>{if(!s.got[a.id]&&achVal(a.k,s)>=a.t){s.got[a.id]=Date.now();fresh.push(a)}});
   if(!fresh.length)return;store.set('busjam.ach',s);
   fresh.forEach((a,i)=>setTimeout(()=>{addCoins(a.r);sfx('unlock');achBanner(a)},600+i*2600))}
@@ -1839,14 +1862,14 @@ function cDepartBay(st,cur){if(!st)return departBay(cur);cur.classList.remove('o
   setTimeout(()=>{cur.remove();const f=makeFly(b,cell);sfx('depart');animatePath(f,pts,420).onfinish=()=>f.remove()},250)}
 function cFlyToBay(st,b,res,el){const si=res.slot,rr=el.getBoundingClientRect(),cx=rr.left+rr.width/2,cy=rr.top+rr.height/2,a0=[0,90,180,-90][b.dir];
   const v=$('view').getBoundingClientRect(),bc=cBayCenter(st,si,b.len),base=cell*V.z,wp=[{x:cx,y:cy}];
-  const rp=compress(route(res.ex,res.ey,bc.x,st?game.H:-1).map(([x,y])=>toScreen(wx(x),wy(y))));
+  const rg=route(res.ex,res.ey,bc.x,st?game.H:-1),tw=tramDelay(rg,Math.min(3200,rg.length*170+500)),rp=compress(rg.map(([x,y])=>toScreen(wx(x),wy(y))));
   rp.forEach(q=>{q.y=st?Math.min(q.y,v.bottom-base*.5):Math.max(q.y,v.top+base*.5)});wp.push(...rp);const T=rp[rp.length-1].y;
   wp.push({x:bc.x,y:T},{x:bc.x,y:bc.y,s:U/base});const pts=headings([{pts:roundCorners(compress(wp),base*.75)}]),rear=base*b.len/2,rad=a0*Math.PI/180;
   setTimeout(()=>{if(!el.isConnected)return;el.remove();puffs(cx-Math.sin(rad)*rear,cy+Math.cos(rad)*rear,a0);const f=makeFly(b,base),g=gen;sfx('drive');COOP.flies[b.id]=f;
     animatePath(f,pts,560).onfinish=()=>{const go=()=>{if(g!==gen){f.remove();return}if(SD(st).bays.children[si].querySelector('.bbus.leaving'))return setTimeout(go,120);
         f.remove();delete COOP.flies[b.id];
         if(COOP.host){const now=performance.now();game.cready(st,si,b.id,now);coopEmit({e:'ready',st,si,id:b.id,now});sfx('arrive')}
-        cRenderSlots(st)};go()}},150)}
+        cRenderSlots(st)};go()}},150+tw)}
 /* --- įvykiai --- */
 function coopEmit(ev){COOP.seq++;mpSend({t:'ce',n:COOP.seq,ev})}
 function coopForeign(id,st){const b=game.buses[id];return !!b&&b.kind!=='esc'&&game.own&&game.own[b.color]!=null&&game.own[b.color]!==st}
