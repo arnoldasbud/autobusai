@@ -364,7 +364,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:ll>50?6:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='2.2.1';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='2.2.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -1931,7 +1931,7 @@ function makeStick_3d(ci,seed,old){const wn=curWorld?curWorld.name:'Miestas',sp=
   e._sp=sp;e._hd=sp.pram||old===true?235:r<.5?160+h(24)*50:r<.78?215+h(24)*45:r<.9?265+h(24)*30:120+h(24)*30;
   const c=document.createElement('canvas');c.className='pc';e.appendChild(c);p3draw(e,performance.now(),true);P3E.add(e);return e}
 function p3draw(e,now,force){const fx=e.parentNode&&e.parentNode.id==='fx',walk=e.classList.contains('walk')&&(fx||FAC.on);let an,hd,ppm=P3PPM*DPR3;
-  if(walk){const f=e.style.getPropertyValue('--f');hd=fx?(parseFloat(f)>0?90:270):e._exit?180:270;an={t:'w',f:Math.floor(now/62)%8};if(fx)ppm=Math.round(ppm*.9)}
+  if(walk){const f=e.style.getPropertyValue('--f');hd=fx?(parseFloat(f)>0?90:270):e._exit?180:e._dir>0?90:270;an={t:'w',f:Math.floor(now/62)%8};if(fx)ppm=Math.round(ppm*.9)}
   else if(e._joy&&now<e._joy&&!(typeof P4!=='undefined'&&P4.avg>25)){hd=180;an={t:'j',f:0}}
   else{hd=e._hd;an={t:'i',f:typeof P4!=='undefined'&&P4.avg>25?0:P3IDLE[Math.floor((now+e._ph)/320)%P3IDLE.length]}}
   const key=hd+'|'+an.t+an.f+'|'+ppm;if(!force&&e._k===key)return;
@@ -2069,7 +2069,7 @@ const FAC={on:false,type:null,door:0,
   name:{kinas:'KINO TEATRAS',oro:'ORO UOSTAS',autob:'AUTOBUSŲ STOTIS',traukin:'GELEŽINKELIO STOTIS',prek:'PREKYBOS CENTRAS',stad:'STADIONAS',mok:'MOKYKLA',muz:'MUZIEJUS',kemp:'KEMPINGAS',zoo:'ZOOLOGIJOS SODAS',oaze:'OAZĖ',turg:'TURGUS',slid:'SLIDINĖJIMO CENTRAS',ciuoz:'ČIUOŽYKLA'}};
 function facType(){const w=curWorld?curWorld.name:'Miestas',kids=!!(game&&game.queue&&game.queue.includes(KIDC));let L=(FAC.list[w]||FAC.list.Miestas).filter(t=>t!=='mok'||kids);
   if(kids&&hr(level*13+5)<.6)return 'mok';return L[(level*7+Math.floor(level/L.length)*3)%L.length]}
-function facadeSet(){const on=R3ok();document.body.classList.toggle('toon',on);FAC.on=on;if(!on)return;cloudsSet();if(typeof P4!=='undefined'&&typeof U!=='undefined')P4.scale=Math.round(Math.max(.75,Math.min(1.45,.62*U/1.2/21))*100)/100;FAC.type=facType();const pl=$('platform');if(!pl)return;
+function facadeSet(){const on=R3ok();FAC.next=0;document.body.classList.toggle('toon',on);FAC.on=on;if(!on)return;cloudsSet();if(typeof P4!=='undefined'&&typeof U!=='undefined')P4.scale=Math.round(Math.max(.75,Math.min(1.45,.62*U/1.2/21))*100)/100;FAC.type=facType();const pl=$('platform');if(!pl)return;
   let c=pl.querySelector('canvas.facade');if(!c){c=document.createElement('canvas');c.className='facade';pl.insertBefore(c,pl.firstChild)}
   const W=pl.clientWidth||400,H=40;c.width=Math.round(W*DPR3);c.height=Math.round(H*DPR3);c.style.width=W+'px';c.style.height=H+'px';
   const x=c.getContext('2d');x.setTransform(DPR3,0,0,DPR3,0,0);const dx=Math.max(70,W-56-6-40);facadeDraw(x,W,H,FAC.type,dx);FAC.door=dx+16-6;
@@ -2077,12 +2077,21 @@ function facadeSet(){const on=R3ok();document.body.classList.toggle('toon',on);F
 function facDoor(){const d=document.querySelector('#platform .fdoor');if(!d)return;d.classList.add('open');clearTimeout(d._t);d._t=setTimeout(()=>d.classList.remove('open'),700)}
 // pradžios vieta naujam eilės žmogui: pro duris (jei pastatas yra)
 function qStart(el,x,y,SP){if(!FAC.on||!$('platform').querySelector('canvas.facade'))return `translate(${x+SP*2}px,${y}px)`;el._new=1;el.style.opacity='0';return `translate(${FAC.door}px,${y-9}px)`}
-// naujas žmogus: pirmiausia išžengia pro duris (į mus), tada eina iki savo vietos eilėje
-function qMove(el,x,y){if(el._x===x)return;el._x=x;clearTimeout(el._t);clearTimeout(el._t2);
-  if(el._new&&FAC.on){el._new=0;el._exit=1;facDoor();el.classList.add('walk');el.style.transition='transform .32s linear,opacity .22s linear';el.style.opacity='1';el.style.transform=`translate(${FAC.door}px,${y}px)`;
-    el._t2=setTimeout(()=>{el._exit=0;const dist=Math.abs(FAC.door-x),dur=Math.max(.2,Math.min(2.6,dist/70));el.style.transition=`transform ${dur.toFixed(2)}s linear`;el.style.transform=`translate(${el._x}px,${y}px)`;
-      el._t=setTimeout(()=>{el.classList.remove('walk');el.style.transition=''},dur*1000)},330);return}
-  el.style.opacity='';el.style.transition='';el.style.transform=`translate(${x}px,${y}px)`;el.classList.add('walk');el._t=setTimeout(()=>el.classList.remove('walk'),300)}
+// durys išleidžia po vieną: kiekvienas gauna savo laiką, eina tolygiu greičiu, tad eilė ateina „traukinuku“
+const QV=110,QGAP=Math.round(18/QV*1000);
+function qCurX(el){const m=getComputedStyle(el).transform,a=m&&m.match(/matrix\(([^)]+)\)/);return a?parseFloat(a[1].split(',')[4]):el._x}
+function qWalk(el){if(!el.isConnected)return;el._exit=0;el._st=2;const cx=qCurX(el),d=Math.abs(cx-el._x),dur=Math.max(.05,d/QV);el._dir=el._x>cx+1?1:-1;
+  el.style.transition='none';el.style.transform=`translate(${cx}px,${el._y}px)`;el.getBoundingClientRect();
+  el.style.transition=`transform ${dur.toFixed(3)}s linear`;el.style.transform=`translate(${el._x}px,${el._y}px)`;el.classList.add('walk');
+  clearTimeout(el._t);el._t=setTimeout(()=>{el._st=0;el._dir=0;el.classList.remove('walk');el.style.transition=''},dur*1000+30)}
+function qExit(el){if(!el.isConnected)return;el._st=1;el._exit=1;facDoor();el.classList.add('walk');
+  el.style.transition='transform .15s linear,opacity .1s linear';el.style.opacity='1';el.style.transform=`translate(${FAC.door}px,${el._y}px)`;
+  el._t2=setTimeout(()=>qWalk(el),150)}
+function qMove(el,x,y){if(el._x===x)return;el._x=x;el._y=y;
+  if(el._new&&FAC.on){el._new=0;el._st=3;const now=performance.now(),T=Math.max(now,FAC.next||0);FAC.next=T+QGAP;el._t2=setTimeout(()=>qExit(el),T-now);return}
+  if(el._st===3||el._st===1)return;
+  if(el._st===2){qWalk(el);return}
+  clearTimeout(el._t);el.style.opacity='';el.style.transition='';el.style.transform=`translate(${x}px,${y}px)`;el.classList.add('walk');el._t=setTimeout(()=>el.classList.remove('walk'),300)}
 // žmogaus išvaizda pagal pastatą (lagaminai, kuprinės, kepurės)
 function facSpec(sp,seed){if(!FAC.on||!FAC.type||sp.kid||sp.sr||sp.pram||sp.vip)return sp;const h=k=>hr(seed*17+k),t=FAC.type;
   if((t==='oro'&&h(1)<.5)||((t==='traukin'||t==='autob')&&h(1)<.3))sp.pose='suitcase';
