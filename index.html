@@ -299,7 +299,7 @@ button.primary:active{transform:translateY(3px);box-shadow:0 1px 0 #1e40af,0 4px
    kai kelias iki artimiausio kelio arba krašto laisvas. */
 const COLORS=['#ef4444','#3b82f6','#22c55e','#eab308','#a855f7','#f97316','#ec4899','#14b8a6','#23262e','#8f99a6','#1e293b','#fbbf24'];  // 8 – VIP, 9 – paslėpta spalva, 10 – palyda, 11 – mokyklinis (vaikai)
 const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
-const SPINP=5000,FOGP=12000,STEPMS=145,RUSH={rate:2.3,start:12,grace:8,max:45,star:22};   // RUSH: piko valandos keleivių srautas (per s), pradžioje laukia, didžiausia eilė, žvaigždutės riba   // sukamasis diskas kas 5 s, rūkas kas 12 s; STEPMS – kas kiek ms įlipa keleivis (v2.0: buvo 170)
+const SPINP=5000,FOGP=12000,STEPMS=145,RUSH={rate:1.4,start:12,grace:10,max:45,star:24};   // RUSH: piko valandos keleivių srautas (per s), pradžioje laukia, didžiausia eilė, žvaigždutės riba   // sukamasis diskas kas 5 s, rūkas kas 12 s; STEPMS – kas kiek ms įlipa keleivis (v2.0: buvo 170)
 // ar visi keliai (be užtvertų langelių) pasiekiami iki stotelės – kliūtys neturi atkirsti kvartalo
 function roadConn(W,H,road,cellsList){const bl=new Set();cellsList.forEach(cs=>cs.forEach(c=>bl.add((c[1]+1)*(W+3)+c[0]+1)));const key=(x,y)=>(y+1)*(W+3)+x+1,
   ok=(x,y)=>x>=-1&&x<=W&&y>=-1&&y<=H&&(x===-1||x===W||y===H||y===-1||road(x,y))&&!bl.has(key(x,y)),seen=new Set(),q=[];
@@ -364,7 +364,7 @@ function params(L){
   if(GENCOOP){mech.specials=[];mech.chal=false;mech.mod=null;mech.stroller=0}
   return {ll,W,H,rc,rb,n,colors,win,slots:GENCOOP?4:ll>50?6:5,long:0.45,boss,easy,big,mega,roads,mech};
 }
-const VERSION='2.2.2';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
+const VERSION='2.2.3';   // ⚠️ keičiant žaidimą – padidinti čia ir version.json
 const VIPC=8,HIDC=9,ESCC=10,KIDC=11;
 /* kelio atkarpa tarp sankryžų, į kurią veda langelis (x,y) – kliūtys ir šviesoforai uždaro visą atkarpą */
 function segOf(W,H,rc,rb,x,y){
@@ -1492,16 +1492,18 @@ function t4glass(M,x0,x1,ya,yb,z0,z1,tz,r,body,glass,pil,pitch=.36,doorR=null){c
    opt: {pil – stulpeliai, bare – be stogo įrangos, inside:{cap,n,ci,seed} – vidus stotelei (be stiklų ir stogo)} */
 function busMesh4(kind,len,hexCol,v=0,opt={}){const M=new Mesh(),P=hex3(hexCol),PD=mix3(P,[0,0,0],.22),PL=mix3(P,[1,1,1],.36),x0=.14,x1=.86,y0=.15,y1=len-.15;
   const ty=kind==='n'?['city','retro','elec','troll','stripe','mini'][v]||'city':kind,retro=ty==='retro',elec=ty==='elec',mini=ty==='mini',school=ty==='school',dd=ty==='dd',coach=ty==='coach',art=ty==='art',troll=ty==='troll',stripe=ty==='stripe';
-  const nose=school?.42:mini?.32:0,cab0=y0+nose,cy=(cab0+y1)/2,chl=(y1-cab0)/2,rr=retro?.2:.14,IN=opt.inside;
-  const axF=y0+(school?.36:mini?.34:.5),axR=y1-.48,axles=art?[axF,len/2-.05,axR]:[axF,axR];
+  const nose=school?.54:mini?.32:0,cab0=y0+nose,cy=(cab0+y1)/2,chl=(y1-cab0)/2,rr=retro?.2:.14,IN=opt.inside;
+  const axF=y0+(school?.38:mini?.34:.5),axR=y1-.48,axles=art?[axF,len/2-.05,axR]:[axF,axR];
   t4wheels(M,axles,x0,x1,.2,retro?TC.WH:TC.HUB,P);
   const mat=(side,x,y,z)=>{
     if(side==='L'||side==='R'){if(stripe&&z>.38&&z<.45)return [TC.WH,MAT.paint];if(retro&&z>.45)return [hex3('#fff4dc'),MAT.paint];if(elec&&z>.17&&z<.22)return [TC.WH,MAT.paint];
-      if(school&&((z>.29&&z<.31)||(z>.42&&z<.44)))return [TC.DK,MAT.plastic];if(coach&&z>.25&&z<.39)return [mix3(P,[0,0,0],.14),MAT.paint]}
+      if(school&&((z>.2&&z<.22)||(z>.28&&z<.30)||(z>.41&&z<.43)))return [TC.DK,MAT.plastic];if(coach&&z>.25&&z<.39)return [mix3(P,[0,0,0],.14),MAT.paint]}
     return [P,MAT.paint]};
-  const zl=[.14,.17,.22,.25,.29,.31,.38,.42,.44,.45,.52];
+  const zl=school?[.14,.17,.20,.22,.25,.27,.31,.38,.40,.44,.45,.52]:[.14,.17,.22,.25,.29,.31,.38,.42,.44,.45,.52];
   const inL=IN&&!dd;shell(M,{out:rrOutline(x0,nose?cab0-.05:y0,x1,y1,rr,{},.06),zl,mat,H:.52,rb:inL?0:.06,roof:P,open:inL});
-  if(nose)shell(M,{out:rrOutline(x0+.025,y0,x1-.025,cab0+.04,.13,{},.06),zl:[.14,.22,.31,.38],mat,H:school?.43:.46,rb:.08,roof:P});
+  if(nose)shell(M,{out:rrOutline(x0+(school?.07:.025),y0,x1-(school?.07:.025),cab0+.04,.13,{},.06),zl:school?[.14,.20,.22,.27,.31,.36]:[.14,.22,.31,.38],mat,H:school?.41:.46,rb:.08,roof:P});
+  if(school){M.box(.5-.17,y0-.016,.16,.5+.17,y0+.02,.32,TC.DK,MAT.plastic,.03);for(const zz of [.2,.245,.29])M.box(.5-.13,y0-.024,zz,.5+.13,y0-.014,zz+.014,TC.CH,MAT.chrome);
+    M.box(x0-.03,cab0+.12,.29,x0-.012,cab0+.3,.47,TC.WH,MAT.paint,.035);M.box(x0-.04,cab0+.135,.305,x0-.026,cab0+.285,.455,hex3('#e11d2a'),MAT.paint,.03)}
   if(art){M.box(x0-.006,len/2-.15,.15,x1+.006,len/2+.05,.8,TC.DK,MAT.matte);for(let i=0;i<6;i++){const y=len/2-.13+i*.033;M.box(x0-.012,y,.16,x1+.012,y+.01,.79,hex3('#3a3d45'),MAT.matte)}}
   t4bumpers(M,x0,x1,y0,y1,retro?TC.CH:school?TC.DK:mix3(P,[0,0,0],.55));
   for(const sd of [-1,1]){const lx=.5+sd*.25;if(retro||mini||school){M.ell(lx,y0-.012,.34,.075,.025,.075,TC.CH,MAT.chrome,12,8);M.ell(lx,y0-.03,.34,.058,.02,.058,TC.HL,MAT.light,12,8)}else M.box(lx-.08,y0-.02,.31,lx+.08,y0+.005,.37,TC.HL,MAT.light,.01);
@@ -1515,7 +1517,7 @@ function busMesh4(kind,len,hexCol,v=0,opt={}){const M=new Mesh(),P=hex3(hexCol),
     for(let y=cab0+.32;y<y1-.12;y+=.2)for(const sx of [w2+.13,1-w2-.13]){M.box(sx-.085,y-.05,.8,sx+.085,y+.05,.86,mix3(P,[0,0,0],.3),MAT.plastic,.02);M.box(sx-.085,y+.03,.8,sx+.085,y+.06,.95,mix3(P,[0,0,0],.38),MAT.plastic,.012)}
     M.box(w2+.04,cab0+.04,.9,1-w2-.04,cab0+.06,1.05,TC.GL,MAT.glass);topW=1-2*w2;zr=.98;if(IN)t4inside(M,x0,x1,cab0,y1,IN,true)}
   else{const z1=coach?.86:.78,g=t4glass(M,x0,x1,cab0,y1,.5,z1,coach?.38:.45,Math.min(rr,.16),P,coach?TC.GLC:TC.GL,opt.pil,coach?.5:retro?.3:.36,[cab0+.12,cab0+.42]);topW=g.top;zr=z1;
-    if(g.B)capTop(M,g.B,z1,P,MAT.paint);M.ell(.5,cy,z1-.004,topW/2+.004,chl+.002,.06,P,MAT.paint,18,6,0)}
+    if(g.B)capTop(M,g.B,z1,school?hex3('#f4f1e8'):P,MAT.paint);if(!school)M.ell(.5,cy,z1-.004,topW/2+.004,chl+.002,.06,P,MAT.paint,18,6,0)}
   // priekinis/galinis stiklas (kabinos galai)
   const zt=zr+.05;
   if(!dd)t4mirrors(M,x0,x1,cab0+.06,.6,P);
@@ -1525,7 +1527,17 @@ function busMesh4(kind,len,hexCol,v=0,opt={}){const M=new Mesh(),P=hex3(hexCol),
     if(elec){M.box(.5-topW/2+.02,cab0+.005,zr-.02,.5+topW/2-.02,cab0+.3,zr+.045,TC.GL,MAT.glass,.03);M.box(.5-.15,cy+.1-chl*.5,zr+.01,.5+.15,cy+.1+chl*.5,zr+.1,PL,MAT.paint,.04);if(len>=3)M.box(.5-.17,y1-.22,zr+.04,.5+.17,y1-.18,zr+.08,TC.DK,MAT.plastic)}
     if(troll){M.box(.5-.15,cab0+.32,zr+.01,.5+.15,cab0+.8,zr+.11,hex3('#596270'),MAT.plastic,.03);for(const sd of [-1,1]){const a=[.5+sd*.07,cab0+.68,zr+.11],b=[.5+sd*.08,y1-.03,zr+.34];M.tube(a,b,.022,.017,TC.DK,MAT.plastic,6);M.ball(b,.03,TC.DK,MAT.plastic,6,5)}}
     if(mini){for(const sd of [-1,1])M.box(.5+sd*.13-.016,cy-chl*.6+.04,zr+.04,.5+sd*.13+.016,cy+chl*.6+.04,zr+.07,TC.CH,MAT.chrome);for(const yy of [-.25,0,.25])M.box(.5-.13,cy+.04+yy*chl-.012,zr+.045,.5+.13,cy+.04+yy*chl+.012,zr+.065,TC.CH,MAT.chrome)}
-    if(school)for(const sd of [-1,1]){M.ell(.5+sd*.2,cab0+.06,zr+.03,.035,.03,.03,TC.OR,MAT.light,8,6);M.ell(.5+sd*.2,y1-.06,zr+.03,.035,.03,.03,TC.TL,MAT.light,8,6)}
+    if(school){const hw=topW/2-.02;
+      // priekyje ir gale – juodos švieslentės su geltonais ir raudonais žibintais
+      for(const [ya,yb] of [[cab0+.02,cab0+.14],[y1-.14,y1-.02]]){M.box(.5-hw,ya,zr-.01,.5+hw,yb,zr+.035,TC.DK,MAT.plastic,.025);const yy=(ya+yb)/2;
+        for(const sd of [-1,1]){M.ell(.5+sd*.09,yy,zr+.04,.042,.036,.03,TC.OR,MAT.light,8,6);M.ell(.5+sd*(hw-.06),yy,zr+.04,.042,.036,.03,TC.TL,MAT.light,8,6)}}
+      if(len>2)for(const yy of [cab0+.34,cab0+.62])M.box(.5-.1,yy-.08,zr-.006,.5+.1,yy+.08,zr+.02,hex3('#3d4452'),MAT.plastic,.02);
+      // ženklas „Vežami vaikai“: geltonas kvadratas su raudonu kraštu ir juodais vaikais (galvos – į priekį)
+      const sy=y1-.4,hs=.2,KC=hex3('#17171f'),za=zr+.05,zb=zr+.062;
+      M.box(.5-hs,sy-hs,zr-.006,.5+hs,sy+hs,zr+.042,hex3('#e11d2a'),MAT.paint,.025);M.box(.5-hs+.04,sy-hs+.04,zr+.042,.5+hs-.04,sy+hs-.04,za,hex3('#ffd23f'),MAT.paint,.01);
+      M.cylZ(.44,sy-.1,za,zb,.036,.036,KC,MAT.matte,12);M.box(.412,sy-.062,za,.468,sy+.035,zb,KC,MAT.matte,.008);M.box(.413,sy+.03,za,.434,sy+.115,zb,KC,MAT.matte);M.box(.446,sy+.03,za,.467,sy+.115,zb,KC,MAT.matte);
+      M.cylZ(.567,sy-.045,za,zb,.03,.03,KC,MAT.matte,12);M.box(.545,sy-.014,za,.589,sy+.058,zb,KC,MAT.matte,.008);M.box(.546,sy+.054,za,.564,sy+.115,zb,KC,MAT.matte);M.box(.571,sy+.054,za,.589,sy+.115,zb,KC,MAT.matte);
+      M.box(.466,sy-.036,za,.547,sy-.016,zb,KC,MAT.matte)}
     if(coach)M.box(.5-.17,cy+.1-chl*.55,zr+.01,.5+.17,cy+.1+chl*.55,zr+.08,mix3(P,[0,0,0],.25),MAT.paint,.03)}
   M.cx=.5;M.cy=len/2;M.H=dd?.86:zt;M.shadow=rrOutline(x0,y0,x1,y1,rr,{},.2).map(p=>[p.x,p.y]);return M}
 // vidus: grindys, sėdynės, keleiviai, vairuotojas
@@ -2186,7 +2198,7 @@ function newGame(L,showWorld,vs){
   gen++;level=L;if(!vs)store.set('busjam.level',level);$('menu').classList.remove('show');
   if(vs!=='coop'&&typeof coopOff==='function')coopOff();
   game=vs==='coop'?new CoopGame(level):new Game(level);startT=0;endT=0;
-  if(vs===true)game.lt=null;if(game.lt==='rush'){game.arrived=RUSH.start;game.rushMax=RUSH.max}$('sign').classList.toggle('rush',game.lt==='rush');
+  if(vs===true)game.lt=null;if(game.lt==='rush'){game.arrived=RUSH.start;game.rushMax=RUSH.max;const nb=game.buses.length;game.rushRate=Math.max(1,Math.min(1.7,game.queue.length/nb/(4.6+nb*.03)))}   // piko valanda: ~1 autobusas per 5 s$('sign').classList.toggle('rush',game.lt==='rush');
   const w=worldOf(level);
   $('lvlLabel').textContent=vs==='daily'?'📅 Dienos':'Lygis '+lLoc(level)+KICON[kindOf(level)];$('worldLabel').textContent=w.emoji+' '+w.name+(wIdx(level)>=WORLDS.length?' '+(Math.floor(wIdx(level)/WORLDS.length)+1):'');
   $('prev').disabled=level<=1;$('next').disabled=!playable(level+1);
@@ -2723,7 +2735,7 @@ function goldDepart(ev){if(!game||game.gold!==ev.busId||game.goldDone||COOP.on||
 function typeFail(reason){game.fail(reason);endT=performance.now();renderStats();loseCard(gen)}
 setInterval(()=>{if(!game||game.status!=='play'||PZ.on||!game.lt)return;const now=performance.now(),el=startT?now-startT:0;
   if(game.lt==='sprint'&&startT&&el>game.limit*1000)return typeFail('time');
-  if(game.lt==='rush'){const a=Math.min(game.queue.length,RUSH.start+Math.floor(Math.max(0,el/1000-RUSH.grace)*RUSH.rate));if(a!==game.arrived){game.arrived=a;renderQueue()}
+  if(game.lt==='rush'){const a=Math.min(game.queue.length,RUSH.start+Math.floor(Math.max(0,el/1000-RUSH.grace)*(game.rushRate||RUSH.rate)));if(a!==game.arrived){game.arrived=a;renderQueue()}
     const back=a-game.qi;game.maxBack=Math.max(game.maxBack,back);const mx=game.rushMax||RUSH.max;
     const sg=$('more');sg.textContent=back+'/'+mx;sg.parentNode.classList.toggle('warn',back>mx*.75);
     if(back>mx)return typeFail('rush')}},200);
