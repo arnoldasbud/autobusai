@@ -1,1 +1,1 @@
-{"version": "2.2.3", "notes": "Piko valanda lengvesnė: keleiviai ateina pagal lygį (~1 autobusas per 5 s), 10 s ramybės pradžioje, žvaigždutė – jei eilė ≤ 24. Mokyklinis autobusas išsiskiria: ilgas gaubtas, baltas stogas, juodos juostos, žibintai, ženklas „Vežami vaikai“."}
+{"version": "2.2.4", "notes": "Užduotis „3 tos pačios spalvos iš eilės“ skiriama tik tuose lygiuose, kur ji tikrai įvykdoma; kituose – kita užduotis."}
